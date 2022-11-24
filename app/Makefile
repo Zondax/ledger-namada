@@ -52,20 +52,20 @@ endif
 # DEFINES += REVIEW_SCREEN_ENABLED APP_BLIND_MODE_ENABLED
 
 ifndef COIN
-COIN=TODO
+COIN=NAM
 endif
 
 include $(CURDIR)/Makefile.version
 
 $(info COIN  = [$(COIN)])
 
-ifeq ($(COIN),TODO)
+ifeq ($(COIN),NAM)
 # Main app configuration
 DEFINES += APP_STANDARD
 ifneq ($(TARGET_NAME),TARGET_NANOS)
 DEFINES += SUBSTRATE_PARSER_FULL
 endif
-APPNAME = "Anoma"
+APPNAME = "Namada"
 APPPATH = "44'/283'"
 
 else
@@ -245,7 +245,7 @@ include $(BOLOS_SDK)/Makefile.rules
 dep/%.d: %.c Makefile
 
 listvariants:
-	@echo VARIANTS COIN anoma
+	@echo VARIANTS COIN NAM
 
 .PHONY: version
 version:

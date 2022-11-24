@@ -38,7 +38,7 @@ typedef struct {
 class JsonTestsA : public ::testing::TestWithParam<testcase_t> {
 public:
     struct PrintToStringParamName {
-        anoma<class ParamType>
+        namada<class ParamType>
         std::string operator()(const testing::TestParamInfo<ParamType> &info) const {
             auto p = static_cast<testcase_t>(info.param);
             std::stringstream ss;

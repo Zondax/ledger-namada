@@ -972,7 +972,7 @@
     "@typescript-eslint/types" "5.44.0"
     eslint-visitor-keys "^3.3.0"
 
-"@zondax/ledger-anoma@../js":
+"@zondax/ledger-namada@../js":
   version "0.0.1"
   dependencies:
     "@ledgerhq/hw-transport" "^6.27.1"

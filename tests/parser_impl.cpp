@@ -27,7 +27,7 @@
 
 using namespace std;
 
-TEST(Address, AnomaEncoding) {
+TEST(Address, NamadaEncoding) {
 
 std::vectorstring pubkeys {"0eb0a6d7b862dc35c856c02c47fde3b4f60f2f3571a888b9a8ca7540c6793243",
                            "0000000000000000000000000000000000000000000000000000000000000000",
@@ -45,7 +45,7 @@ std::vectorstring addresses { "lsk24cd35u4jdq8szo3pnsqe5dsxwrnazyqqqg5eu",
                               "lskxwnb4ubt93gz49w3of855yy9uzntddyndahm6s",
                               "lskzkfw7ofgp3uusknbetemrey4aeatgf2ntbhcds"};
 
-const uint8_t ANOMA_ADDRESS_SIZE{84};
+const uint8_t NAMADA_ADDRESS_SIZE{84};
 
 for (uint8_t i = 0; i < pubkeys.size(); i++) {
 uint8_t pubkey_buffer[100];
@@ -54,12 +54,12 @@ auto bufferLen = parseHexString(
         sizeof(pubkey_buffer),
         pubkeys.at(i).c_str()
 );
-uint8_t encoded[ANOMA_ADDRESS_SIZE] = {0};
+uint8_t encoded[NAMADA_ADDRESS_SIZE] = {0};
 uint8_t address_len = 0;
-crypto_encodePubkey(encoded, ANOMA_ADDRESS_SIZE, pubkey_buffer, &address_len);
-EXPECT_EQ(address_len, ANOMA_ADDRESS_SIZE);
+crypto_encodePubkey(encoded, NAMADA_ADDRESS_SIZE, pubkey_buffer, &address_len);
+EXPECT_EQ(address_len, NAMADA_ADDRESS_SIZE);
 
-std::string lisk32_address( encoded, encoded + ANOMA_ADDRESS_SIZE );
+std::string lisk32_address( encoded, encoded + NAMADA_ADDRESS_SIZE );
 EXPECT_EQ(lisk32_address, addresses.at(i));
 }
 }

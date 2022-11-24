@@ -157,7 +157,7 @@ function processOutgoingViewingKeyResponse(response: Buffer) {
   }
 }
 
-export default class AnomaApp {
+export default class NamadaApp {
   transport
 
   constructor(transport: Transport) {
@@ -191,7 +191,7 @@ export default class AnomaApp {
   }
 
   async signGetChunks(path: string, message: Buffer) {
-    return AnomaApp.prepareChunks(message, serializePath(path))
+    return NamadaApp.prepareChunks(message, serializePath(path))
   }
 
   async getVersion(): Promise<ResponseVersion> {

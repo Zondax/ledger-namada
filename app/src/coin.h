@@ -20,10 +20,11 @@ extern "C" {
 #endif
 
 // #{TODO} ---> Replace CLA, Token symbol, HDPATH, etc etc
-#define CLA                             0x80
+#define CLA                             0x57
 
 #define HDPATH_LEN_DEFAULT   5
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
+// TODO: Change 283' to whatever the namada slip-0010 coin type will be.
 #define HDPATH_1_DEFAULT     (0x80000000u | 0x11b)  //283
 
 #define HDPATH_2_DEFAULT     (0x80000000u | 0u)

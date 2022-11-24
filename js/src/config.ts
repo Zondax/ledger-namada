@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-export const CLA = 0x80;
+export const CLA = 0x57;
 export const INS = {
   GET_VERSION: 0x00,
   GET_PUBLIC_KEY: 0x01,

@@ -16,8 +16,8 @@
 
 import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
 // @ts-ignore
-import AnomaApp from '@zondax/ledger-anoma'
-import { APP_SEED, models, txBlobExample, APP_DERIVATION } from './common'
+import NamadaApp from '@zondax/ledger-namada'
+import { APP_SEED, models, txBlobExample, hdpath } from './common'
 
 // @ts-ignore
 import ed25519 from 'ed25519-supercop'
@@ -34,7 +34,7 @@ const accountId = 123
 const SIGN_TEST_DATA = [
   {
     name: 'blind-sign',
-    nav: { s: [2, 0], x: [3, 0], sp: [3, 0] },
+    nav: { s: [1, 0], x: [2, 0], sp: [2, 0] },
     op: Buffer.from('hello@zondax.ch'),
   },
 ]
@@ -68,7 +68,7 @@ describe.each(models)('Standard', function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      const app = new AnomaApp(sim.getTransport())
+      const app = new NamadaApp(sim.getTransport())
       const resp = await app.getVersion()
 
       console.log(resp)
@@ -89,9 +89,9 @@ describe.each(models)('Standard', function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      const app = new AnomaApp(sim.getTransport())
+      const app = new NamadaApp(sim.getTransport())
 
-      const resp = await app.getAddressAndPubKey("m/44/283/1/2/3")
+      const resp = await app.getAddressAndPubKey(hdpath)
 
       console.log(resp, m.name)
 
@@ -108,9 +108,9 @@ describe.each(models)('Standard', function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      const app = new AnomaApp(sim.getTransport())
+      const app = new NamadaApp(sim.getTransport())
       const msg = data.op
-      const respReq = app.sign(APP_DERIVATION, msg)
+      const respReq = app.sign(hdpath, msg)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
 
@@ -126,7 +126,7 @@ describe.each(models)('Standard', function (m) {
       expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
 
-      const resp_addr = await app.getAddressAndPubKey(APP_DERIVATION)
+      const resp_addr = await app.getAddressAndPubKey(hdpath)
 
       let signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey.slice(1, 33))
       expect(signatureOK).toEqual(true)
@@ -140,7 +140,7 @@ describe.each(models)('Standard', function (m) {
   //   const sim = new Zemu(m.path)
   //   try {
   //     await sim.start({ ...defaultOptions, model: m.name })
-  //     const app = new AnomaApp(sim.getTransport())
+  //     const app = new NamadaApp(sim.getTransport())
 
   //     //Define HDPATH
   //     const resp = await app.getAddressAndPubKey(accountId)
@@ -164,7 +164,7 @@ describe.each(models)('Standard', function (m) {
   //   const sim = new Zemu(m.path)
   //   try {
   //     await sim.start({ ...defaultOptions, model: m.name })
-  //     const app = new AnomaApp(sim.getTransport())
+  //     const app = new NamadaApp(sim.getTransport())
 
   //     const respRequest = app.getAddressAndPubKey(accountId, true)
   //     // Wait until we are not in the main menu
@@ -185,7 +185,7 @@ describe.each(models)('Standard', function (m) {
   //   const sim = new Zemu(m.path)
   //   try {
   //     await sim.start({ ...defaultOptions, model: m.name })
-  //     const app = new AnomaApp(sim.getTransport())
+  //     const app = new NamadaApp(sim.getTransport())
 
   //     const respRequest = app.getAddressAndPubKey(accountId, true)
   //     // Wait until we are not in the main menu
@@ -208,7 +208,7 @@ describe.each(models)('Standard', function (m) {
   //   const sim = new Zemu(m.path)
   //   try {
   //     await sim.start({ ...defaultOptions, model: m.name })
-  //     const app = new AnomaApp(sim.getTransport())
+  //     const app = new NamadaApp(sim.getTransport())
 
   //     const txBlob = Buffer.from(txBlobExample)
   //     const responseAddr = await app.getAddressAndPubKey(accountId)
@@ -240,7 +240,7 @@ describe.each(models)('Standard', function (m) {
   //   const sim = new Zemu(m.path)
   //   try {
   //     await sim.start({ ...defaultOptions, model: m.name })
-  //     const app = new AnomaApp(sim.getTransport())
+  //     const app = new NamadaApp(sim.getTransport())
 
   //     const txBlob = Buffer.from(txBlobExample)
   //     const responseAddr = await app.getAddressAndPubKey(accountId)

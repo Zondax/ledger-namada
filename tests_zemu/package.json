@@ -7,7 +7,7 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Zondax/ledger-anoma"
+    "url": "git+https://github.com/Zondax/ledger-namada"
   },
   "keywords": [
     "Zondax",
@@ -17,7 +17,7 @@
     "test": "jest -t 'Standard' && jest -t 'BigTransactions'"
   },
   "dependencies": {
-    "@zondax/ledger-anoma": "../js",
+    "@zondax/ledger-namada": "../js",
     "@zondax/zemu": "^0.32.0"
   },
   "devDependencies": {

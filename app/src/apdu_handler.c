@@ -45,32 +45,23 @@ if( os_global_pin_is_validated() != BOLOS_UX_OK ) { \
 static bool tx_initialized = false;
 
 void extractHDPath(uint32_t rx, uint32_t offset) {
-    tx_initialized = false;
     zemu_log("extractHDPath\n");
-    if (offset==5){
-        zemu_log("offset is 5");
-    }
+    tx_initialized = false;
 
-    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_DEFAULT) {
+    const uint8_t pathLength = G_io_apdu_buffer[offset];
+    offset++;
+
+    if ((rx - offset) < sizeof(uint32_t) * pathLength || pathLength > HDPATH_LEN_DEFAULT) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    memcpy(hdPath, G_io_apdu_buffer + 6, sizeof(uint32_t) * HDPATH_LEN_DEFAULT);
+    memcpy(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * pathLength);
 
     //#{TODO} --> testnet necessary?
     const bool mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
                          hdPath[1] == HDPATH_1_DEFAULT;
-    if (hdPath[0] == HDPATH_0_DEFAULT){
-        zemu_log("Path[0] is 44\n");
-    }
-
-    if (hdPath[1] == HDPATH_1_DEFAULT){
-        zemu_log("Path[0] is 283\n");
-    }
 
     if (!mainnet) {
-        zemu_log("Main net is false\n");
-
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
@@ -150,7 +141,6 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     extractHDPath(rx, OFFSET_DATA);
     *tx = 0;
     const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-    zemu_log("Path has been extracted, and so has P1\n");
 
     zxerr_t zxerr = app_fill_address(key_ed25519);
     if(zxerr != zxerr_ok){
