@@ -1,0 +1,74 @@
+[
+    {
+      "index": 0,
+      "name": "Asset_Freeze",
+      "blob": "8ba466616464c4204b2a4ad9d4d900ea16f9dcee534b9c0189daa1acbccace73d794bf168b8a73e3a466616964ce000b6717a3666565ce001e163fa26676ce000153c8a367656eac6d61696e6e65742d76312e30a26768c420c061c4d8fc1dbdded2d7604be4568e3f6d041987ac37bde4b620b5ab39248adfa26c76ce00018b66a46e6f7465c41c48656c6c6f2074686572652c20746869732069732061206e6f746521a572656b6579c4206a08f935de3bb9eb65b9d206598f5d34419257491c4024ca5f88ea73749de231a3736e64c4209fa4543b7caf05ad7334a5a74033acdc130137d7afa1f6733509f6d4377c30d7a474797065a46166727a",
+      "output": [
+        "0 | Txn type : Asset Freeze",
+        "1 | Sender [1/2] : T6SFIO34V4C224ZUUWTUAM5M3QJQCN6XV6Q7M4",
+        "1 | Sender [2/2] : ZVBH3NIN34GDLSK2ETKM",
+        "2 | Rekey to [1/2] : WARNING: NIEPSNO6HO46WZNZ2IDFTD25GRAZE",
+        "2 | Rekey to [2/2] : V2JDRACJSS7RDVHG5E54IYZOIA3MI",
+        "3 | Fee : ALGO 1.971775",
+        "4 | Genesis ID : mainnet-v1.0",
+        "5 | Genesis hash [1/2] : wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qz",
+        "5 | Genesis hash [2/2] : kkit8=",
+        "6 | Note : 28 bytes",
+        "7 | Asset ID : 747287",
+        "8 | Asset account [1/2] : JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM44",
+        "8 | Asset account [2/2] : 6XSS7RNC4KOPR5HR537U",
+        "9 | Freeze flag : Unfrozen"
+      ],
+      "output_expert": [
+        "0 | Txn type : Asset Freeze",
+        "1 | Sender [1/2] : T6SFIO34V4C224ZUUWTUAM5M3QJQCN6XV6Q7M4",
+        "1 | Sender [2/2] : ZVBH3NIN34GDLSK2ETKM",
+        "2 | Rekey to [1/2] : WARNING: NIEPSNO6HO46WZNZ2IDFTD25GRAZE",
+        "2 | Rekey to [2/2] : V2JDRACJSS7RDVHG5E54IYZOIA3MI",
+        "3 | Fee : ALGO 1.971775",
+        "4 | Genesis ID : mainnet-v1.0",
+        "5 | Genesis hash [1/2] : wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qz",
+        "5 | Genesis hash [2/2] : kkit8=",
+        "6 | Note : 28 bytes",
+        "7 | Asset ID : 747287",
+        "8 | Asset account [1/2] : JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM44",
+        "8 | Asset account [2/2] : 6XSS7RNC4KOPR5HR537U",
+        "9 | Freeze flag : Unfrozen"
+      ]
+    },
+    {
+      "index": 1,
+      "name": "Asset_Freeze",
+      "blob": "8aa466616464c4204b2a4ad9d4d900ea16f9dcee534b9c0189daa1acbccace73d794bf168b8a73e3a466616964ce00038ce6a3666565ce00272460a26676cd6584a367656eac6d61696e6e65742d76312e30a26768c420c061c4d8fc1dbdded2d7604be4568e3f6d041987ac37bde4b620b5ab39248adfa26c76ce0001cd3ca572656b6579c42075895bccedfa0c747cea13601babff1de5cecf4dd7a3fe86eaeccb74b60124dea3736e64c420aba83eaca22287f68cad3906661fc72b1c3537dbbae4ba2c6e35a51c03c87f80a474797065a46166727a",
+      "output": [
+        "0 | Txn type : Asset Freeze",
+        "1 | Sender [1/2] : VOUD5LFCEKD7NDFNHEDGMH6HFMODKN63XLSLUL",
+        "1 | Sender [2/2] : DOGWSRYA6IP6ADQBWT6Y",
+        "2 | Rekey to [1/2] : WARNING: OWEVXTHN7IGHI7HKCNQBXK77DXS45",
+        "2 | Rekey to [2/2] : T2N26R75BXK5TFXJNQBETPAS7VK74",
+        "3 | Fee : ALGO 2.565216",
+        "4 | Genesis ID : mainnet-v1.0",
+        "5 | Genesis hash [1/2] : wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qz",
+        "5 | Genesis hash [2/2] : kkit8=",
+        "6 | Asset ID : 232678",
+        "7 | Asset account [1/2] : JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM44",
+        "7 | Asset account [2/2] : 6XSS7RNC4KOPR5HR537U",
+        "8 | Freeze flag : Unfrozen"
+      ],
+      "output_expert": [
+        "0 | Txn type : Asset Freeze",
+        "1 | Sender [1/2] : VOUD5LFCEKD7NDFNHEDGMH6HFMODKN63XLSLUL",
+        "1 | Sender [2/2] : DOGWSRYA6IP6ADQBWT6Y",
+        "2 | Rekey to [1/2] : WARNING: OWEVXTHN7IGHI7HKCNQBXK77DXS45",
+        "2 | Rekey to [2/2] : T2N26R75BXK5TFXJNQBETPAS7VK74",
+        "3 | Fee : ALGO 2.565216",
+        "4 | Genesis ID : mainnet-v1.0",
+        "5 | Genesis hash [1/2] : wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qz",
+        "5 | Genesis hash [2/2] : kkit8=",
+        "6 | Asset ID : 232678",
+        "7 | Asset account [1/2] : JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM44",
+        "7 | Asset account [2/2] : 6XSS7RNC4KOPR5HR537U",
+        "8 | Freeze flag : Unfrozen"
+      ]
+    }
+]
