@@ -31,16 +31,7 @@
 #include "coin.h"
 #include "transparent.h"
 #include "zxmacros.h"
-
-// #{TODO} --> these is defined in last version from zxlib
-#define REVIEW_ADDRESS 0x01
-#define REVIEW_TXN 0x02
-
-// #{TODO} --> this will be included in zxlib (here to avoid compilation errors)
-#define CHECK_PIN_VALIDATED() \
-if( os_global_pin_is_validated() != BOLOS_UX_OK ) { \
-    THROW(APDU_CODE_COMMAND_NOT_ALLOWED); \
-}
+#include "view_internal.h"
 
 static bool tx_initialized = false;
 
