@@ -21,8 +21,8 @@
 #include "tx.h"
 #include "zxmacros.h"
 #include "zxformat.h"
+#include "crypto_helper.h"
 
-uint32_t hdPath[HDPATH_LEN_DEFAULT];
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
 typedef struct {
@@ -93,7 +93,7 @@ zxerr_t crypto_extractPublicKey_secp256k1(uint8_t *pubKey, uint16_t pubKeyLen)
 {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[SECP256K1_SK_LEN];
+    uint8_t privateKeyData[SECP256K1_SK_LEN] = {0};
 
     if (pubKeyLen < SECP256K1_PK_LEN) {
         return zxerr_invalid_crypto_settings;
@@ -240,54 +240,6 @@ zxerr_t crypto_sign_secp256k1(uint8_t *signature,
     return err;
 }
 
-zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_t *pubkey){
-    // Step 1.  First borsh serialize pubkey (this prepends a 0 to the bytes of pubkey);
-    uint8_t borshEncodedPubKey[PK_LEN_25519 + 1];
-    memset(borshEncodedPubKey, 0, PK_LEN_25519 + 1);
-    memcpy(borshEncodedPubKey + 1, pubkey, PK_LEN_25519);
-
-    // Step 2. Hash the serialized public key with sha256.
-    uint8_t pkh[CX_SHA256_SIZE];
-    MEMZERO(pkh,sizeof(pkh));
-    cx_hash_sha256(borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
-
-    CHECK_APP_CANARY()
-
-    // Step 3. Take the hex encoding of the hash (using upper-case);
-    //         this is 64 characters long (64 = 256/16)
-    char hexPubKeyHash[64];
-    array_to_hexstr(hexPubKeyHash, 64, pkh, CX_SHA256_SIZE);
-
-    // Step 4. The Public Key Hash consists of the first 40 characters of the hex encoding.
-    memcpy(publicKeyHash, hexPubKeyHash, PK_HASH_LEN);
-
-    return zxerr_ok;
-}
-
-static uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, const uint8_t *pubkey) {
-    // #{TODO} --> Generate address
-    // Step 1:  Compute the hash of the Ed25519 public key
-    uint8_t publicKeyHash[PK_HASH_LEN];
-    crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
-
-    // Step 2. Encode the public key hash with bech32m
-    char addr_out[100];
-    const char *hrp ="atest";
-    zxerr_t err = bech32EncodeFromBytes(addr_out,
-                                        sizeof(addr_out),
-                                        hrp,
-                                        publicKeyHash,
-                                        sizeof(publicKeyHash),
-                                        0);
-                                        //BECH32_ENCODING_BECH32M);
-    if (err!=zxerr_ok){
-        return 0;
-    }
-    // pubkey ---> address ---> copy into buffer
-    uint8_t addressLen = ADDRESS_LEN;
-    memcpy(buffer, addr_out, ADDRESS_LEN);
-    return addressLen;
-}
 
 typedef struct {
     uint8_t publicKey[PK_LEN_25519];
