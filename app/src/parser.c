@@ -112,19 +112,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     switch (displayIdx)
     {
         case 0:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Title #0");
-            snprintf(outVal, outValLen, "Value #0");
-            return parser_ok;
-        case 1:
-            // Display Item 1
-            snprintf(outKey, outKeyLen, "Title #1");
-            snprintf(outVal, outValLen, "Value #1");
-            return parser_ok;
-        case 10:
-            // Display Item 10
-            snprintf(outKey, outKeyLen, "Title #N");
-            snprintf(outVal, outValLen, "Value #N");
+            snprintf(outKey, outKeyLen, "Blind Sign");
+            snprintf(outVal, outValLen, "%s", ctx->buffer);
             return parser_ok;
     default:
         break;

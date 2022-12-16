@@ -22,6 +22,8 @@
 #include "zxformat.h"
 #include "app_mode.h"
 #include "crypto.h"
+#include "lcx_ripemd160.h"
+#include "base58.h"
 
 typedef struct {
     uint8_t publicKey[SECP256K1_PK_LEN];

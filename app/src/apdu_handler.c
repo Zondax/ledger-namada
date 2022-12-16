@@ -98,7 +98,8 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     THROW(APDU_CODE_INVALIDP1P2);
 }
 
-
+// Avoid warnings: unused method
+#if 0
 // For transparent transfers in MASP transactions
 __Z_INLINE void handleGetAddrSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     extractHDPath(rx, OFFSET_DATA);
@@ -125,6 +126,7 @@ __Z_INLINE void handleGetAddrSecp256k1(volatile uint32_t *flags, volatile uint32
     *tx = replyLen;
     THROW(APDU_CODE_OK);
 }
+#endif
 
 // For wrapper transactions, address is derived from Ed25519 pubkey
 __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
@@ -172,6 +174,8 @@ __Z_INLINE void handleSignEd25519(volatile uint32_t *flags, volatile uint32_t *t
     *flags |= IO_ASYNCH_REPLY;
 }
 
+// Avoid warning: unused method
+#if 0
 __Z_INLINE void handleSignSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     zemu_log("handleSignSecp256k1\n");
     if (!process_chunk(tx, rx)) {
@@ -191,6 +195,7 @@ __Z_INLINE void handleSignSecp256k1(volatile uint32_t *flags, volatile uint32_t 
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
+#endif
 
 __Z_INLINE void handle_getversion(volatile uint32_t *flags, volatile uint32_t *tx)
 {

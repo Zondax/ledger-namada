@@ -92,7 +92,7 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
         return 0;
     }
 
-    const uint8_t addressLen = ADDRESS_LEN;
-    memcpy(buffer, addr_out, ADDRESS_LEN);
+    const uint8_t addressLen = isTestnet ? ADDRESS_LEN_TESTNET : ADDRESS_LEN_MAINNET;
+    memcpy(buffer, addr_out, addressLen);
     return addressLen;
 }

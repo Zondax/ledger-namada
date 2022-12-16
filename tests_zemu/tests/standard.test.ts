@@ -20,6 +20,9 @@ import { models, hdpath, defaultOptions } from './common'
 
 jest.setTimeout(60000)
 
+const expected_pubkey = '1f9a685c9d644d8501f12ec69126b74073bdaa9e66b5c54fa1f35369f3edd05b'
+const expected_address = "atest1d9khqw36x4rrgvf3gfznvsfhxgeyzdpnggmrvdjrgs6ngdp4xgmnwdzygvmnywpcx9p5vwp58p09fc"
+
 describe('Standard', function () {
   test.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
@@ -55,7 +58,6 @@ describe('Standard', function () {
       expect(resp).toHaveProperty('major')
       expect(resp).toHaveProperty('minor')
       expect(resp).toHaveProperty('patch')
-
     } finally {
       await sim.close()
     }
@@ -78,6 +80,9 @@ describe('Standard', function () {
       console.log(resp.address.toString())
       console.log(resp.publicKey.toString('hex'))
 
+      expect(resp.publicKey.toString('hex')).toEqual(expected_pubkey)
+      expect(resp.address.toString()).toEqual(expected_address)
+
     } finally {
       await sim.close()
     }
@@ -89,7 +94,7 @@ describe('Standard', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
-      const respRequest = app.getAddressAndPubKey(hdpath)
+      const respRequest = app.showAddressAndPubKey(hdpath)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_address`)
@@ -104,6 +109,9 @@ describe('Standard', function () {
 
       console.log(resp.address.toString())
       console.log(resp.publicKey.toString('hex'))
+
+      expect(resp.publicKey.toString('hex')).toEqual(expected_pubkey)
+      expect(resp.address.toString()).toEqual(expected_address)
     } finally {
       await sim.close()
     }
@@ -115,7 +123,7 @@ describe('Standard', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
-      const respRequest = app.getAddressAndPubKey(hdpath)
+      const respRequest = app.showAddressAndPubKey(hdpath)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-show_address_reject`, 'REJECT')
@@ -125,9 +133,6 @@ describe('Standard', function () {
 
       expect(resp.returnCode).toEqual(0x6986)
       expect(resp.errorMessage).toEqual('Transaction rejected')
-      expect(resp).toHaveProperty('publicKey')
-      expect(resp).toHaveProperty('address')
-
     } finally {
       await sim.close()
     }

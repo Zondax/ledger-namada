@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "clean": "ts-node tests/pullImageKillOld.ts",
-    "test": "yarn clean && jest -t 'Standard'"
+    "test": "yarn clean && jest -t 'Standard' && jest -t 'Transactions'"
   },
   "dependencies": {
     "@zondax/ledger-namada": "../js",

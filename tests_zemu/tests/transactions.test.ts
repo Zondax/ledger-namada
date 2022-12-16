@@ -23,7 +23,7 @@ import ed25519 from 'ed25519-supercop'
 
 const SIGN_TEST_DATA = [
   {
-    name: 'blind-sign',
+    name: 'blind',
     op: Buffer.from('hello@zondax.ch'),
   },
 ]
@@ -40,7 +40,7 @@ describe.each(models)('Transactions', function (m) {
     }
   })
 
-  test.skip.each(SIGN_TEST_DATA)('blind signing', async function (data) {
+  test.each(SIGN_TEST_DATA)('blind signing', async function (data) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })

@@ -243,7 +243,7 @@ zxerr_t crypto_sign_secp256k1(uint8_t *signature,
 
 typedef struct {
     uint8_t publicKey[PK_LEN_25519];
-    uint8_t address[ADDRESS_LEN];
+    uint8_t address[ADDRESS_LEN_TESTNET];
 } __attribute__((packed)) ed25519_answer_t;
 
 zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen)
@@ -253,11 +253,13 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
     uint8_t outLen = 0;
     ed25519_answer_t *const answer = (ed25519_answer_t *) buffer;
 
-    if (bufferLen < PK_LEN_25519 + ADDRESS_LEN) {
+    if (bufferLen < PK_LEN_25519 + ADDRESS_LEN_TESTNET) {
         return zxerr_unknown;
     }
     CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey, sizeof_field(ed25519_answer_t, publicKey)))
-    outLen = crypto_encodePubkey_ed25519(answer->address, answer->publicKey);
+
+    const bool isTestnet = hdPath[1] == HDPATH_1_TESTNET;
+    outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey, isTestnet);
 
     if (outLen == 0) {
         MEMZERO(buffer, bufferLen);
