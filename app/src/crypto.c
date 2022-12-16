@@ -123,13 +123,13 @@ zxerr_t crypto_extractPublicKey_secp256k1(uint8_t *pubKey, uint16_t pubKeyLen)
 
     }
     END_TRY;
-    return zxerr_unknown;
+    return err;
 }
 
 zxerr_t crypto_sign_ed25519(uint8_t *signature, uint16_t signatureMaxLen, const uint8_t *message, uint16_t messageLen)
 {
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[SK_LEN_25519];
+    uint8_t privateKeyData[SK_LEN_25519] = {0};
 
     zxerr_t err = zxerr_ok;
     BEGIN_TRY
