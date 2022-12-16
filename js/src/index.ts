@@ -333,9 +333,11 @@ export default class NamadaApp {
           }
 
           if (returnCode === LedgerError.NoErrors && response.length > 2) {
+            const signature = response.slice(0, response.length - 2);
             return {
-              hash: response.slice(0, 32),
-              signature: response.slice(32, -2),
+              // hash: response.slice(0, 32),
+              // signature: response.slice(32, -2),
+              signature,
               returnCode: returnCode,
               errorMessage: errorMessage,
             }
@@ -344,7 +346,7 @@ export default class NamadaApp {
           return {
             returnCode: returnCode,
             errorMessage: errorMessage,
-          }
+          } as ResponseSign;
         }, processErrorResponse)
   }
 

@@ -59,10 +59,10 @@ describe.each(models)('Transactions', function (m) {
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('hash')
+      // expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
 
-      let signatureOK = ed25519.verify(resp.signature, resp.hash, resp_addr.publicKey)
+      let signatureOK = ed25519.verify(resp.signature, msg, resp_addr.publicKey)
       expect(signatureOK).toEqual(true)
 
     } finally {
