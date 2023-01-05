@@ -52,18 +52,16 @@ export class NamadaApp {
 
   async prepareChunks(serializedPath: Buffer, code: Buffer, data: Buffer, timestamp: Buffer) {
     const chunks = []
-    const tmpBuff = Buffer.alloc(12);
+    const tmpBuff = Buffer.alloc(8);
     tmpBuff.writeUInt32LE(code.length, 0)
     tmpBuff.writeUInt32LE(data.length, 4)
 
     // Update packet length
-    serializedPath[0] = serializedPath[0] + 3
+    serializedPath[0] = serializedPath[0] + 2
     chunks.push(Buffer.concat([serializedPath, tmpBuff]))
 
-    console.log("FIRST CHUNK")
-    console.log(chunks)
-
     const message = Buffer.concat([code, data, timestamp])
+
     for (let i = 0; i < message.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE
       if (i > message.length) {

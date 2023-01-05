@@ -15,7 +15,7 @@
  ******************************************************************************* */
 
 import Zemu from '@zondax/zemu'
-import NamadaApp from '@zondax/ledger-namada'
+import { NamadaApp } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions } from './common'
 
 jest.setTimeout(60000)

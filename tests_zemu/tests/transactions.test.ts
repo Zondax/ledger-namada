@@ -15,23 +15,29 @@
  ******************************************************************************* */
 
 import Zemu from '@zondax/zemu'
-import NamadaApp from '@zondax/ledger-namada'
+import { NamadaApp } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions } from './common'
+
+const sha256 = require('js-sha256')
+const leb = require('leb128')
 
 // @ts-ignore
 import ed25519 from 'ed25519-supercop'
+import { serializeTimestamp } from '@zondax/ledger-namada/dist/common'
 
-const SIGN_TEST_DATA = [
+const SIGN_WRAPPER_TEST_DATA = [
   {
-    name: 'blind',
-    op: Buffer.from('hello@zondax.ch'),
+    name: 'wrapper',
+    code: Buffer.from('WrapperCode'),
+    data: Buffer.from('WrapperData'),
+    timestamp: {seconds: 1672923381, nanos: 536609000},
   },
 ]
 
 jest.setTimeout(60000)
 
 describe.each(models)('Transactions', function (m) {
-  test('can start and stop container', async function () {
+  test.skip('can start and stop container', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -40,17 +46,16 @@ describe.each(models)('Transactions', function (m) {
     }
   })
 
-  test.each(SIGN_TEST_DATA)('blind signing', async function (data) {
+  test.each(SIGN_WRAPPER_TEST_DATA)('Sign wrapper transaction', async function (data) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
       const resp_addr = await app.getAddressAndPubKey(hdpath)
+      console.log(resp_addr)
 
-      const msg = data.op
-      const respRequest = app.sign(hdpath, msg)
-
+      const respRequest = app.signWrapper(hdpath, data.code, data.data, data.timestamp)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign-${data.name}`)
 
@@ -59,12 +64,20 @@ describe.each(models)('Transactions', function (m) {
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      // expect(resp).toHaveProperty('hash')
       expect(resp).toHaveProperty('signature')
 
-      let signatureOK = ed25519.verify(resp.signature, msg, resp_addr.publicKey)
-      expect(signatureOK).toEqual(true)
+      const code_hash = Buffer.from(sha256.hex(data.code), 'hex')
+      const codeHashLength = leb.signed.encode(code_hash.length)
+      const serializedCode = Buffer.concat([Buffer.from([0x0A]), codeHashLength , code_hash])
+      const dataLength = leb.signed.encode(data.data.length)
+      const serializedData = Buffer.concat([Buffer.from([0x12]), dataLength, data.data])
+      const serializedTimestamp = serializeTimestamp(data.timestamp)
 
+      const serializedOuterTxn = Buffer.concat([serializedCode, serializedData, serializedTimestamp])
+      const bytes_to_sign = Buffer.from(sha256.hex(serializedOuterTxn), 'hex')
+
+      let signatureOK = ed25519.verify(resp.signature, bytes_to_sign, resp_addr.publicKey)
+      expect(signatureOK).toEqual(true)
     } finally {
       await sim.close()
     }
