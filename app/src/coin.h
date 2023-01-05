@@ -39,6 +39,8 @@ extern "C" {
 #define SCALAR_LEN_ED25519 32u
 #define SIG_PLUS_TYPE_LEN 65u
 
+#define ED25519_SIGNATURE_SIZE 64u
+
 #define PK_LEN_25519 32u
 #define PK_HASH_LEN 40u
 

@@ -22,10 +22,22 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
+typedef struct {
+    uint64_t seconds;
+    uint32_t nanos;
+} prototimestamp_t;
+typedef struct {
+    const uint8_t *code;
+    uint32_t codeSize;
+
+    const uint8_t *data;
+    uint32_t dataSize;
+
+    prototimestamp_t timestamp;
+} outer_layer_tx_t;
+
 typedef struct{
-    uint8_t txn_param_0;
-    uint8_t txn_param_1;
-    uint8_t txn_param_N;
+    outer_layer_tx_t *outerTxnPtr;
 } parser_tx_t;
 
 

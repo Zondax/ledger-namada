@@ -25,6 +25,7 @@
 
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
+
 typedef struct {
     uint8_t r[32];
     uint8_t s[32];
@@ -36,8 +37,6 @@ typedef struct {
 
 } __attribute__((packed)) rsv_signature_t;
 
-// #{TODO} --> Check pubkey and sign methods
-//ed25519
 zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen)
 {
     cx_ecfp_public_key_t cx_publicKey;
@@ -282,4 +281,29 @@ zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint
             break;
     }
     return err;
+}
+
+zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen) {
+    if (outerTxn == NULL || output == NULL) {
+        return zxerr_no_data;
+    }
+
+    if (outputLen < ED25519_SIGNATURE_SIZE) {
+        return zxerr_buffer_too_small;
+    }
+
+    // 1 - Serialize transaction and hash it
+    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
+    CHECK_ZXERR(crypto_getBytesToSign(outerTxn, bytes_to_sign, sizeof(bytes_to_sign)))
+
+#ifdef APP_TESTING
+    uint8_t tmpArray[65] = {0};
+    array_to_hexstr_uppercase(tmpArray, sizeof(tmpArray), bytes_to_sign, sizeof(bytes_to_sign));
+    ZEMU_LOGF(100, "bytes_to_sign: %s\n", (char*)tmpArray)
+#endif
+
+    // 2 - Sign ED25519
+    CHECK_ZXERR(crypto_sign_ed25519(output, outputLen, bytes_to_sign, sizeof(bytes_to_sign)))
+
+    return zxerr_ok;
 }

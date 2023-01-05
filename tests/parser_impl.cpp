@@ -20,11 +20,23 @@
 #include <iostream>
 #include <hexutils.h>
 #include "crypto_helper.h"
+#include "leb128.h"
 
 using namespace std;
 struct AddressTestcase {
         string pubkey;
         string address;
+};
+
+struct OuterLayerTransactionTestcase {
+        string serializeTxn;
+        string signedTransaction;
+};
+
+struct LEB128Testcase {
+        uint64_t input;
+        vector<uint8_t> expected;
+        uint8_t consumed;
 };
 
 TEST(Address, NamadaEncodingTestnet) {
@@ -70,5 +82,33 @@ TEST(Address, NamadaEncodingTestnet) {
 
                 const string namada_address(actualAddress, actualAddress + NAMADA_ADDRESS_SIZE);
                 EXPECT_EQ(namada_address, testcase.address);
+        }
+}
+
+TEST(LEB128, LEB128Encoding) {
+        vector<LEB128Testcase> leb128_encoding {
+                {12, {0x0C}, 1},
+                {32, {0x20}, 1},
+                { 1548174235, {0x9B, 0x87, 0x9D, 0xE2, 0x05, }, 5 },
+                { 693000000, {0xC0, 0xAE, 0xB9, 0xCA, 0x02, }, 5 },
+                { 1135613917, {0xDD, 0xAF, 0xC0, 0x9D, 0x04, }, 5 },
+                { 390000000, {0x80, 0xDB, 0xFB, 0xB9, 0x01, }, 5 },
+                { 1150276518, {0xA6, 0xA7, 0xBF, 0xA4, 0x04, }, 5 },
+                { 992000000, {0x80, 0xF0, 0x82, 0xD9, 0x03, }, 5 },
+                { 1640106391, {0x97, 0x93, 0x88, 0x8E, 0x06, }, 5 },
+                { 965000000, {0xC0, 0xF6, 0x92, 0xCC, 0x03, }, 5 },
+                { 1002286660, {0xC4, 0xDC, 0xF6, 0xDD, 0x03}, 5 },
+                { 308000000, {0x80, 0xEA, 0xEE, 0x92, 0x01}, 5 },
+        };
+
+        for (const auto& testcase : leb128_encoding) {
+                uint8_t encoded[MAX_LEB128_OUTPUT] = {0};
+                uint8_t bytes = 0;
+                zxerr_t err = encodeLEB128(testcase.input, (uint8_t*) &encoded, MAX_LEB128_OUTPUT, &bytes);
+
+                ASSERT_EQ(err, zxerr_ok);
+                ASSERT_EQ(testcase.consumed, bytes);
+
+                EXPECT_TRUE(std::memcmp(testcase.expected.data(), &encoded, bytes) == 0);
         }
 }

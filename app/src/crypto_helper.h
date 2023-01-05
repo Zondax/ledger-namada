@@ -24,8 +24,20 @@ extern "C" {
 #include "zxerror.h"
 #include "parser_common.h"
 
+#define CODE_HASH_SIZE  32
+#define TIMESTAMP_SIZE  14
+
+#define CODE_HASH_INFO_SIZE 2
+
+
 uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen,
                                     const uint8_t *pubkey, bool isTestnet);
+
+zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen,
+                      uint8_t *output, uint16_t outputLen);
+
+zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign, size_t toSignLen);
+
 
 #ifdef __cplusplus
 }

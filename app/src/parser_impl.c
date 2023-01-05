@@ -13,12 +13,20 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #include "parser_impl.h"
+#include "zxformat.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v)
 {
-    // #{TODO} --> parse parameters: read from c->buffer and store in v
+    ZEMU_LOGF(50, "Parser::_read\n")
+    if (c->bufferLen < v->outerTxnPtr->codeSize + v->outerTxnPtr->dataSize + sizeof(uint64_t) + sizeof(uint32_t)) {
+        return parser_missing_field;
+    }
+    // Point data from input buffer to OuterTxn struct
+    v->outerTxnPtr->code = c->buffer;
+    v->outerTxnPtr->data = c->buffer + v->outerTxnPtr->codeSize;
+    MEMCPY(&v->outerTxnPtr->timestamp, v->outerTxnPtr->data + v->outerTxnPtr->dataSize, 12);
+
     return parser_ok;
 }
 
