@@ -215,7 +215,24 @@ zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign,
     // Hash SigningTxn
     cx_sha256_final(&ctx, toSign);
     #else
+    picohash_ctx_t ctx;
+    picohash_init_sha256(&ctx);
 
+    // Code - Code hash
+    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) &tmpBuff, sizeof(tmpBuff)))
+    picohash_update(&ctx, &tmpBuff, 2);
+    picohash_update(&ctx, &code_hash, sizeof(code_hash));
+
+    // Data
+    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
+    picohash_update(&ctx, &tmpBuff, tmpSize);
+    picohash_update(&ctx, outerTxn->data, outerTxn->dataSize);
+
+    // Timestamp
+    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
+    picohash_update(&ctx, &tmpBuff, tmpSize);
+
+    picohash_final(&ctx, toSign);
     #endif
 
     return zxerr_ok;
