@@ -54,7 +54,7 @@ describe('Standard', function () {
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('test_mode')
+      expect(resp).toHaveProperty('testMode')
       expect(resp).toHaveProperty('major')
       expect(resp).toHaveProperty('minor')
       expect(resp).toHaveProperty('patch')

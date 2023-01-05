@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cstring>
 #include <hexutils.h>
 #include "crypto_helper.h"
 #include "leb128.h"
@@ -109,6 +110,6 @@ TEST(LEB128, LEB128Encoding) {
                 ASSERT_EQ(err, zxerr_ok);
                 ASSERT_EQ(testcase.consumed, bytes);
 
-                EXPECT_TRUE(std::memcmp(testcase.expected.data(), &encoded, bytes) == 0);
+                EXPECT_TRUE(memcmp(testcase.expected.data(), &encoded, bytes) == 0);
         }
 }

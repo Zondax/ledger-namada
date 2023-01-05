@@ -86,10 +86,10 @@ export class NamadaApp {
       }
 
       return {
-        return_code: returnCode,
-        error_message: errorCodeToString(returnCode),
+        returnCode: returnCode,
+        errorMessage: errorCodeToString(returnCode),
         // ///
-        test_mode: response[0] !== 0,
+        testMode: response[0] !== 0,
         major: response[1],
         minor: response[2],
         patch: response[3],

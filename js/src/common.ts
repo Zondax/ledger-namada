@@ -110,27 +110,27 @@ export function processErrorResponse(response: any) {
     if (isDict(response)) {
       if (Object.prototype.hasOwnProperty.call(response, 'statusCode')) {
         return {
-          return_code: response.statusCode,
-          error_message: errorCodeToString(response.statusCode),
+          returnCode: response.statusCode,
+          errorMessage: errorCodeToString(response.statusCode),
         }
       }
 
       if (
-        Object.prototype.hasOwnProperty.call(response, 'return_code') &&
-        Object.prototype.hasOwnProperty.call(response, 'error_message')
+        Object.prototype.hasOwnProperty.call(response, 'returnCode') &&
+        Object.prototype.hasOwnProperty.call(response, 'errorMessage')
       ) {
         return response
       }
     }
     return {
-      return_code: 0xffff,
-      error_message: response.toString(),
+      returnCode: 0xffff,
+      errorMessage: response.toString(),
     }
   }
 
   return {
-    return_code: 0xffff,
-    error_message: response.toString(),
+    returnCode: 0xffff,
+    errorMessage: response.toString(),
   }
 }
 
