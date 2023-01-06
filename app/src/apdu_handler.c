@@ -114,36 +114,6 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     THROW(APDU_CODE_INVALIDP1P2);
 }
 
-// Avoid warnings: unused method
-#if 0
-// For transparent transfers in MASP transactions
-__Z_INLINE void handleGetAddrSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
-
-    const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-    uint16_t replyLen = 0;
-
-    zxerr_t zxerr = masp_transparent_get_address_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
-    if(zxerr != zxerr_ok){
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    action_addrResponse.kind = addr_masp_transparent_secp256k1;
-    action_addrResponse.len = replyLen;
-
-    if (requireConfirmation) {
-        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(REVIEW_ADDRESS);
-        *flags |= IO_ASYNCH_REPLY;
-        return;
-    }
-
-    *tx = replyLen;
-    THROW(APDU_CODE_OK);
-}
-#endif
-
 __Z_INLINE void handleSignWrapper(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     ZEMU_LOGF(50, "handleSignWrapper\n")
     if (!process_chunk(tx, rx)) {
@@ -212,29 +182,6 @@ __Z_INLINE void handleSignEd25519(volatile uint32_t *flags, volatile uint32_t *t
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
-
-// Avoid warning: unused method
-#if 0
-__Z_INLINE void handleSignSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("handleSignSecp256k1\n");
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-
-    const char *error_msg = tx_parse();
-    CHECK_APP_CANARY()
-    if (error_msg != NULL) {
-        int error_msg_length = strlen(error_msg);
-        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
-        *tx += (error_msg_length);
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_secp256k1);
-    view_review_show(REVIEW_TXN);
-    *flags |= IO_ASYNCH_REPLY;
-}
-#endif
 
 __Z_INLINE void handle_getversion(volatile uint32_t *flags, volatile uint32_t *tx)
 {

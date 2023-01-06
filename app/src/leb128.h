@@ -24,8 +24,9 @@ extern "C" {
 #define MAX_LEB128_OUTPUT 10
 
 zxerr_t encodeLEB128(uint64_t number, uint8_t *encoded, uint8_t encodedLen, uint8_t *encodedBytes);
-// zxerr_t encodeSLEB128(const int64_t number, uint8_t *encoded, uint8_t encodedSize);
 
+// TO DO
+// zxerr_t encodeSLEB128();
 // zxerr_t decodeLEB128();
 // zxerr_t decodeSLEB128();
 

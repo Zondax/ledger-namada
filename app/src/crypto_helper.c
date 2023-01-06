@@ -144,10 +144,6 @@ zxerr_t crypto_serializeData(const uint64_t dataSize, uint8_t *buffer, uint16_t 
     CHECK_ZXERR(encodeLEB128(dataSize, buffer + 1, MAX_LEB128_OUTPUT, dataInfoSize))
 
     (*dataInfoSize)++;
-    ZEMU_LOGF(50, "PreData 0: %d\n", buffer[0])
-    ZEMU_LOGF(50, "PreData 1: %d\n", buffer[1])
-    ZEMU_LOGF(50, "DataInfoSize: %d\n", *dataInfoSize)
-
     return zxerr_ok;
 }
 

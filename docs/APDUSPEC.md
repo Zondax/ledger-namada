@@ -2,8 +2,6 @@
 
 ## General structure
 
-# #{TODO} --> Update CLA, HDPATH and APDU messages
-
 The general structure of commands and responses is as follows:
 
 ### Commands
@@ -76,7 +74,7 @@ Gets the ED25519 public key and corresponding address
 | CLA     | byte (1) | Application Identifier    | 0x57       |
 | INS     | byte (1) | Instruction ID            | 0x01       |
 | P1      | byte (1) | Request User confirmation | No = 0     |
-| P2      | byte (1) | Parameter 2               | ignored    |
+| P2      | byte (1) | Signature scheme          | Ed25519 = 0 / Secp256k1 = 1 |
 | L       | byte (1) | Bytes in payload          | (depends)  |
 | Path[0] | byte (4) | Derivation Path Data      | 0x80000000 | 44 |
 | Path[1] | byte (4) | Derivation Path Data      | 0x80000000 | 434 |
@@ -89,7 +87,7 @@ Gets the ED25519 public key and corresponding address
 | Field   | Type      | Content     | Note                     |
 | ------- | --------- | ----------- | ------------------------ |
 | PK      | byte (32) | Public Key  |                          |
-| ADDR    | byte (??) | address     |                          |
+| ADDR    | byte (??) | address     | Testnet: 84 / Mainnet: 80                          |
 | SW1-SW2 | byte (2)  | Return code | see list of return codes |
 
 ---
@@ -109,7 +107,7 @@ Sign wrapper transaction with Ed25519
 | P2    | byte (1) | ----                   | not used  |
 | L     | byte (1) | Bytes in payload       | (depends) |
 
-The first packet/chunk includes only the derivation path
+The first packet/chunk includes the derivation path and size for Code and Data fields
 
 All other packets/chunks contain data chunks that are described below
 
@@ -122,6 +120,8 @@ All other packets/chunks contain data chunks that are described below
 | Path[2] | byte (4) | Derivation Path Data | ?        |
 | Path[3] | byte (4) | Derivation Path Data | ?        |
 | Path[4] | byte (4) | Derivation Path Data | ?        |
+| CodeSize | byte (4) | Bytes of Code | ?        |
+| DataSize | byte (4) | Bytes of Data | ?        |
 
 ##### Other Chunks/Packets
 
@@ -133,6 +133,6 @@ All other packets/chunks contain data chunks that are described below
 
 | Field   | Type      | Content     | Note                     |
 | ------- | --------- | ----------- | ------------------------ |
-| SIG     | byte (65) | Signature   |                          |
+| SIG     | byte (64) | Signature   |                          |
 | SW1-SW2 | byte (2)  | Return code | see list of return codes |
 

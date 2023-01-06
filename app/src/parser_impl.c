@@ -18,7 +18,6 @@
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v)
 {
-    ZEMU_LOGF(50, "Parser::_read\n")
     if (c->bufferLen < v->outerTxnPtr->codeSize + v->outerTxnPtr->dataSize + sizeof(uint64_t) + sizeof(uint32_t)) {
         return parser_missing_field;
     }
