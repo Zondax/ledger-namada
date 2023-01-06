@@ -19,13 +19,13 @@
 extern "C" {
 #endif
 
-// #{TODO} ---> Replace CLA, Token symbol, HDPATH, etc etc
 #define CLA                             0x57
 
 #define HDPATH_LEN_DEFAULT   5
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
-// TODO: Change 283' to whatever the namada slip-0010 coin type will be.
+
 #define HDPATH_1_DEFAULT     (0x80000000u | 0x11b)  //283
+#define HDPATH_1_TESTNET     (0x80000000u | 0x11b)  //283
 
 #define HDPATH_2_DEFAULT     (0x80000000u | 0u)
 #define HDPATH_3_DEFAULT     (0u)
@@ -39,28 +39,28 @@ extern "C" {
 #define SCALAR_LEN_ED25519 32u
 #define SIG_PLUS_TYPE_LEN 65u
 
+#define ED25519_SIGNATURE_SIZE 64u
+
 #define PK_LEN_25519 32u
 #define PK_HASH_LEN 40u
-#define ADDRESS_HRP_LEN 5
-/// The length of [`Address`] encoded with Bech32m.
-#define ADDRESS_LEN 79 + ADDRESS_HRP_LEN
+
+#define ADDRESS_LEN_MAINNET 80u
+#define ADDRESS_LEN_TESTNET 84u
+
+#define MAX_BECH32_HRP_LEN  83u
+
+/// An address string before bech32m encoding must be this size.
 #define FIXED_LEN_STRING_BYTES 45u
 
 /// For payment addresses on the Testnet, the Human-Readable Part is "patest"
 #define SAPLING_PAYMENT_ADDR_HRP "patest"
 
-/// The length of [`Address`] encoded with Bech32m.
-#define ADDRESS_LEN 79 + ADDRESS_HRP_LEN
-
-#define MAX_SIGN_SIZE 256u
-#define BLAKE2B_DIGEST_SIZE 32u
-
 #define COIN_AMOUNT_DECIMAL_PLACES 6
-#define COIN_TICKER "TODO "
+#define COIN_TICKER "NAM "
 
 #define MENU_MAIN_APP_LINE1 "Namada"
 #define MENU_MAIN_APP_LINE2 "Ready"
-#define MENU_MAIN_APP_LINE2_SECRET          "???"
+#define MENU_MAIN_APP_LINE2_SECRET  "???"
 #define APPVERSION_LINE1 "Namada"
 #define APPVERSION_LINE2 "v" APPVERSION
 

@@ -13,8 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import Transport from '@ledgerhq/hw-transport';
-import {CLA, INS} from "./config";
+const leb = require('leb128')
 
 export const CHUNK_SIZE = 250;
 
@@ -67,7 +66,7 @@ export enum LedgerError {
   BadKeyHandle = 0x6a80,
   InvalidP1P2 = 0x6b00,
   InstructionNotSupported = 0x6d00,
-  AppDoesNotSeemToBeOpen = 0x6e00,
+  AppDoesNotSeemToBeOpen = 0x6e01,
   UnknownError = 0x6f00,
   SignVerifyError = 0x6f01,
 }
@@ -106,72 +105,33 @@ function isDict(v: any) {
   return typeof v === 'object' && v !== null && !(v instanceof Array) && !(v instanceof Date);
 }
 
-export function processErrorResponse(response?: any) {
+export function processErrorResponse(response: any) {
   if (response) {
     if (isDict(response)) {
       if (Object.prototype.hasOwnProperty.call(response, 'statusCode')) {
         return {
           returnCode: response.statusCode,
           errorMessage: errorCodeToString(response.statusCode),
-// legacy
-          return_code: response.statusCode,
-          error_message: errorCodeToString(response.statusCode),
-        };
+        }
       }
 
       if (
         Object.prototype.hasOwnProperty.call(response, 'returnCode') &&
         Object.prototype.hasOwnProperty.call(response, 'errorMessage')
       ) {
-        return response;
+        return response
       }
     }
     return {
       returnCode: 0xffff,
       errorMessage: response.toString(),
-// legacy
-      return_code: 0xffff,
-      error_message: response.toString(),
-    };
+    }
   }
 
   return {
     returnCode: 0xffff,
     errorMessage: response.toString(),
-  };
-}
-
-export async function getVersion(transport: Transport) {
-  return transport.send(CLA, INS.GET_VERSION, 0, 0).then(response => {
-    const errorCodeData = response.slice(-2);
-    const returnCode = (errorCodeData[0] * 256 + errorCodeData[1]) as LedgerError;
-
-    let targetId = 0;
-    if (response.length >= 9) {
-      /* eslint-disable no-bitwise */
-      targetId =
-        (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0);
-      /* eslint-enable no-bitwise */
-    }
-
-    return {
-      returnCode,
-      errorMessage: errorCodeToString(returnCode),
-//
-      // legacy
-      return_code: returnCode,
-      error_message: errorCodeToString(returnCode),
-//
-      testMode: response[0] !== 0,
-      test_mode: response[0] !== 0,
-
-      major: response[1],
-      minor: response[2],
-      patch: response[3],
-      deviceLocked: response[4] === 1,
-      targetId: targetId.toString(16),
-    };
-  }, processErrorResponse);
+  }
 }
 
 const HARDENED = 0x80000000;
@@ -220,4 +180,28 @@ export function serializePath(path: string) {
   }
 
   return buf;
+}
+
+export interface ProtoTimestamp {
+  seconds: number;
+  nanos: number;
+}
+
+export function serializeTimestamp(timestamp: ProtoTimestamp) {
+  const TAG_TS =  Buffer.from([0x1A])
+  const TAG_S =  Buffer.from([0x08])
+  const TAG_N =  Buffer.from([0x10])
+
+  const lebseconds = leb.signed.encode(timestamp.seconds)
+  const lebnanos = leb.signed.encode(timestamp.nanos)
+
+  let serialized = timestamp.seconds > 0 ? Buffer.concat([TAG_S, lebseconds]) : Buffer.from([])
+  if (timestamp.nanos > 0) {
+    serialized = Buffer.concat([serialized, TAG_N, lebnanos])
+  }
+
+  const timestampSize = leb.unsigned.encode(serialized.length)
+  const buffer = Buffer.concat([TAG_TS, timestampSize, serialized])
+
+  return buffer
 }

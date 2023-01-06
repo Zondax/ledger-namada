@@ -48,9 +48,6 @@ DEFINES += ZEMU_LOGGING
 $(info ************ LOGGING ENABLED ************)
 endif
 
-# #{TODO} --> Need for an special mode?
-# DEFINES += REVIEW_SCREEN_ENABLED APP_BLIND_MODE_ENABLED
-
 ifndef COIN
 COIN=NAM
 endif
@@ -128,6 +125,8 @@ DEFINES       += USB_SEGMENT_SIZE=64
 DEFINES       += HAVE_BOLOS_APP_STACK_CANARY
 
 DEFINES       += HAVE_WEBUSB WEBUSB_URL_SIZE_B=0 WEBUSB_URL=""
+DEFINES		  += HAVE_HASH HAVE_RIPEMD160 HAVE_SHA256
+
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
@@ -194,7 +193,6 @@ include $(BOLOS_SDK)/Makefile.glyphs
 
 APP_SOURCE_PATH += $(MY_DIR)/src
 APP_SOURCE_PATH += $(MY_DIR)/glyphs
-# APP_SOURCE_PATH += $(MY_DIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/src
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/app/common
@@ -202,7 +200,6 @@ APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/app/common
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 SDK_SOURCE_PATH  += lib_ux
 
-# #{TODO} --> Need Rust?
 .PHONY: rust
 rust:
 	@echo "No rust code"
@@ -215,19 +212,6 @@ rust_clean:
 	@echo "No rust code"
 
 clean: rust_clean
-
-# .PHONY: rust
-# rust:
-# 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target thumbv6m-none-eabi --release
-
-# # Before linking, we need to be sure rust lib is there
-# bin/app.elf: rust
-
-# .PHONY: rust_clean
-# rust_clean:
-# 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo clean
-
-# clean: rust_clean
 
 # load, delete and listvariants are provided to comply with Ledger requirements
 .PHONY: load

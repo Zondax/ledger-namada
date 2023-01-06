@@ -53,6 +53,18 @@ __Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
     return err;
 }
 
+__Z_INLINE void app_sign_outer_layer_transaction() {
+    const zxerr_t err = crypto_signOuterLayerTxn(&outerTxn, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
+
+    if (err != zxerr_ok) {
+        set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+    } else {
+        set_code(G_io_apdu_buffer, SK_LEN_25519, APDU_CODE_OK);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, SK_LEN_25519 + 2);
+    }
+}
+
 __Z_INLINE void app_sign_ed25519() {
     const uint8_t *message = tx_get_buffer();
     const uint16_t messageLength = tx_get_buffer_length();

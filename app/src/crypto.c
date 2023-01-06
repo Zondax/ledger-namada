@@ -21,10 +21,11 @@
 #include "tx.h"
 #include "zxmacros.h"
 #include "zxformat.h"
+#include "crypto_helper.h"
 
-uint32_t hdPath[HDPATH_LEN_DEFAULT];
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
+
 typedef struct {
     uint8_t r[32];
     uint8_t s[32];
@@ -36,8 +37,6 @@ typedef struct {
 
 } __attribute__((packed)) rsv_signature_t;
 
-// #{TODO} --> Check pubkey and sign methods
-//ed25519
 zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen)
 {
     cx_ecfp_public_key_t cx_publicKey;
@@ -93,7 +92,7 @@ zxerr_t crypto_extractPublicKey_secp256k1(uint8_t *pubKey, uint16_t pubKeyLen)
 {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[SECP256K1_SK_LEN];
+    uint8_t privateKeyData[SECP256K1_SK_LEN] = {0};
 
     if (pubKeyLen < SECP256K1_PK_LEN) {
         return zxerr_invalid_crypto_settings;
@@ -123,13 +122,13 @@ zxerr_t crypto_extractPublicKey_secp256k1(uint8_t *pubKey, uint16_t pubKeyLen)
 
     }
     END_TRY;
-    return zxerr_unknown;
+    return err;
 }
 
 zxerr_t crypto_sign_ed25519(uint8_t *signature, uint16_t signatureMaxLen, const uint8_t *message, uint16_t messageLen)
 {
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[SK_LEN_25519];
+    uint8_t privateKeyData[SK_LEN_25519] = {0};
 
     zxerr_t err = zxerr_ok;
     BEGIN_TRY
@@ -240,58 +239,10 @@ zxerr_t crypto_sign_secp256k1(uint8_t *signature,
     return err;
 }
 
-zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_t *pubkey){
-    // Step 1.  First borsh serialize pubkey (this prepends a 0 to the bytes of pubkey);
-    uint8_t borshEncodedPubKey[PK_LEN_25519 + 1];
-    memset(borshEncodedPubKey, 0, PK_LEN_25519 + 1);
-    memcpy(borshEncodedPubKey + 1, pubkey, PK_LEN_25519);
-
-    // Step 2. Hash the serialized public key with sha256.
-    uint8_t pkh[CX_SHA256_SIZE];
-    MEMZERO(pkh,sizeof(pkh));
-    cx_hash_sha256(borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
-
-    CHECK_APP_CANARY()
-
-    // Step 3. Take the hex encoding of the hash (using upper-case);
-    //         this is 64 characters long (64 = 256/16)
-    char hexPubKeyHash[64];
-    array_to_hexstr(hexPubKeyHash, 64, pkh, CX_SHA256_SIZE);
-
-    // Step 4. The Public Key Hash consists of the first 40 characters of the hex encoding.
-    memcpy(publicKeyHash, hexPubKeyHash, PK_HASH_LEN);
-
-    return zxerr_ok;
-}
-
-static uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, const uint8_t *pubkey) {
-    // #{TODO} --> Generate address
-    // Step 1:  Compute the hash of the Ed25519 public key
-    uint8_t publicKeyHash[PK_HASH_LEN];
-    crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
-
-    // Step 2. Encode the public key hash with bech32m
-    char addr_out[100];
-    const char *hrp ="atest";
-    zxerr_t err = bech32EncodeFromBytes(addr_out,
-                                        sizeof(addr_out),
-                                        hrp,
-                                        publicKeyHash,
-                                        sizeof(publicKeyHash),
-                                        0);
-                                        //BECH32_ENCODING_BECH32M);
-    if (err!=zxerr_ok){
-        return 0;
-    }
-    // pubkey ---> address ---> copy into buffer
-    uint8_t addressLen = ADDRESS_LEN;
-    memcpy(buffer, addr_out, ADDRESS_LEN);
-    return addressLen;
-}
 
 typedef struct {
     uint8_t publicKey[PK_LEN_25519];
-    uint8_t address[ADDRESS_LEN];
+    uint8_t address[ADDRESS_LEN_TESTNET];
 } __attribute__((packed)) ed25519_answer_t;
 
 zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen)
@@ -301,11 +252,13 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
     uint8_t outLen = 0;
     ed25519_answer_t *const answer = (ed25519_answer_t *) buffer;
 
-    if (bufferLen < PK_LEN_25519 + ADDRESS_LEN) {
+    if (bufferLen < PK_LEN_25519 + ADDRESS_LEN_TESTNET) {
         return zxerr_unknown;
     }
     CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey, sizeof_field(ed25519_answer_t, publicKey)))
-    outLen = crypto_encodePubkey_ed25519(answer->address, answer->publicKey);
+
+    const bool isTestnet = hdPath[1] == HDPATH_1_TESTNET;
+    outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey, isTestnet);
 
     if (outLen == 0) {
         MEMZERO(buffer, bufferLen);
@@ -328,4 +281,29 @@ zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint
             break;
     }
     return err;
+}
+
+zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen) {
+    if (outerTxn == NULL || output == NULL) {
+        return zxerr_no_data;
+    }
+
+    if (outputLen < ED25519_SIGNATURE_SIZE) {
+        return zxerr_buffer_too_small;
+    }
+
+    // 1 - Serialize transaction and hash it
+    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
+    CHECK_ZXERR(crypto_getBytesToSign(outerTxn, bytes_to_sign, sizeof(bytes_to_sign)))
+
+#ifdef APP_TESTING
+    uint8_t tmpArray[65] = {0};
+    array_to_hexstr_uppercase(tmpArray, sizeof(tmpArray), bytes_to_sign, sizeof(bytes_to_sign));
+    ZEMU_LOGF(100, "bytes_to_sign: %s\n", (char*)tmpArray)
+#endif
+
+    // 2 - Sign ED25519
+    CHECK_ZXERR(crypto_sign_ed25519(output, outputLen, bytes_to_sign, sizeof(bytes_to_sign)))
+
+    return zxerr_ok;
 }

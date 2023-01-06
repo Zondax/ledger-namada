@@ -15,13 +15,14 @@
  ******************************************************************************* */
 export const CLA = 0x57;
 export const INS = {
-  GET_VERSION: 0x00,
-  GET_PUBLIC_KEY: 0x01,
-  SIGN_MSGPACK: 0x02,
+  GET_VERSION:      0x00,
+  GET_PUBLIC_KEY:   0x01,
+  SIGN_WRAPPER:     0x02,
+
   GET_MASP_ADDRESS: 0x03,
-  GET_IVK : 0x04,
-  GET_OVK:  0x05,
-  GET_NF: 0x06,
+  GET_IVK :         0x04,
+  GET_OVK:          0x05,
+  GET_NF:           0x06,
 };
 export const PK_LEN_25519 = 32;
 export const HASH_LEN_SHA256 = 32;

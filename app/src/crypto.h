@@ -24,8 +24,10 @@ extern "C" {
 #include <stdbool.h>
 #include <sigutils.h>
 #include "zxerror.h"
+#include "parser_txdef.h"
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
+extern outer_layer_tx_t outerTxn;
 
 zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen);
 
@@ -36,6 +38,9 @@ zxerr_t crypto_sign_ed25519(uint8_t *signature, uint16_t signatureMaxLen, const 
 zxerr_t crypto_sign_secp256k1(uint8_t *signature,
                               uint16_t signatureMaxLen,
                               uint16_t *sigSize);
+
+zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen);
+
 #ifdef __cplusplus
 }
 #endif

@@ -38,7 +38,7 @@ typedef struct {
 class JsonTestsA : public ::testing::TestWithParam<testcase_t> {
 public:
     struct PrintToStringParamName {
-        namada<class ParamType>
+        template<class ParamType>
         std::string operator()(const testing::TestParamInfo<ParamType> &info) const {
             auto p = static_cast<testcase_t>(info.param);
             std::stringstream ss;
@@ -128,8 +128,8 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
     #endif
 }
 
-INSTANTIATE_TEST_SUITE_P
 
+INSTANTIATE_TEST_SUITE_P
 (
     JsonTestCasesCurrentTxVer,
     JsonTestsA,

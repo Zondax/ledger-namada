@@ -41,6 +41,8 @@ parser_error_t parser_init_context(parser_context_t *ctx,
 
     ctx->buffer = buffer;
     ctx->bufferLen = bufferSize;
+
+    ctx->tx_obj->outerTxnPtr = &outerTxn;
     return parser_ok;
 }
 
@@ -48,8 +50,8 @@ parser_error_t parser_parse(parser_context_t *ctx,
                             const uint8_t *data,
                             size_t dataLen,
                             parser_tx_t *tx_obj) {
-    CHECK_ERROR(parser_init_context(ctx, data, dataLen))
     ctx->tx_obj = tx_obj;
+    CHECK_ERROR(parser_init_context(ctx, data, dataLen))
     return _read(ctx, tx_obj);
 }
 
@@ -71,7 +73,7 @@ parser_error_t parser_validate(parser_context_t *ctx) {
 parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
     // #{TODO} --> function to retrieve num Items
     // *num_items = _getNumItems();
-    *num_items = 1;
+    *num_items = 4;
     if(*num_items == 0) {
         return parser_unexpected_number_items;
     }
@@ -109,22 +111,26 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
+    const outer_layer_tx_t *outerTxn = ctx->tx_obj->outerTxnPtr;
     switch (displayIdx)
     {
         case 0:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Title #0");
-            snprintf(outVal, outValLen, "Value #0");
+            snprintf(outKey, outKeyLen, "Code");
+            pageStringExt(outVal, outValLen, (const char*) outerTxn->code, outerTxn->codeSize, pageIdx, pageCount);
             return parser_ok;
         case 1:
-            // Display Item 1
-            snprintf(outKey, outKeyLen, "Title #1");
-            snprintf(outVal, outValLen, "Value #1");
+            snprintf(outKey, outKeyLen, "Data");
+            pageStringExt(outVal, outValLen, (const char*) outerTxn->data, outerTxn->dataSize, pageIdx, pageCount);
             return parser_ok;
-        case 10:
-            // Display Item 10
-            snprintf(outKey, outKeyLen, "Title #N");
-            snprintf(outVal, outValLen, "Value #N");
+        case 2:
+            snprintf(outKey, outKeyLen, "Seconds");
+            if (uint64_to_str(outVal, outValLen, outerTxn->timestamp.seconds) == NULL) {
+                return parser_ok;
+            }
+            return parser_no_data;
+        case 3:
+            snprintf(outKey, outKeyLen, "Nanos");
+            snprintf(outVal, outValLen, "%d", ctx->tx_obj->outerTxnPtr->timestamp.nanos);
             return parser_ok;
     default:
         break;

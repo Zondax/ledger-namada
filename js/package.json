@@ -43,6 +43,7 @@
     "jest": "^27.3.1",
     "prettier": "^2.4.1",
     "secp256k1": "^4.0.0",
+    "leb128": "^0.0.5",
     "typescript": "^4.5.2"
   },
   "moduleDirectories": [

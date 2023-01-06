@@ -22,6 +22,8 @@
 #include "zxformat.h"
 #include "app_mode.h"
 #include "crypto.h"
+#include "lcx_ripemd160.h"
+#include "base58.h"
 
 typedef struct {
     uint8_t publicKey[SECP256K1_PK_LEN];
@@ -79,7 +81,8 @@ zxerr_t masp_transparent_get_address_secp256k1(uint8_t *buffer, uint16_t buffer_
     address_temp.version[0] = VERSION_P2PKH >> 8;
     address_temp.version[1] = VERSION_P2PKH & 0xFF;
     cx_hash_sha256(answer->publicKey, SECP256K1_PK_LEN, address_temp.sha256_pk, CX_SHA256_SIZE);      // SHA256
-    ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk);         // RIPEMD-160
+    // ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk);         // RIPEMD-160
+    cx_hash_ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk, sizeof(address_temp.ripe_sha256_pk));
 
     // checksum = sha256(sha256(extended-ripe))
     cx_hash_sha256(address_temp.extended_ripe, CX_RIPEMD160_SIZE + VERSION_SIZE, address_temp.sha256_extended_ripe, CX_SHA256_SIZE);

@@ -31,38 +31,45 @@
 #include "coin.h"
 #include "transparent.h"
 #include "zxmacros.h"
-
-// #{TODO} --> these is defined in last version from zxlib
-#define REVIEW_ADDRESS 0x01
-#define REVIEW_TXN 0x02
-
-// #{TODO} --> this will be included in zxlib (here to avoid compilation errors)
-#define CHECK_PIN_VALIDATED() \
-if( os_global_pin_is_validated() != BOLOS_UX_OK ) { \
-    THROW(APDU_CODE_COMMAND_NOT_ALLOWED); \
-}
+#include "view_internal.h"
 
 static bool tx_initialized = false;
 
 void extractHDPath(uint32_t rx, uint32_t offset) {
-    zemu_log("extractHDPath\n");
+    ZEMU_LOGF(50, "Extract HDPath\n")
     tx_initialized = false;
 
-    const uint8_t pathLength = G_io_apdu_buffer[offset];
+    const uint8_t totalParams = G_io_apdu_buffer[offset];
     offset++;
 
-    if ((rx - offset) < sizeof(uint32_t) * pathLength || pathLength > HDPATH_LEN_DEFAULT) {
+    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_DEFAULT) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    memcpy(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * pathLength);
+    memcpy(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_DEFAULT);
 
-    //#{TODO} --> testnet necessary?
     const bool mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
                          hdPath[1] == HDPATH_1_DEFAULT;
 
-    if (!mainnet) {
+    const bool testnet = hdPath[0] == HDPATH_0_DEFAULT &&
+                         hdPath[1] == HDPATH_1_TESTNET;
+
+    if (!mainnet && !testnet) {
         THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    // Extract Code and Data sizes if present
+    if (totalParams == 7) {
+        if (((rx-offset) == 28)) {
+            const uint32_t codeSizeOffset = offset + sizeof(uint32_t) * (HDPATH_LEN_DEFAULT);
+            const uint32_t dataSizeOffset = codeSizeOffset + sizeof(uint32_t);
+
+            MEMZERO(&outerTxn, sizeof(outerTxn));
+            MEMCPY(&outerTxn.codeSize, G_io_apdu_buffer + codeSizeOffset, sizeof(uint32_t));
+            MEMCPY(&outerTxn.dataSize, G_io_apdu_buffer + dataSizeOffset, sizeof(uint32_t));
+        } else {
+            THROW(APDU_CODE_DATA_INVALID);
+        }
     }
 }
 
@@ -107,32 +114,27 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     THROW(APDU_CODE_INVALIDP1P2);
 }
 
+__Z_INLINE void handleSignWrapper(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignWrapper\n")
+    if (!process_chunk(tx, rx)) {
+        THROW(APDU_CODE_OK);
+    }
+    CHECK_APP_CANARY()
 
-// For transparent transfers in MASP transactions
-__Z_INLINE void handleGetAddrSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
+    const char *error_msg = tx_parse();
+    CHECK_APP_CANARY()
 
-    const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-    uint16_t replyLen = 0;
-
-    zxerr_t zxerr = masp_transparent_get_address_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
-    if(zxerr != zxerr_ok){
-        *tx = 0;
+    if (error_msg != NULL) {
+        int error_msg_length = strlen(error_msg);
+        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
+        *tx += (error_msg_length);
         THROW(APDU_CODE_DATA_INVALID);
     }
 
-    action_addrResponse.kind = addr_masp_transparent_secp256k1;
-    action_addrResponse.len = replyLen;
-
-    if (requireConfirmation) {
-        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(REVIEW_ADDRESS);
-        *flags |= IO_ASYNCH_REPLY;
-        return;
-    }
-
-    *tx = replyLen;
-    THROW(APDU_CODE_OK);
+    CHECK_APP_CANARY()
+    view_review_init(tx_getItem, tx_getNumItems, app_sign_outer_layer_transaction);
+    view_review_show(REVIEW_TXN);
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 // For wrapper transactions, address is derived from Ed25519 pubkey
@@ -177,26 +179,6 @@ __Z_INLINE void handleSignEd25519(volatile uint32_t *flags, volatile uint32_t *t
 
     CHECK_APP_CANARY()
     view_review_init(tx_getItem, tx_getNumItems, app_sign_ed25519);
-    view_review_show(REVIEW_TXN);
-    *flags |= IO_ASYNCH_REPLY;
-}
-
-__Z_INLINE void handleSignSecp256k1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("handleSignSecp256k1\n");
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-
-    const char *error_msg = tx_parse();
-    CHECK_APP_CANARY()
-    if (error_msg != NULL) {
-        int error_msg_length = strlen(error_msg);
-        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
-        *tx += (error_msg_length);
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_secp256k1);
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
@@ -264,7 +246,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_SIGN_WRAPPER: {
                     CHECK_PIN_VALIDATED()
-                    handleSignEd25519(flags, tx, rx);
+                    handleSignWrapper(flags, tx, rx);
                     break;
                 }
 
