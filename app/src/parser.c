@@ -25,6 +25,7 @@
 #include "parser.h"
 
 #include "crypto.h"
+#include "crypto_helper.h"
 
 
 parser_error_t parser_init_context(parser_context_t *ctx,
@@ -111,16 +112,22 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
+    uint8_t hash[32] = {0};
+    char hash_str[65] = {0};
     const outer_layer_tx_t *outerTxn = ctx->tx_obj->outerTxnPtr;
     switch (displayIdx)
     {
         case 0:
             snprintf(outKey, outKeyLen, "Code");
-            pageStringExt(outVal, outValLen, (const char*) outerTxn->code, outerTxn->codeSize, pageIdx, pageCount);
+            crypto_sha256(outerTxn->code, outerTxn->codeSize, hash, sizeof(hash));
+            array_to_hexstr((char*) hash_str, sizeof(hash_str), hash, sizeof(hash));
+            pageString(outVal, outValLen, (const char*) &hash_str, pageIdx, pageCount);
             return parser_ok;
         case 1:
             snprintf(outKey, outKeyLen, "Data");
-            pageStringExt(outVal, outValLen, (const char*) outerTxn->data, outerTxn->dataSize, pageIdx, pageCount);
+            crypto_sha256(outerTxn->data, outerTxn->dataSize, hash, sizeof(hash));
+            array_to_hexstr((char*) hash_str, sizeof(hash_str), hash, sizeof(hash));
+            pageString(outVal, outValLen, (const char*) &hash_str, pageIdx, pageCount);
             return parser_ok;
         case 2:
             snprintf(outKey, outKeyLen, "Seconds");
