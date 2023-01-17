@@ -54,7 +54,7 @@ __Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
 }
 
 __Z_INLINE void app_sign_outer_layer_transaction() {
-    const zxerr_t err = crypto_signOuterLayerTxn(&outerTxn, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
+    const zxerr_t err = tx_signOuterLayerTxn(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
 
     if (err != zxerr_ok) {
         set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);

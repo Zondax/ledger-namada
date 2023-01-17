@@ -37,7 +37,7 @@ typedef struct {
 } outer_layer_tx_t;
 
 typedef struct{
-    outer_layer_tx_t *outerTxnPtr;
+    outer_layer_tx_t outerTxn;
 } parser_tx_t;
 
 

@@ -96,7 +96,7 @@ where
         require_confirmation: bool,
     ) -> Result<ResponseAddress, NamError<E::Error>> {
         let serialized_path = path.serialize_path().unwrap();
-        let p1 = if require_confirmation { 1 } else { 0 };
+        let p1:u8 = if require_confirmation { 1 } else { 0 };
         let command = APDUCommand {
             cla: CLA,
             ins: InstructionCode::GetAddressAndPubkey as _,
@@ -155,12 +155,7 @@ where
         timestamp: &Timestamp,
     ) -> Result<ResponseSignatureWrapperTransaction, NamError<E::Error>> {
 
-        // 1st chunk: [HDPath | code length | data length]
-        let mut first_chunk = path.serialize_path().unwrap();
-        // Add codeSize and DataSize
-        first_chunk[0] += 2;
-        first_chunk.write_u32::<LittleEndian>(code.len() as u32).unwrap();
-        first_chunk.write_u32::<LittleEndian>(data.len() as u32).unwrap();
+        let first_chunk = path.serialize_path().unwrap();
 
         let start_command = APDUCommand {
             cla: CLA,
@@ -171,6 +166,8 @@ where
         };
 
         let mut message = Vec::new();
+        message.write_u32::<LittleEndian>(code.len() as u32).unwrap();
+        message.write_u32::<LittleEndian>(data.len() as u32).unwrap();
         message.extend(code);
         message.extend(data);
         message.write_i64::<LittleEndian>(timestamp.seconds).unwrap();

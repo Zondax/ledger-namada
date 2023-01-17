@@ -35,7 +35,7 @@ parser_error_t parser_init_context(parser_context_t *ctx,
     ctx->buffer = NULL;
     ctx->bufferLen = 0;
 
-    if (bufferSize == 0 || buffer == NULL) {
+    if (bufferSize == 0 || buffer == NULL || ctx->tx_obj == NULL) {
         // Not available, use defaults
         return parser_init_context_empty;
     }
@@ -43,7 +43,7 @@ parser_error_t parser_init_context(parser_context_t *ctx,
     ctx->buffer = buffer;
     ctx->bufferLen = bufferSize;
 
-    ctx->tx_obj->outerTxnPtr = &outerTxn;
+    MEMZERO(&ctx->tx_obj->outerTxn, sizeof(ctx->tx_obj->outerTxn));
     return parser_ok;
 }
 
@@ -114,7 +114,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
 
     uint8_t hash[32] = {0};
     char hash_str[65] = {0};
-    const outer_layer_tx_t *outerTxn = ctx->tx_obj->outerTxnPtr;
+    const outer_layer_tx_t *outerTxn = &ctx->tx_obj->outerTxn;
     switch (displayIdx)
     {
         case 0:
@@ -137,7 +137,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
             return parser_no_data;
         case 3:
             snprintf(outKey, outKeyLen, "Nanos");
-            snprintf(outVal, outValLen, "%d", ctx->tx_obj->outerTxnPtr->timestamp.nanos);
+            snprintf(outVal, outValLen, "%d", outerTxn->timestamp.nanos);
             return parser_ok;
     default:
         break;

@@ -32,7 +32,6 @@
 #endif
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
-outer_layer_tx_t outerTxn;
 
 uint8_t bech32_hrp_len;
 char bech32_hrp[MAX_BECH32_HRP_LEN + 1];

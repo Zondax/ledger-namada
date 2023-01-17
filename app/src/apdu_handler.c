@@ -39,10 +39,10 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
     ZEMU_LOGF(50, "Extract HDPath\n")
     tx_initialized = false;
 
-    const uint8_t totalParams = G_io_apdu_buffer[offset];
+    const uint8_t pathLength = G_io_apdu_buffer[offset];
     offset++;
 
-    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_DEFAULT) {
+    if (pathLength != HDPATH_LEN_DEFAULT || (rx - offset) != sizeof(uint32_t) * pathLength) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
@@ -56,20 +56,6 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
 
     if (!mainnet && !testnet) {
         THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    // Extract Code and Data sizes if present
-    if (totalParams == 7) {
-        if (((rx-offset) == 28)) {
-            const uint32_t codeSizeOffset = offset + sizeof(uint32_t) * (HDPATH_LEN_DEFAULT);
-            const uint32_t dataSizeOffset = codeSizeOffset + sizeof(uint32_t);
-
-            MEMZERO(&outerTxn, sizeof(outerTxn));
-            MEMCPY(&outerTxn.codeSize, G_io_apdu_buffer + codeSizeOffset, sizeof(uint32_t));
-            MEMCPY(&outerTxn.dataSize, G_io_apdu_buffer + dataSizeOffset, sizeof(uint32_t));
-        } else {
-            THROW(APDU_CODE_DATA_INVALID);
-        }
     }
 }
 

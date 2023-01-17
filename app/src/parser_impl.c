@@ -18,13 +18,21 @@
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v)
 {
-    if (c->bufferLen < v->outerTxnPtr->codeSize + v->outerTxnPtr->dataSize + sizeof(uint64_t) + sizeof(uint32_t)) {
+    if (c->bufferLen < 2 * sizeof(uint32_t)) {
+        return parser_no_data;
+    }
+
+    MEMCPY(&v->outerTxn.codeSize, c->buffer, sizeof(uint32_t));
+    MEMCPY(&v->outerTxn.dataSize, c->buffer + sizeof(uint32_t), sizeof(uint32_t));
+
+    if (c->bufferLen < v->outerTxn.codeSize + v->outerTxn.dataSize + sizeof(uint64_t) + 3 * sizeof(uint32_t)) {
         return parser_missing_field;
     }
     // Point data from input buffer to OuterTxn struct
-    v->outerTxnPtr->code = c->buffer;
-    v->outerTxnPtr->data = c->buffer + v->outerTxnPtr->codeSize;
-    MEMCPY(&v->outerTxnPtr->timestamp, v->outerTxnPtr->data + v->outerTxnPtr->dataSize, 12);
+    // [codeSize | dataSize | [Code....] | [Data....] | Timestamp]
+    v->outerTxn.code = c->buffer + 2 * sizeof(uint32_t);
+    v->outerTxn.data = c->buffer + v->outerTxn.codeSize + 2 * sizeof(uint32_t);
+    MEMCPY(&v->outerTxn.timestamp, v->outerTxn.data + v->outerTxn.dataSize, 12);
 
     return parser_ok;
 }
