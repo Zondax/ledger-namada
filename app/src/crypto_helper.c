@@ -25,13 +25,13 @@
 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
     #include "cx.h"
+    #include "cx_sha256.h"
 #else
     #include "picohash.h"
     #define CX_SHA256_SIZE 32
 #endif
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
-outer_layer_tx_t outerTxn;
 
 uint8_t bech32_hrp_len;
 char bech32_hrp[MAX_BECH32_HRP_LEN + 1];
@@ -48,7 +48,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     // Step 2. Hash the serialized public key with sha256.
     uint8_t pkh[CX_SHA256_SIZE] = {0};
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
-    cx_hash_sha256(borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
+    cx_hash_sha256((const uint8_t*) borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
     picohash_init_sha256(&ctx);
@@ -194,18 +194,18 @@ zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign,
     cx_sha256_init(&ctx);
 
     // Code - Code hash
-    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) &tmpBuff, sizeof(tmpBuff)))
-    cx_sha256_update(&ctx, &tmpBuff, 2);
-    cx_sha256_update(&ctx, &code_hash, sizeof(code_hash));
+    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) tmpBuff, sizeof(tmpBuff)))
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
+    cx_sha256_update(&ctx, (const uint8_t*) code_hash, sizeof(code_hash));
 
     // Data
-    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
-    cx_sha256_update(&ctx, &tmpBuff, tmpSize);
+    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, tmpSize);
     cx_sha256_update(&ctx, outerTxn->data, outerTxn->dataSize);
 
     // Timestamp
-    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
-    cx_sha256_update(&ctx, &tmpBuff, tmpSize);
+    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, tmpSize);
 
 
     // Hash SigningTxn
@@ -215,18 +215,18 @@ zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign,
     picohash_init_sha256(&ctx);
 
     // Code - Code hash
-    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) &tmpBuff, sizeof(tmpBuff)))
-    picohash_update(&ctx, &tmpBuff, 2);
-    picohash_update(&ctx, &code_hash, sizeof(code_hash));
+    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) tmpBuff, sizeof(tmpBuff)))
+    picohash_update(&ctx, tmpBuff, 2);
+    picohash_update(&ctx, code_hash, sizeof(code_hash));
 
     // Data
-    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
+    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
     picohash_update(&ctx, &tmpBuff, tmpSize);
     picohash_update(&ctx, outerTxn->data, outerTxn->dataSize);
 
     // Timestamp
-    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) &tmpBuff, sizeof(tmpBuff), &tmpSize))
-    picohash_update(&ctx, &tmpBuff, tmpSize);
+    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
+    picohash_update(&ctx, tmpBuff, tmpSize);
 
     picohash_final(&ctx, toSign);
     #endif

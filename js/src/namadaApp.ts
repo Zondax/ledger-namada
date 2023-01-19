@@ -52,15 +52,13 @@ export class NamadaApp {
 
   async prepareChunks(serializedPath: Buffer, code: Buffer, data: Buffer, timestamp: Buffer) {
     const chunks = []
-    const tmpBuff = Buffer.alloc(8);
-    tmpBuff.writeUInt32LE(code.length, 0)
-    tmpBuff.writeUInt32LE(data.length, 4)
+    const buffCodeSize = Buffer.alloc(4)
+    const buffDataSize = Buffer.alloc(4)
+    buffCodeSize.writeUInt32LE(code.length, 0)
+    buffDataSize.writeUInt32LE(data.length, 0)
 
-    // Update packet length
-    serializedPath[0] = serializedPath[0] + 2
-    chunks.push(Buffer.concat([serializedPath, tmpBuff]))
-
-    const message = Buffer.concat([code, data, timestamp])
+    chunks.push(serializedPath)
+    const message = Buffer.concat([buffCodeSize, buffDataSize, code, data, timestamp])
 
     for (let i = 0; i < message.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE
@@ -218,7 +216,6 @@ export class NamadaApp {
 
     const serializedPath = serializePath(path)
 
-    // 1st chunk: [HDPath | code length | data length]
     return this.prepareChunks(serializedPath, code, data, serializedTimestamp).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], INS.SIGN_WRAPPER).then(async response => {
         let result = {

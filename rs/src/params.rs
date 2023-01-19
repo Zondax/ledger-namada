@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2023 ZondaX AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,34 +13,25 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#pragma once
+#![deny(warnings, trivial_casts, trivial_numeric_casts)]
+#![deny(unused_import_braces, unused_qualifications)]
+#![deny(missing_docs)]
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/// App identifier
+pub const CLA: u8 = 0x57;
 
-#include <stdint.h>
-#include <stddef.h>
+/// Public Key Length
+pub const ED25519_PUBKEY_LEN: usize = 32;
+/// Address array size
+pub const ADDRESS_LEN: usize = 84;  // 84 --> Testnet | 80 --> Mainnet
+/// ED25519 signature Length
+pub const ED25519_SIGNATURE_LEN: usize = 64;
 
-typedef struct {
-    uint64_t seconds;
-    uint32_t nanos;
-} prototimestamp_t;
-typedef struct {
-    const uint8_t *code;
-    uint32_t codeSize;
-
-    const uint8_t *data;
-    uint32_t dataSize;
-
-    prototimestamp_t timestamp;
-} outer_layer_tx_t;
-
-typedef struct{
-    outer_layer_tx_t outerTxn;
-} parser_tx_t;
-
-
-#ifdef __cplusplus
+/// Available instructions to interact with the Ledger device
+#[repr(u8)]
+pub enum InstructionCode {
+    /// Instruction to retrieve Pubkey and Address
+    GetAddressAndPubkey = 1,
+    /// Instruction to sign a wrapper transaction
+    SignWrapperTransaction = 2,
 }
-#endif

@@ -139,3 +139,8 @@ zxerr_t tx_getItem(int8_t displayIdx,
 
     return zxerr_ok;
 }
+
+zxerr_t tx_signOuterLayerTxn(uint8_t* output, uint16_t outputLen) {
+    return crypto_signOuterLayerTxn(&ctx_parsed_tx.tx_obj->outerTxn,
+                                    output, outputLen);
+}

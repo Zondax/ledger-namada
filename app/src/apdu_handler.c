@@ -39,10 +39,10 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
     ZEMU_LOGF(50, "Extract HDPath\n")
     tx_initialized = false;
 
-    const uint8_t totalParams = G_io_apdu_buffer[offset];
+    const uint8_t pathLength = G_io_apdu_buffer[offset];
     offset++;
 
-    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_DEFAULT) {
+    if (pathLength != HDPATH_LEN_DEFAULT || (rx - offset) != sizeof(uint32_t) * pathLength) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
@@ -56,20 +56,6 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
 
     if (!mainnet && !testnet) {
         THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    // Extract Code and Data sizes if present
-    if (totalParams == 7) {
-        if (((rx-offset) == 28)) {
-            const uint32_t codeSizeOffset = offset + sizeof(uint32_t) * (HDPATH_LEN_DEFAULT);
-            const uint32_t dataSizeOffset = codeSizeOffset + sizeof(uint32_t);
-
-            MEMZERO(&outerTxn, sizeof(outerTxn));
-            MEMCPY(&outerTxn.codeSize, G_io_apdu_buffer + codeSizeOffset, sizeof(uint32_t));
-            MEMCPY(&outerTxn.dataSize, G_io_apdu_buffer + dataSizeOffset, sizeof(uint32_t));
-        } else {
-            THROW(APDU_CODE_DATA_INVALID);
-        }
     }
 }
 
@@ -157,30 +143,6 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     }
     *tx = action_addrResponse.len;
     THROW(APDU_CODE_OK);
-}
-
-// For signing wrapper transactions, only Ed25519 signatures
-__Z_INLINE void handleSignEd25519(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("handleSignEd25519\n");
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    CHECK_APP_CANARY()
-
-    const char *error_msg = tx_parse();
-    CHECK_APP_CANARY()
-
-    if (error_msg != NULL) {
-        int error_msg_length = strlen(error_msg);
-        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
-        *tx += (error_msg_length);
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    CHECK_APP_CANARY()
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_ed25519);
-    view_review_show(REVIEW_TXN);
-    *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handle_getversion(volatile uint32_t *flags, volatile uint32_t *tx)

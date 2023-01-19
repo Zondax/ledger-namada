@@ -189,6 +189,7 @@ LDLIBS   += -lm -lgcc -lc
 #########################
 GLYPH_SRC_DIR = glyphs
 INCLUDES_PATH += $(MY_DIR)/glyphs
+INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 include $(BOLOS_SDK)/Makefile.glyphs
 
 APP_SOURCE_PATH += $(MY_DIR)/src
@@ -196,7 +197,6 @@ APP_SOURCE_PATH += $(MY_DIR)/glyphs
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/src
 APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/app/common
-
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
 SDK_SOURCE_PATH  += lib_ux
 
