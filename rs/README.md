@@ -12,7 +12,7 @@ _Please visit our website at [zondax.ch](https://www.zondax.ch)_
 
 # Rust library for Ledger Namada app
 
-This package provides a basic Rust client library to communicate with the Filecoin App running in a Ledger Nano S/S+/X devices
+This package provides a basic Rust client library to communicate with the Namada App running in a Ledger Nano S/S+/X devices
 
 ## Build
 
@@ -25,7 +25,7 @@ cargo build
 ## Run Tests
 To run the tests
 
-- Initialize your device with the test mnemonic. More info [here](https://github.com/zondax/ledger-filecoin#set-test-mnemonic)
+- Initialize your device with the test mnemonic. More info [here](https://github.com/zondax/ledger-namada#how-to-prepare-your-development-device)
 - run tests using:
 ```shell script
 cargo test --all
