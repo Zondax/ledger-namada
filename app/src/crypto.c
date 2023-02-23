@@ -283,6 +283,22 @@ zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint
     return err;
 }
 
+zxerr_t crypto_signInnerTransaction(const bytes_t innerTx, uint8_t *innerSignature, uint16_t innerSignatureMaxLen) {
+#if 0
+    uint8_t inner_tx_hash[CX_SHA256_SIZE] = {0};
+
+    // 1 - Hash inner transaction
+    cx_sha256_t ctx;
+    cx_sha256_init(&ctx);
+    cx_sha256_update(&ctx, innerTx.ptr, innerTx.len);
+    cx_sha256_final(&ctx, inner_tx_hash);
+
+    // 2 - Sign ED25519
+    return crypto_sign_ed25519(innerSignature, innerSignatureLen, inner_tx_hash, sizeof(inner_tx_hash));
+#endif
+    return zxerr_ok;
+}
+
 zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen) {
     if (outerTxn == NULL || output == NULL) {
         return zxerr_no_data;

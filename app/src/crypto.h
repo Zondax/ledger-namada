@@ -40,6 +40,8 @@ zxerr_t crypto_sign_secp256k1(uint8_t *signature,
 
 zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen);
 
+zxerr_t crypto_signInnerTransaction(const bytes_t innerTx, uint8_t *innerSignature, uint16_t innerSignatureMaxLen);
+
 #ifdef __cplusplus
 }
 #endif

@@ -32,3 +32,33 @@ zxerr_t encodeLEB128(uint64_t number, uint8_t *encoded, uint8_t encodedLen, uint
 
     return zxerr_ok;
 }
+
+zxerr_t decodeLEB128(const uint8_t *input, uint16_t inputSize, uint8_t *consumed, uint64_t *v) {
+    uint16_t  i = 0;
+
+    *v = 0;
+    uint16_t shift = 0;
+    while (i < 10u && i < inputSize) {
+        uint64_t b = input[i] & 0x7fu;
+
+        if (shift >= 63 && b > 1) {
+            // This will overflow uint64_t
+            break;
+        }
+
+        *v |= b << shift;
+
+        if (!(input[i] & 0x80u)) {
+            *consumed = i + 1;
+            return zxerr_ok;
+            // return i + 1;
+        }
+
+        shift += 7;
+        i++;
+    }
+
+    // exit because of overflowing outputSize
+    *v = 0;
+    return zxerr_unknown;
+}

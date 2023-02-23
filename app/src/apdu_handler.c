@@ -35,7 +35,7 @@
 
 static bool tx_initialized = false;
 
-void extractHDPath(uint32_t rx, uint32_t offset) {
+__Z_INLINE void extractHDPath(uint32_t rx, uint32_t offset) {
     ZEMU_LOGF(50, "Extract HDPath\n")
     tx_initialized = false;
 

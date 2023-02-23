@@ -25,6 +25,7 @@ extern "C" {
 #endif
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems);
 
 #ifdef __cplusplus
 }

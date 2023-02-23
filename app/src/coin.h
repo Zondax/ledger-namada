@@ -24,8 +24,8 @@ extern "C" {
 #define HDPATH_LEN_DEFAULT   5
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
 
-#define HDPATH_1_DEFAULT     (0x80000000u | 0x11b)  //283
-#define HDPATH_1_TESTNET     (0x80000000u | 0x11b)  //283
+#define HDPATH_1_DEFAULT     (0x80000000u | 0x36d)  //877
+#define HDPATH_1_TESTNET     (0x80000000u | 0x36d)  //877
 
 #define HDPATH_2_DEFAULT     (0x80000000u | 0u)
 #define HDPATH_3_DEFAULT     (0u)
@@ -81,6 +81,14 @@ typedef enum {
     key_fvk = 2,
     nf = 3
 } key_type_e;
+
+#define INS_SIGN_WRAPPER                0x02
+
+#define INS_GET_SHIELDED_ADDRESS 0x10
+#define INS_INIT_MASP_TRANSFER 0xe0
+#define INS_GET_IVK 0xf0
+#define INS_GET_OVK 0xf1
+#define INS_GET_NF 0xf2
 
 #ifdef __cplusplus
 }
