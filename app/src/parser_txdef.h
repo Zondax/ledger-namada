@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*  (c) 2018 - 2023 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -21,114 +21,54 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
-
-typedef enum {
-    Bond = 0,
-    Unbond,
-    Transfer,
-    InitAccount,
-    InitProposal,
-    InitValidator,
-    UpdateVP,
-    Custom,
-    Withdraw,
-} transaction_type_e;
+#include "parser_types.h"
+#include "coin.h"
 
 typedef struct {
-    uint64_t seconds;
-    uint32_t nanos;
-} prototimestamp_t;
+    uint8_t address[ADDRESS_LEN_TESTNET];
+    const char *symbol;
+} tokens_t;
+
+// -----------------------------------------------------------------
+typedef struct {
+    bytes_t hash;
+    bytes_t r;
+    bytes_t s;
+    bytes_t pubKey;
+} signature_section_t;
 
 typedef struct {
-    const uint8_t *ptr;
-    uint32_t len;
-} bytes_t;
+    /* data */
+} proof_of_work_section_t;
 
 typedef struct {
-    bytes_t pubkey;
-} tx_init_account_t;
+    /* data */
+} encrypted_section_t;
 
 typedef struct {
-    bytes_t validator;
-    uint64_t amount;
-    uint8_t has_source;
-    bytes_t source;
-} tx_bond_t;
-typedef struct {
-    bytes_t validator;
-    uint8_t has_source;
-    bytes_t source;
-} tx_withdraw_t;
-
-typedef struct {
-    bytes_t account_key;
-    bytes_t consensus_key;
-    bytes_t protocol_key;
-    bytes_t dkg_key;
-    // commission rate
-    // max commission rate change
-    // validator VP
-} tx_init_validator_t;
-
-typedef struct {
-    // tx_t????
-    bytes_t source;
-    bytes_t target;
-    bytes_t token;
-    uint8_t has_sub_prefix;
-    const char* sub_prefix;
-    uint64_t amount;
-} tx_transfer_t;
-
-typedef struct {
-    bytes_t code;
-    bytes_t data;
-    prototimestamp_t timestamp;
-
-    const uint8_t *extra;
-    uint32_t extraSize;
-
-    uint8_t hasInnerTx;
-    const uint8_t *innerTx;
-    uint32_t innerTxSize;
-} tx_t;
-
-
-typedef struct {
-    bytes_t address;
-    uint64_t amount;
-} fees_t;
-
-typedef struct {
-    const uint8_t *startData;
-
-    bytes_t innerTxHash;
     fees_t fees;
     bytes_t pubkey;
-
     uint64_t epoch;
     uint64_t gasLimit;
-
-
-    // tx_hash
-
-    // solution???
-} wrapperTx_t;
+    bytes_t dataHash;
+    bytes_t codeHash;
+} header_t;
 
 typedef struct {
-    const uint8_t *code;
-    uint32_t codeSize;
+    bytes_t extraData;
+    bytes_t data;
+    bytes_t code;
+    signature_section_t signatures[3];
+} sections_t;
+typedef struct {
+    bytes_t timestamp;
+    header_t header;
+    sections_t sections;
+} transaction_t;
 
-    const uint8_t *data;
-    uint32_t dataSize;
-
-    prototimestamp_t timestamp;
-} outer_layer_tx_t;
 
 typedef struct{
     transaction_type_e typeTx;
-    tx_t innerTx;
-    wrapperTx_t wrapperTx;
     union {
         tx_bond_t bond;
         tx_transfer_t transfer;
@@ -136,6 +76,8 @@ typedef struct{
         tx_withdraw_t withdraw;
         tx_init_validator_t initValidator;
     };
+
+    transaction_t transaction;
 
 } parser_tx_t;
 
