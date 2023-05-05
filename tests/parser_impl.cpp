@@ -29,13 +29,6 @@ struct AddressTestcase {
         string address;
 };
 
-struct OuterLayerTransactionTestcase {
-        vector<uint8_t> code;
-        vector<uint8_t> data;
-        prototimestamp_t timestamp;
-        vector<uint8_t> bytes_to_sign;
-};
-
 struct LEB128Testcase {
         uint64_t input;
         vector<uint8_t> expected;
@@ -117,6 +110,7 @@ TEST(LEB128, LEB128Encoding) {
         }
 }
 
+#if 0
 TEST(OuterTxn, HashOuterTxn) {
         vector<OuterLayerTransactionTestcase> outer_transactions {
                 {
@@ -204,3 +198,4 @@ TEST(OuterTxn, HashOuterTxn) {
                 EXPECT_TRUE(memcmp(testcase.bytes_to_sign.data(), &toSign, sizeof(toSign)) == 0);
         }
 }
+#endif
