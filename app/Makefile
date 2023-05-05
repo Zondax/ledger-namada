@@ -53,9 +53,9 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS =  --delete $(COMMON_LOAD_PARAMS) --path $(APPPATH)
+APP_LOAD_PARAMS =  --curve ed25519 $(COMMON_LOAD_PARAMS) --path $(APPPATH)
 
-NANOS_STACK_SIZE := 3216
+NANOS_STACK_SIZE := 3000
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.devices
 
 $(info TARGET_NAME  = [$(TARGET_NAME)])
