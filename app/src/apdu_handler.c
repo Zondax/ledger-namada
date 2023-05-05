@@ -100,8 +100,8 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     THROW(APDU_CODE_INVALIDP1P2);
 }
 
-__Z_INLINE void handleSignWrapper(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    ZEMU_LOGF(50, "handleSignWrapper\n")
+__Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignTransaction\n")
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -118,7 +118,7 @@ __Z_INLINE void handleSignWrapper(volatile uint32_t *flags, volatile uint32_t *t
     }
 
     CHECK_APP_CANARY()
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_outer_layer_transaction);
+    view_review_init(tx_getItem, tx_getNumItems, app_sign);
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
@@ -145,7 +145,7 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     THROW(APDU_CODE_OK);
 }
 
-__Z_INLINE void handle_getversion(volatile uint32_t *flags, volatile uint32_t *tx)
+__Z_INLINE void handle_getversion(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx)
 {
     G_io_apdu_buffer[0] = 0;
 
@@ -206,13 +206,11 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
-                case INS_SIGN_WRAPPER: {
+                case INS_SIGN: {
                     CHECK_PIN_VALIDATED()
-                    handleSignWrapper(flags, tx, rx);
+                    handleSignTransaction(flags, tx, rx);
                     break;
                 }
-
-                // APDU calls for MASP transfers
 
 #if defined(APP_TESTING)
                     case INS_TEST: {

@@ -27,6 +27,7 @@ zxerr_t encodeLEB128(uint64_t number, uint8_t *encoded, uint8_t encodedLen, uint
         if (number) {
             byte |= 0x80;
         }
+        if (*encodedBytes >= encodedLen) return zxerr_buffer_too_small;
         encoded[(*encodedBytes)++] = byte;
     } while (number);
 

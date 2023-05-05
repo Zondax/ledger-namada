@@ -62,7 +62,8 @@ typedef struct {
 } __attribute__((packed)) address_temp_t;
 
 // handleGetAddrSecp256K1
-zxerr_t masp_transparent_get_address_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint16_t *replyLen) {
+zxerr_t masp_transparent_get_address_secp256k1(__Z_UNUSED uint8_t *buffer, __Z_UNUSED uint16_t buffer_len, __Z_UNUSED uint16_t *replyLen) {
+    #if 0
     if (buffer_len < sizeof(answer_t)) {
         *replyLen =  0;
         return zxerr_unknown;
@@ -96,5 +97,7 @@ zxerr_t masp_transparent_get_address_secp256k1(uint8_t *buffer, uint16_t buffer_
         return zxerr_unknown;
     }
     *replyLen = SECP256K1_PK_LEN + outLen;
+
+    #endif
     return zxerr_ok;
 }

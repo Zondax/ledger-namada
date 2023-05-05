@@ -53,5 +53,4 @@ zxerr_t tx_getItem(int8_t displayIdx,
                    char *outValue, uint16_t outValueLen,
                    uint8_t pageIdx, uint8_t *pageCount);
 
-/// Process outer layer txn to be sign and sign it. Return signature in output buffer
-zxerr_t tx_signOuterLayerTxn(uint8_t* output, uint16_t outputLen);
+// zxerr_t tx_signOuterTxn(uint8_t* output, uint16_t outputLen);

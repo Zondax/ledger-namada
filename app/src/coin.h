@@ -47,6 +47,11 @@ extern "C" {
 #define ADDRESS_LEN_MAINNET 80u
 #define ADDRESS_LEN_TESTNET 84u
 
+#define HASH_LEN    32
+#define SIG_R_LEN   32
+#define SIG_S_LEN   32
+#define SIG_ED25519_LEN (SIG_R_LEN + SIG_S_LEN)
+
 #define MAX_BECH32_HRP_LEN  83u
 
 /// An address string before bech32m encoding must be this size.

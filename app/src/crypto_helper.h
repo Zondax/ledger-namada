@@ -36,7 +36,11 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen,
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen,
                       uint8_t *output, uint16_t outputLen);
 
+
+#if 0
+zxerr_t crypto_serializeTimestamp(const prototimestamp_t *timestamp, uint8_t *buffer, uint16_t bufferLen, uint8_t *timestampSize);
 zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign, size_t toSignLen);
+#endif
 
 
 #ifdef __cplusplus
