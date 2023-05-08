@@ -20,8 +20,8 @@ import { models, hdpath, defaultOptions } from './common'
 
 jest.setTimeout(60000)
 
-const expected_pubkey = '1f9a685c9d644d8501f12ec69126b74073bdaa9e66b5c54fa1f35369f3edd05b'
-const expected_address = "atest1d9khqw36x4rrgvf3gfznvsfhxgeyzdpnggmrvdjrgs6ngdp4xgmnwdzygvmnywpcx9p5vwp58p09fc"
+const expected_pubkey = 'f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf'
+const expected_address = "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"
 
 describe('Standard', function () {
   test.concurrent.each(models)('can start and stop container', async function (m) {
