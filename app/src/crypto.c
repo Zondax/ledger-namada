@@ -22,6 +22,8 @@
 #include "zxmacros.h"
 #include "zxformat.h"
 #include "crypto_helper.h"
+#include "leb128.h"
+#include "cx_sha256.h"
 
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
@@ -283,6 +285,94 @@ zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint
     return err;
 }
 
+#if 0
+zxerr_t crypto_hashSigningTx(const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output) {
+    // Build SigningTx -> data replaced by [data : innerSig] and hash it
+    uint8_t tmpBuff[10] = {0};
+    cx_sha256_t ctx;
+    cx_sha256_init(&ctx);
+
+    // Code
+    tmpBuff[0] = TAG_CODE;
+    tmpBuff[1] = CX_SHA256_SIZE;
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
+    cx_sha256_update(&ctx, innerTxn->code.ptr, innerTxn->code.len);
+
+    // Data + InnerSig
+    MEMZERO(&tmpBuff, sizeof(tmpBuff));
+    tmpBuff[0] = TAG_DATA;
+    uint8_t dataSize = 0;
+    CHECK_ZXERR(encodeLEB128(innerTxn->data.len + CX_SHA256_SIZE, tmpBuff + 1, MAX_LEB128_OUTPUT, &dataSize))
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, dataSize + 1);
+    cx_sha256_update(&ctx, innerTxn->data.ptr, innerTxn->data.len);
+    cx_sha256_update(&ctx, innerSig->ptr, innerSig->len);
+
+    //Timestamp
+    MEMZERO(&tmpBuff, sizeof(tmpBuff));
+    uint8_t timestampSize = 0;
+    CHECK_ZXERR(crypto_serializeTimestamp(&innerTxn->timestamp, tmpBuff, sizeof(tmpBuff), &timestampSize))
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, timestampSize);
+
+    cx_sha256_final(&ctx, output->ptr);
+    output->len = CX_SHA256_SIZE;
+    return zxerr_ok;
+}
+
+zxerr_t crypto_hashWrapperTx(const wrapperTx_t *wrapperTxn, mut_bytes_t *output) {
+    if (wrapperTxn == NULL ||  output == NULL) {
+        return zxerr_no_data;
+    }
+    uint8_t tmpBuff[10] = {0};
+    cx_sha256_t ctx;
+    cx_sha256_init(&ctx);
+
+    // InnerTxn hash
+    tmpBuff[0] = TAG_INNER_TX_HASH;
+    tmpBuff[1] = CX_SHA256_SIZE;
+    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
+    cx_sha256_update(&ctx, wrapperTxn->innerTxHash.ptr, wrapperTxn->innerTxHash.len);
+
+    // Rest of the wrapper transaction
+    cx_sha256_update(&ctx, wrapperTxn->buff.ptr, wrapperTxn->buff.len);
+
+    cx_sha256_final(&ctx, output->ptr);
+    return zxerr_ok;
+}
+
+zxerr_t crypto_signInnerTxn(const inner_tx_t *innerTxn, mut_bytes_t *output) {
+    if (innerTxn == NULL ||  output == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
+    CHECK_ZXERR(crypto_sha256(innerTxn->buff.ptr, innerTxn->buff.len, (uint8_t*) bytes_to_sign, sizeof(bytes_to_sign)))
+    CHECK_ZXERR(crypto_sign_ed25519(output->ptr, output->len, bytes_to_sign, sizeof(bytes_to_sign)))
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_signOuterTxn(wrapperTx_t *wrapperTxn, const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output) {
+    // 2. Build outer transaction from WrapperTx and InnerTxn + innerSignature
+    uint8_t innerTxnHash[CX_SHA256_SIZE] = {0};
+    mut_bytes_t hash = {.ptr = innerTxnHash, .len = sizeof(innerTxnHash)};
+    CHECK_ZXERR(crypto_hashSigningTx(innerTxn, innerSig, &hash))
+
+
+    // Code and Timestamp from Outer transaction ???
+    wrapperTxn->innerTxHash.ptr = (const uint8_t*) &hash;
+    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
+    mut_bytes_t outerDataHashed = {.ptr = bytes_to_sign, .len = CX_SHA256_SIZE};
+    CHECK_ZXERR(crypto_hashWrapperTx(wrapperTxn, &outerDataHashed))
+
+    // 3. Sign outer transaction
+    CHECK_ZXERR(crypto_sign_ed25519(output->ptr, output->len, bytes_to_sign, CX_SHA256_SIZE))
+
+    return zxerr_ok;
+}
+#endif
+
+
+#if 0
 zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen) {
     if (outerTxn == NULL || output == NULL) {
         return zxerr_no_data;
@@ -307,3 +397,4 @@ zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *outp
 
     return zxerr_ok;
 }
+#endif

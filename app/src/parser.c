@@ -15,11 +15,10 @@
 ********************************************************************************/
 
 #include <stdio.h>
-#include <zxmacros.h>
-#include <zxformat.h>
+
+
 #include <zxtypes.h>
 
-#include "coin.h"
 #include "parser_common.h"
 #include "parser_impl.h"
 #include "parser.h"
@@ -27,6 +26,7 @@
 #include "crypto.h"
 #include "crypto_helper.h"
 
+#include "parser_print_common.h"
 
 parser_error_t parser_init_context(parser_context_t *ctx,
                                    const uint8_t *buffer,
@@ -43,7 +43,6 @@ parser_error_t parser_init_context(parser_context_t *ctx,
     ctx->buffer = buffer;
     ctx->bufferLen = bufferSize;
 
-    MEMZERO(&ctx->tx_obj->outerTxn, sizeof(ctx->tx_obj->outerTxn));
     return parser_ok;
 }
 
@@ -72,13 +71,7 @@ parser_error_t parser_validate(parser_context_t *ctx) {
 }
 
 parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
-    // #{TODO} --> function to retrieve num Items
-    // *num_items = _getNumItems();
-    *num_items = 4;
-    if(*num_items == 0) {
-        return parser_unexpected_number_items;
-    }
-    return parser_ok;
+    return getNumItems(ctx, num_items);
 }
 
 static void cleanOutput(char *outKey, uint16_t outKeyLen,
@@ -112,37 +105,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    uint8_t hash[32] = {0};
-    char hash_str[65] = {0};
-    const outer_layer_tx_t *outerTxn = &ctx->tx_obj->outerTxn;
-    switch (displayIdx)
-    {
-        case 0:
-            snprintf(outKey, outKeyLen, "Code");
-            crypto_sha256(outerTxn->code, outerTxn->codeSize, hash, sizeof(hash));
-            array_to_hexstr((char*) hash_str, sizeof(hash_str), hash, sizeof(hash));
-            pageString(outVal, outValLen, (const char*) &hash_str, pageIdx, pageCount);
-            return parser_ok;
-        case 1:
-            snprintf(outKey, outKeyLen, "Data");
-            crypto_sha256(outerTxn->data, outerTxn->dataSize, hash, sizeof(hash));
-            array_to_hexstr((char*) hash_str, sizeof(hash_str), hash, sizeof(hash));
-            pageString(outVal, outValLen, (const char*) &hash_str, pageIdx, pageCount);
-            return parser_ok;
-        case 2:
-            snprintf(outKey, outKeyLen, "Seconds");
-            if (uint64_to_str(outVal, outValLen, outerTxn->timestamp.seconds) == NULL) {
-                return parser_ok;
-            }
-            return parser_no_data;
-        case 3:
-            snprintf(outKey, outKeyLen, "Nanos");
-            snprintf(outVal, outValLen, "%d", outerTxn->timestamp.nanos);
-            return parser_ok;
-    default:
-        break;
-    }
-
-    return parser_display_idx_out_of_range;
+    return printTxnFields(ctx, displayIdx, outKey, outKeyLen,
+                          outVal, outValLen, pageIdx, pageCount);
 }
-

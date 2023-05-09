@@ -20,11 +20,11 @@ import { models, hdpath, defaultOptions } from './common'
 
 jest.setTimeout(60000)
 
-const expected_pubkey = '1f9a685c9d644d8501f12ec69126b74073bdaa9e66b5c54fa1f35369f3edd05b'
-const expected_address = "atest1d9khqw36x4rrgvf3gfznvsfhxgeyzdpnggmrvdjrgs6ngdp4xgmnwdzygvmnywpcx9p5vwp58p09fc"
+const expected_pubkey = 'f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf'
+const expected_address = "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"
 
 describe('Standard', function () {
-  test.each(models)('can start and stop container', async function (m) {
+  test.concurrent.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -33,7 +33,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test.concurrent.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -43,7 +43,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test.concurrent.each(models)('get app version', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -63,7 +63,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('get pubkey and address', async function (m) {
+  test.concurrent.each(models)('get pubkey and address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -88,7 +88,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('show address', async function (m) {
+  test.concurrent.each(models)('show address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -117,7 +117,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('show address - reject', async function (m) {
+  test.concurrent.each(models)('show address - reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })

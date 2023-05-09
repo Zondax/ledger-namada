@@ -41,6 +41,7 @@ typedef enum {
     parser_unexpected_type,
     parser_unexpected_method,
     parser_unexpected_buffer_end,
+    parser_unexpected_unparsed_bytes,
     parser_unexpected_value,
     parser_unexpected_number_items,
     parser_unexpected_version,

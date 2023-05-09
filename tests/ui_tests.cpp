@@ -106,9 +106,7 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
 
     err = parser_parse(&ctx, buffer, bufferLen, &tx_obj);
 
-    // #{TODO} --> After updating testvector, enable this part
-    // ASSERT_EQ(err, parser_ok) << parser_getErrorDescription(err);
-    ASSERT_EQ(err, parser_missing_field) << parser_getErrorDescription(err);
+    ASSERT_EQ(err, parser_ok) << parser_getErrorDescription(err);
 
     auto output = dumpUI(&ctx, 39, 39);
 
@@ -119,16 +117,12 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
     std::cout << std::endl << std::endl;
 
     std::vector<std::string> expected = app_mode_expert() ? tc.expected_expert : tc.expected;
-
-    // #{TODO} --> After updating testvector, enable this part
-    #if 0
     EXPECT_EQ(output.size(), expected.size());
     for (size_t i = 0; i < expected.size(); i++) {
         if (i < output.size()) {
             EXPECT_THAT(output[i], testing::Eq(expected[i]));
         }
     }
-    #endif
 }
 
 
@@ -136,7 +130,8 @@ INSTANTIATE_TEST_SUITE_P
 (
     JsonTestCasesCurrentTxVer,
     JsonTestsA,
-    ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
+    ::testing::ValuesIn(GetJsonTestCases("testvectors.json")),
     JsonTestsA::PrintToStringParamName()
 );
+TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Normal) { check_testcase(GetParam(), false); }
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }

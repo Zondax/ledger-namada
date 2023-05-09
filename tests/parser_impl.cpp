@@ -29,13 +29,6 @@ struct AddressTestcase {
         string address;
 };
 
-struct OuterLayerTransactionTestcase {
-        vector<uint8_t> code;
-        vector<uint8_t> data;
-        prototimestamp_t timestamp;
-        vector<uint8_t> bytes_to_sign;
-};
-
 struct LEB128Testcase {
         uint64_t input;
         vector<uint8_t> expected;
@@ -70,6 +63,7 @@ TEST(Address, NamadaEncodingTestnet) {
                 {"f9bc8f13609ce609441fbee7d6e2f15fe2e59c0d120714204372c744d3149130", "atest1d9khqw36xcenjdp5g9pr2df4xyunj3zygyerx3phgse5z3ph89zrjve3gyun2334g56r2s3jmkel8c"},
                 {"d90a7292de4cdc62b05540170d1f02042e3fdc84177799360791293e3049cc7e", "atest1d9khqw36xvurgvf3gs65y3f3x56y2s298pzrjvj9x3pnxv6z8qe5vvphg3zrydpjxvergvpsk6p52e"},
                 {"1f9a685c9d644d8501f12ec69126b74073bdaa9e66b5c54fa1f35369f3edd05b", "atest1d9khqw36x4rrgvf3gfznvsfhxgeyzdpnggmrvdjrgs6ngdp4xgmnwdzygvmnywpcx9p5vwp58p09fc"},
+                {"f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf", "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"},
         };
 
         const uint8_t NAMADA_ADDRESS_SIZE {84};
@@ -116,6 +110,7 @@ TEST(LEB128, LEB128Encoding) {
         }
 }
 
+#if 0
 TEST(OuterTxn, HashOuterTxn) {
         vector<OuterLayerTransactionTestcase> outer_transactions {
                 {
@@ -203,3 +198,4 @@ TEST(OuterTxn, HashOuterTxn) {
                 EXPECT_TRUE(memcmp(testcase.bytes_to_sign.data(), &toSign, sizeof(toSign)) == 0);
         }
 }
+#endif

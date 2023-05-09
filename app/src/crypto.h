@@ -38,7 +38,14 @@ zxerr_t crypto_sign_secp256k1(uint8_t *signature,
                               uint16_t signatureMaxLen,
                               uint16_t *sigSize);
 
-zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen);
+// zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen);
+
+// zxerr_t crypto_signInnerTransaction(const bytes_t innerTx, uint8_t *innerSignature, uint16_t innerSignatureMaxLen);
+
+// zxerr_t crypto_signInnerTxn(const inner_tx_t *innerTxn, mut_bytes_t *output);
+// zxerr_t crypto_signOuterTxn(const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output);
+// zxerr_t crypto_signOuterTxn(wrapperTx_t *wrapperTxn, const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output);
+
 
 #ifdef __cplusplus
 }

@@ -140,7 +140,18 @@ zxerr_t tx_getItem(int8_t displayIdx,
     return zxerr_ok;
 }
 
-zxerr_t tx_signOuterLayerTxn(uint8_t* output, uint16_t outputLen) {
-    return crypto_signOuterLayerTxn(&ctx_parsed_tx.tx_obj->outerTxn,
-                                    output, outputLen);
+#if 0
+zxerr_t tx_signOuterTxn(uint8_t* output, uint16_t outputLen) {
+    // Add checks:
+        // outputLen > inner_sig + outer_sig
+
+    // 1. Sign inner transaction
+    mut_bytes_t innerSigOutput = {.ptr = output, .len = outputLen};
+    CHECK_ZXERR(crypto_signInnerTxn(&tx_obj.innerTx, &innerSigOutput))
+
+    // 2. Build & sign outer transaction
+    innerSigOutput.len = ED25519_SIGNATURE_SIZE;
+    mut_bytes_t outerSigOutput = {.ptr = output + ED25519_SIGNATURE_SIZE, .len = outputLen - ED25519_SIGNATURE_SIZE};
+    return crypto_signOuterTxn(&tx_obj.wrapperTx, &tx_obj.innerTx, &innerSigOutput, &outerSigOutput);
 }
+#endif

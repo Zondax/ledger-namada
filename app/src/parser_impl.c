@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*  (c) 2018 - 2023 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,25 +15,56 @@
 ********************************************************************************/
 #include "parser_impl.h"
 #include "zxformat.h"
+#include "leb128.h"
+#include "app_mode.h"
 
-parser_error_t _read(parser_context_t *c, parser_tx_t *v)
-{
-    if (c->bufferLen < 2 * sizeof(uint32_t)) {
-        return parser_no_data;
+#include "parser_impl_common.h"
+
+parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
+    CHECK_ERROR(readTimestamp(ctx, &v->transaction.timestamp))
+    CHECK_ERROR(readHeader(ctx, v))
+    CHECK_ERROR(readSections(ctx, v))
+
+    CHECK_ERROR(validateTransactionParams(v))
+
+    if (ctx->offset != ctx->bufferLen) {
+        return parser_unexpected_unparsed_bytes;
     }
 
-    MEMCPY(&v->outerTxn.codeSize, c->buffer, sizeof(uint32_t));
-    MEMCPY(&v->outerTxn.dataSize, c->buffer + sizeof(uint32_t), sizeof(uint32_t));
+    return parser_ok;
+}
 
-    if (c->bufferLen < v->outerTxn.codeSize + v->outerTxn.dataSize + sizeof(uint64_t) + 3 * sizeof(uint32_t)) {
-        return parser_missing_field;
+parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
+    *numItems = 0;
+    switch (ctx->tx_obj->typeTx) {
+        case Unbond:
+        case Bond:
+            *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
+            break;
+
+        case Transfer:
+            *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
+            break;
+
+        case InitAccount:
+            *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
+            break;
+
+        case Withdraw:
+            *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
+            break;
+
+        case InitValidator:
+            *numItems = (app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS);
+            break;
+
+        default:
+            break;
     }
-    // Point data from input buffer to OuterTxn struct
-    // [codeSize | dataSize | [Code....] | [Data....] | Timestamp]
-    v->outerTxn.code = c->buffer + 2 * sizeof(uint32_t);
-    v->outerTxn.data = c->buffer + v->outerTxn.codeSize + 2 * sizeof(uint32_t);
-    MEMCPY(&v->outerTxn.timestamp, v->outerTxn.data + v->outerTxn.dataSize, 12);
 
+    if(*numItems == 0) {
+        return parser_unexpected_number_items;
+    }
     return parser_ok;
 }
 

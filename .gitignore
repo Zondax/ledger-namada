@@ -69,6 +69,7 @@ tests_zemu/.pnp.*
 node_modules
 fuzz/corpora
 
+app/build
 !build/.gitkeep
 build/*
 cmake-build-debug

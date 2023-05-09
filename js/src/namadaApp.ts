@@ -50,22 +50,16 @@ export class NamadaApp {
     this.transport = transport
   }
 
-  async prepareChunks(serializedPath: Buffer, code: Buffer, data: Buffer, timestamp: Buffer) {
+  async prepareChunks(serializedPath: Buffer, message: Buffer) {
     const chunks = []
-    const buffCodeSize = Buffer.alloc(4)
-    const buffDataSize = Buffer.alloc(4)
-    buffCodeSize.writeUInt32LE(code.length, 0)
-    buffDataSize.writeUInt32LE(data.length, 0)
 
     chunks.push(serializedPath)
-    const message = Buffer.concat([buffCodeSize, buffDataSize, code, data, timestamp])
-
     for (let i = 0; i < message.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE
       if (i > message.length) {
         end = message.length
       }
-      chunks.push(message.slice(i, end))
+      chunks.push(message.subarray(i, end))
     }
 
     return chunks
@@ -208,16 +202,11 @@ export class NamadaApp {
         }, processErrorResponse)
   }
 
-  async signWrapper(path: string, code: Buffer, data: Buffer, timestamp: ProtoTimestamp) {
-    // Serialize code, data and timestamp [seconds_LE | nanos_LE]
-    const serializedTimestamp = Buffer.alloc(12)
-    serializedTimestamp.writeBigUint64LE(BigInt(timestamp.seconds), 0)
-    serializedTimestamp.writeUInt32LE(timestamp.nanos, 8)
-
+  async sign(path: string, message: Buffer) {
     const serializedPath = serializePath(path)
 
-    return this.prepareChunks(serializedPath, code, data, serializedTimestamp).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0], INS.SIGN_WRAPPER).then(async response => {
+    return this.prepareChunks(serializedPath, message).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], INS.SIGN).then(async response => {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
@@ -225,7 +214,7 @@ export class NamadaApp {
         }
 
         for(let i = 1; i < chunks.length; i++) {
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], INS.SIGN_WRAPPER)
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], INS.SIGN)
           if (result.returnCode !== LedgerError.NoErrors) {
             break
           }

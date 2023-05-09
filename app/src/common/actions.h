@@ -53,23 +53,17 @@ __Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
     return err;
 }
 
-__Z_INLINE void app_sign_outer_layer_transaction() {
-    const zxerr_t err = tx_signOuterLayerTxn(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
-
-    if (err != zxerr_ok) {
-        set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    } else {
-        set_code(G_io_apdu_buffer, SK_LEN_25519, APDU_CODE_OK);
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, SK_LEN_25519 + 2);
-    }
-}
-
-__Z_INLINE void app_sign_ed25519() {
+__Z_INLINE void app_sign() {
+    #if 0
     const uint8_t *message = tx_get_buffer();
     const uint16_t messageLength = tx_get_buffer_length();
 
     zxerr_t err = crypto_sign_ed25519(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    #endif
+
+    // Not signing anything. Return zeroes
+    const zxerr_t err = zxerr_ok;
+    MEMZERO(G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
 
     if (err != zxerr_ok) {
         set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
@@ -77,19 +71,6 @@ __Z_INLINE void app_sign_ed25519() {
     } else {
         set_code(G_io_apdu_buffer, SK_LEN_25519, APDU_CODE_OK);
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, SK_LEN_25519 + 2);
-    }
-}
-
-__Z_INLINE void app_sign_secp256k1() {
-
-    zxerr_t err = crypto_sign_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, NULL);
-
-    if (err != zxerr_ok) {
-        set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    } else {
-        set_code(G_io_apdu_buffer, SECP256K1_SK_LEN, APDU_CODE_OK);
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, SECP256K1_SK_LEN + 2);
     }
 }
 

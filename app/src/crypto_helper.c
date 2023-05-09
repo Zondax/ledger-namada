@@ -147,6 +147,7 @@ zxerr_t crypto_serializeData(const uint64_t dataSize, uint8_t *buffer, uint16_t 
     return zxerr_ok;
 }
 
+#if 0
 zxerr_t crypto_serializeTimestamp(const prototimestamp_t *timestamp, uint8_t *buffer, uint16_t bufferLen, uint8_t *timestampSize) {
     if (timestamp == NULL || buffer == NULL || timestampSize == NULL) {
         return zxerr_encoding_failed;
@@ -233,3 +234,4 @@ zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign,
 
     return zxerr_ok;
 }
+#endif

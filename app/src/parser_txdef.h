@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*  (c) 2018 - 2023 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -21,23 +21,64 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
+#include "parser_types.h"
+#include "coin.h"
 
 typedef struct {
-    uint64_t seconds;
-    uint32_t nanos;
-} prototimestamp_t;
+    uint8_t address[ADDRESS_LEN_TESTNET];
+    const char *symbol;
+} tokens_t;
+
+// -----------------------------------------------------------------
 typedef struct {
-    const uint8_t *code;
-    uint32_t codeSize;
+    bytes_t hash;
+    bytes_t r;
+    bytes_t s;
+    bytes_t pubKey;
+} signature_section_t;
 
-    const uint8_t *data;
-    uint32_t dataSize;
+typedef struct {
+    /* data */
+} proof_of_work_section_t;
 
-    prototimestamp_t timestamp;
-} outer_layer_tx_t;
+typedef struct {
+    /* data */
+} encrypted_section_t;
+
+typedef struct {
+    fees_t fees;
+    bytes_t pubkey;
+    uint64_t epoch;
+    uint64_t gasLimit;
+    bytes_t dataHash;
+    bytes_t codeHash;
+} header_t;
+
+typedef struct {
+    bytes_t extraData;
+    bytes_t data;
+    bytes_t code;
+    signature_section_t signatures[3];
+} sections_t;
+typedef struct {
+    bytes_t timestamp;
+    header_t header;
+    sections_t sections;
+} transaction_t;
+
 
 typedef struct{
-    outer_layer_tx_t outerTxn;
+    transaction_type_e typeTx;
+    union {
+        tx_bond_t bond;
+        tx_transfer_t transfer;
+        tx_init_account_t initAccount;
+        tx_withdraw_t withdraw;
+        tx_init_validator_t initValidator;
+    };
+
+    transaction_t transaction;
+
 } parser_tx_t;
 
 

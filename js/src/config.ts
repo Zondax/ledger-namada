@@ -17,7 +17,7 @@ export const CLA = 0x57;
 export const INS = {
   GET_VERSION:      0x00,
   GET_PUBLIC_KEY:   0x01,
-  SIGN_WRAPPER:     0x02,
+  SIGN:             0x02,
 
   GET_MASP_ADDRESS: 0x03,
   GET_IVK :         0x04,
