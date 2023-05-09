@@ -45,10 +45,8 @@ parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
-parser_error_t readTag(parser_context_t *ctx, uint8_t expectedTag);
+parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
 
-// parser_error_t readInnerTx(parser_context_t *ctx, parser_tx_t *v);
-// parser_error_t readWrapperTx(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readToken(const bytes_t *token, const char **symbol);
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
 

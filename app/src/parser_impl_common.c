@@ -81,7 +81,7 @@ parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size) {
     return parser_ok;
 }
 
-parser_error_t readTag(parser_context_t *ctx, uint8_t expectedTag) {
+parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag) {
     uint8_t tmpTag = 0;
     CHECK_ERROR(readByte(ctx, &tmpTag))
 

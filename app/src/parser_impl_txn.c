@@ -223,6 +223,7 @@ static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
 #endif
 
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Source
@@ -256,6 +257,7 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
 }
 
 static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/transaction/pos.rs#L24-L35
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
@@ -291,7 +293,7 @@ parser_error_t readTimestamp(parser_context_t *ctx, bytes_t *timestamp) {
 
 // WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
-    CHECK_ERROR(readTag(ctx, 0x01))
+    CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.fees.amount))
     // Fee.address
@@ -355,7 +357,7 @@ static parser_error_t readCodeSection(parser_context_t *ctx, bytes_t *code) {
     CHECK_ERROR(readSalt(ctx))
     uint16_t hashType = 0;
     CHECK_ERROR(readUint16(ctx, &hashType))
-    code->len = 32;
+    code->len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &code->ptr, code->len))
 
     return parser_ok;
@@ -365,7 +367,7 @@ static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *
     if (ctx == NULL || signature == NULL) {
         return parser_unexpected_error;
     }
-    // CHECK_ERROR(readTag(ctx, 0x03))
+    // CHECK_ERROR(checkTag(ctx, 0x03))
     // CHECK_ERROR(readSalt(ctx))
     // Read hash 32 bytes
     // Read tag 0x00 -> ED25519
@@ -377,18 +379,18 @@ static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *
     const uint8_t SIGNATURE_TAG = 0x03;
     const uint8_t ED25519_TAG = 0x00;
 
-    CHECK_ERROR(readTag(ctx, SIGNATURE_TAG))
+    CHECK_ERROR(checkTag(ctx, SIGNATURE_TAG))
     CHECK_ERROR(readSalt(ctx))
     signature->hash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &signature->hash.ptr, signature->hash.len))
 
-    CHECK_ERROR(readTag(ctx, ED25519_TAG))
+    CHECK_ERROR(checkTag(ctx, ED25519_TAG))
     signature->r.len = SIG_R_LEN;
     CHECK_ERROR(readBytes(ctx, &signature->r.ptr, signature->r.len))
     signature->s.len = SIG_S_LEN;
     CHECK_ERROR(readBytes(ctx, &signature->s.ptr, signature->s.len))
 
-    CHECK_ERROR(readTag(ctx, ED25519_TAG))
+    CHECK_ERROR(checkTag(ctx, ED25519_TAG))
     signature->pubKey.len = PK_LEN_25519;
     CHECK_ERROR(readBytes(ctx, &signature->pubKey.ptr, signature->pubKey.len))
 
