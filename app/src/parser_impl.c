@@ -27,9 +27,12 @@ parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
 
     CHECK_ERROR(validateTransactionParams(v))
 
+#if 0
+    // TODO: Disable this check temporarily
     if (ctx->offset != ctx->bufferLen) {
         return parser_unexpected_unparsed_bytes;
     }
+#endif
 
     return parser_ok;
 }

@@ -123,6 +123,20 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     *flags |= IO_ASYNCH_REPLY;
 }
 
+__Z_INLINE void handleGetSignature(volatile uint32_t *tx) {
+    ZEMU_LOGF(50, "HandleGetSignature")
+    *tx = 0;
+    const uint8_t slot = G_io_apdu_buffer[OFFSET_P2];
+
+    const zxerr_t err = crypto_getSignature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, slot);
+    if (err == zxerr_ok){
+        *tx = SALT_LEN + HASH_LEN + PK_LEN_25519 + SIG_ED25519_LEN;
+        THROW(APDU_CODE_OK);
+    } else {
+        THROW(APDU_CODE_CONDITIONS_NOT_SATISFIED);
+    }
+}
+
 // For wrapper transactions, address is derived from Ed25519 pubkey
 __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     zemu_log("handleGetAddr\n");
@@ -174,7 +188,7 @@ __Z_INLINE void handle_getversion(__Z_UNUSED volatile uint32_t *flags, volatile 
 }
 
 #if defined(APP_TESTING)
-void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+void handleTest(__Z_UNUSED volatile uint32_t *flags, __Z_UNUSED volatile uint32_t *tx, __Z_UNUSED uint32_t rx) {
     THROW(APDU_CODE_OK);
 }
 #endif
@@ -209,6 +223,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 case INS_SIGN: {
                     CHECK_PIN_VALIDATED()
                     handleSignTransaction(flags, tx, rx);
+                    break;
+                }
+
+                case INS_GET_SIGNATURE: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetSignature(tx);
                     break;
                 }
 

@@ -18,6 +18,7 @@
 #include "os.h"
 #include "coin.h"
 #include "zxerror.h"
+#include "parser_txdef.h"
 
 void tx_initialize();
 
@@ -53,4 +54,4 @@ zxerr_t tx_getItem(int8_t displayIdx,
                    char *outValue, uint16_t outValueLen,
                    uint8_t pageIdx, uint8_t *pageCount);
 
-// zxerr_t tx_signOuterTxn(uint8_t* output, uint16_t outputLen);
+parser_tx_t* tx_get_txObject();

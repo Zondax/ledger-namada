@@ -38,7 +38,7 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
                 snprintf(outVal, outValLen, "Unbond");
             }
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -83,7 +83,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Transfer");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
