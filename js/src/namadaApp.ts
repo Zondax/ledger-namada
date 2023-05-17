@@ -14,12 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import Transport from '@ledgerhq/hw-transport'
-import {
-  ResponseAddress,
-  ResponseAppInfo,
-  ResponseSign,
-  ResponseVersion
-} from './types'
+import { ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion, Signature } from './types'
 
 import {
   CHUNK_SIZE,
@@ -28,13 +23,12 @@ import {
   P1_VALUES,
   PAYLOAD_TYPE,
   processErrorResponse,
-  ProtoTimestamp,
   serializePath,
-  serializeTimestamp,
+  SignatureType,
 } from './common'
 
-import {CLA, INS} from "./config";
-import { processGetAddrResponse } from './processResponses';
+import { CLA, INS } from './config'
+import { processGetAddrResponse, processGetSignatureResponse } from './processResponses'
 
 export { LedgerError }
 export * from './types'
@@ -143,18 +137,18 @@ export class NamadaApp {
   async getAddressAndPubKey(path: string): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
     return this.transport
-        .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [LedgerError.NoErrors])
-        .then(processGetAddrResponse, processErrorResponse)
+      .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [LedgerError.NoErrors])
+      .then(processGetAddrResponse, processErrorResponse)
   }
 
   async showAddressAndPubKey(path: string): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
     return this.transport
-        .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [LedgerError.NoErrors])
-        .then(processGetAddrResponse, processErrorResponse)
+      .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [LedgerError.NoErrors])
+      .then(processGetAddrResponse, processErrorResponse)
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, ins: number): Promise<ResponseSign> {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, ins: number): Promise<ResponseBase> {
     let payloadType = PAYLOAD_TYPE.ADD
     const p2 = 0
     if (chunkIdx === 1) {
@@ -165,44 +159,39 @@ export class NamadaApp {
     }
 
     return this.transport
-        .send(CLA, ins, payloadType, p2, chunk, [
-          LedgerError.NoErrors,
-          LedgerError.DataIsInvalid,
-          LedgerError.BadKeyHandle,
-          LedgerError.SignVerifyError,
-        ])
-        .then((response: Buffer) => {
-          const errorCodeData = response.slice(-2)
-          const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-          let errorMessage = errorCodeToString(returnCode)
+      .send(CLA, ins, payloadType, p2, chunk, [
+        LedgerError.NoErrors,
+        LedgerError.DataIsInvalid,
+        LedgerError.BadKeyHandle,
+        LedgerError.SignVerifyError,
+      ])
+      .then((response: Buffer) => {
+        const errorCodeData = response.subarray(-2)
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+        let errorMessage = errorCodeToString(returnCode)
 
-          if (
-              returnCode === LedgerError.BadKeyHandle ||
-              returnCode === LedgerError.DataIsInvalid ||
-              returnCode === LedgerError.SignVerifyError
-          ) {
-            errorMessage = `${errorMessage} : ${response.slice(0, response.length - 2).toString('ascii')}`
-          }
+        if (
+          returnCode === LedgerError.BadKeyHandle ||
+          returnCode === LedgerError.DataIsInvalid ||
+          returnCode === LedgerError.SignVerifyError
+        ) {
+          errorMessage = `${errorMessage} : ${response.subarray(0, response.length - 2).toString('ascii')}`
+        }
 
-          if (returnCode === LedgerError.NoErrors && response.length > 2) {
-            const signature = response.slice(0, response.length - 2);
-            return {
-              // hash: response.slice(0, 32),
-              // signature: response.slice(32, -2),
-              signature,
-              returnCode: returnCode,
-              errorMessage: errorMessage,
-            }
-          }
-
-          return {
-            returnCode: returnCode,
-            errorMessage: errorMessage,
-          } as ResponseSign;
-        }, processErrorResponse)
+        return {
+          returnCode: returnCode,
+          errorMessage: errorMessage,
+        } as ResponseSign
+      }, processErrorResponse)
   }
 
-  async sign(path: string, message: Buffer) {
+  async getSignature(signatureType: SignatureType) {
+    return this.transport
+      .send(CLA, INS.GET_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, signatureType, Buffer.from([]), [LedgerError.NoErrors])
+      .then(processGetSignatureResponse, processErrorResponse)
+  }
+
+  async _sign(path: string, message: Buffer) {
     const serializedPath = serializePath(path)
 
     return this.prepareChunks(serializedPath, message).then(chunks => {
@@ -210,10 +199,9 @@ export class NamadaApp {
         let result = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
-          signature: null as null | Buffer,
         }
 
-        for(let i = 1; i < chunks.length; i++) {
+        for (let i = 1; i < chunks.length; i++) {
           result = await this.signSendChunk(1 + i, chunks.length, chunks[i], INS.SIGN)
           if (result.returnCode !== LedgerError.NoErrors) {
             break
@@ -224,6 +212,27 @@ export class NamadaApp {
     }, processErrorResponse)
   }
 
+  async sign(path: string, message: Buffer) {
+    const signCommand = await this._sign(path, message)
+
+    const result: ResponseSign = {
+      returnCode: signCommand.returnCode,
+      errorMessage: signCommand.errorMessage,
+      headerSignature: new Signature(),
+      dataSignature: new Signature(),
+      codeSignature: new Signature(),
+    }
+
+    if (signCommand.returnCode !== LedgerError.NoErrors) {
+      return result
+    }
+
+    result.headerSignature = new Signature(await this.getSignature(SignatureType.HeaderSignature))
+    result.dataSignature = new Signature(await this.getSignature(SignatureType.DataSignature))
+    result.codeSignature = new Signature(await this.getSignature(SignatureType.CodeSignature))
+
+    return result
+  }
 
   /* Not implemented yet
   async getShieldedAddressAndPubKey(path: number, div: Buffer): Promise<ResponseShieldedAddress> {

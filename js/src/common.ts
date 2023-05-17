@@ -1,5 +1,5 @@
 /** ******************************************************************************
- *  (c) 2018 - 2022 Zondax AG
+ *  (c) 2018 - 2023 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,37 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-const leb = require('leb128')
-
-export const CHUNK_SIZE = 250;
+export const CHUNK_SIZE = 250
 
 export const PAYLOAD_TYPE = {
   INIT: 0x00,
   ADD: 0x01,
   LAST: 0x02,
-};
+}
 
 export const P1_VALUES = {
   ONLY_RETRIEVE: 0x00,
   SHOW_ADDRESS_IN_DEVICE: 0x01,
-  MSGPACK_FIRST: 0x00,
-  MSGPACK_FIRST_ACCOUNT_ID: 0x01,
-  MSGPACK_ADD: 0x80,
-};
+}
 
 export const P2_VALUES = {
   DEFAULT: 0x00,
-  MSGPACK_ADD: 0x80,
-  MSGPACK_LAST: 0x00,
-};
+}
 
 // noinspection JSUnusedGlobalSymbols
 export const SIGN_VALUES_P2 = {
   DEFAULT: 0x00,
-};
+}
 
 export const ERROR_CODE = {
   NoError: 0x9000,
+}
+
+export const enum SignatureType {
+  HeaderSignature = 0,
+  DataSignature = 1,
+  CodeSignature = 2,
 }
 
 export enum LedgerError {
@@ -94,15 +93,15 @@ export const ERROR_DESCRIPTION = {
   [LedgerError.AppDoesNotSeemToBeOpen]: 'App does not seem to be open',
   [LedgerError.UnknownError]: 'Unknown error',
   [LedgerError.SignVerifyError]: 'Sign/verify error',
-};
+}
 
 export function errorCodeToString(statusCode: LedgerError) {
-  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode];
-  return `Unknown Status Code: ${statusCode}`;
+  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode]
+  return `Unknown Status Code: ${statusCode}`
 }
 
 function isDict(v: any) {
-  return typeof v === 'object' && v !== null && !(v instanceof Array) && !(v instanceof Date);
+  return typeof v === 'object' && v !== null && !(v instanceof Array) && !(v instanceof Date)
 }
 
 export function processErrorResponse(response: any) {
@@ -115,10 +114,7 @@ export function processErrorResponse(response: any) {
         }
       }
 
-      if (
-        Object.prototype.hasOwnProperty.call(response, 'returnCode') &&
-        Object.prototype.hasOwnProperty.call(response, 'errorMessage')
-      ) {
+      if (Object.prototype.hasOwnProperty.call(response, 'returnCode') && Object.prototype.hasOwnProperty.call(response, 'errorMessage')) {
         return response
       }
     }
@@ -134,74 +130,50 @@ export function processErrorResponse(response: any) {
   }
 }
 
-const HARDENED = 0x80000000;
-const DEFAULT_DER_PATH_LEN = 6;
-const IDENTITY_DER_PATH_LEN = 4; // m/888'/0'/<account>
+const HARDENED = 0x80000000
+const DEFAULT_DER_PATH_LEN = 6
+const IDENTITY_DER_PATH_LEN = 4 // m/888'/0'/<account>
 
 export function serializePath(path: string) {
   if (!path.startsWith('m')) {
-    throw new Error(`Path should start with "m" (e.g "m/44'/5757'/5'/0/3")`);
+    throw new Error(`Path should start with "m" (e.g "m/44'/5757'/5'/0/3")`)
   }
 
-  const pathArray = path.split('/');
+  const pathArray = path.split('/')
 
-  let allocSize = 0;
+  let allocSize = 0
 
-  if (pathArray.length === DEFAULT_DER_PATH_LEN || pathArray.length === IDENTITY_DER_PATH_LEN  ) {
-    allocSize = (pathArray.length - 1) * 4 + 1;
+  if (pathArray.length === DEFAULT_DER_PATH_LEN || pathArray.length === IDENTITY_DER_PATH_LEN) {
+    allocSize = (pathArray.length - 1) * 4 + 1
   } else {
-    throw new Error(`Invalid path. (e.g "m/44'/134'/0/0/0"`);
+    throw new Error(`Invalid path. (e.g "m/44'/134'/0/0/0"`)
   }
 
-  const buf = Buffer.alloc(allocSize);
+  const buf = Buffer.alloc(allocSize)
   buf.writeUInt8(pathArray.length - 1, 0)
 
   for (let i = 1; i < pathArray.length; i += 1) {
-    let value = 0;
-    let child = pathArray[i];
+    let value = 0
+    let child = pathArray[i]
     if (child.endsWith("'")) {
-      value += HARDENED;
-      child = child.slice(0, -1);
+      value += HARDENED
+      child = child.slice(0, -1)
     }
 
-    const childNumber = Number(child);
+    const childNumber = Number(child)
 
     if (Number.isNaN(childNumber)) {
-      throw new Error(`Invalid path : ${child} is not a number. (e.g "m/44'/461'/5'/0/3")`);
+      throw new Error(`Invalid path : ${child} is not a number. (e.g "m/44'/461'/5'/0/3")`)
     }
 
     if (childNumber >= HARDENED) {
-      throw new Error('Incorrect child value (bigger or equal to 0x80000000)');
+      throw new Error('Incorrect child value (bigger or equal to 0x80000000)')
     }
 
-    value += childNumber;
+    value += childNumber
 
-    buf.writeUInt32LE(value, 4 * (i-1) + 1);
+    buf.writeUInt32LE(value, 4 * (i - 1) + 1)
   }
 
-  return buf;
-}
-
-export interface ProtoTimestamp {
-  seconds: number;
-  nanos: number;
-}
-
-export function serializeTimestamp(timestamp: ProtoTimestamp) {
-  const TAG_TS =  Buffer.from([0x1A])
-  const TAG_S =  Buffer.from([0x08])
-  const TAG_N =  Buffer.from([0x10])
-
-  const lebseconds = leb.signed.encode(timestamp.seconds)
-  const lebnanos = leb.signed.encode(timestamp.nanos)
-
-  let serialized = timestamp.seconds > 0 ? Buffer.concat([TAG_S, lebseconds]) : Buffer.from([])
-  if (timestamp.nanos > 0) {
-    serialized = Buffer.concat([serialized, TAG_N, lebnanos])
-  }
-
-  const timestampSize = leb.unsigned.encode(serialized.length)
-  const buffer = Buffer.concat([TAG_TS, timestampSize, serialized])
-
-  return buffer
+  return buf
 }
