@@ -14,15 +14,32 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import { errorCodeToString } from "./common"
-import { PK_LEN_25519 } from "./config"
+import { errorCodeToString } from './common'
+import { HASH_LEN, PK_LEN_25519, SALT_LEN } from './config'
+import { ISignature } from './types'
+
+export function processGetSignatureResponse(response: Buffer): ISignature {
+  console.log('Processing get signature response')
+
+  const salt = Buffer.from(response.subarray(0, SALT_LEN))
+  const hash = Buffer.from(response.subarray(SALT_LEN, SALT_LEN + HASH_LEN))
+  const pubkey = Buffer.from(response.subarray(SALT_LEN + HASH_LEN, SALT_LEN + HASH_LEN + PK_LEN_25519))
+  const signature = Buffer.from(response.subarray(SALT_LEN + HASH_LEN + PK_LEN_25519, -2))
+
+  return {
+    salt,
+    hash,
+    pubkey,
+    signature,
+  }
+}
 
 export function processGetAddrResponse(response: Buffer) {
-  console.log("Processing get address response")
+  console.log('Processing get address response')
 
   let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2)
+  const errorCodeData = partialResponse.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
   //get public key len (variable)
@@ -34,7 +51,6 @@ export function processGetAddrResponse(response: Buffer) {
   // get the implicit address corresponding to the public key
   const address = Buffer.from(partialResponse.slice(0, -2))
 
-
   return {
     publicKey,
     address,
@@ -43,90 +59,88 @@ export function processGetAddrResponse(response: Buffer) {
   }
 }
 
-function processGetShieldedAddrResponse(response: Buffer) {
-  console.log("Processing get address response")
+// Not used yet
+// function processGetShieldedAddrResponse(response: Buffer) {
+//   console.log("Processing get address response")
 
-  let partialResponse = response
+//   let partialResponse = response
 
-  const errorCodeData = partialResponse.slice(-2)
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+//   const errorCodeData = partialResponse.slice(-2)
+//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  //get public key len (variable)
-  const raw_pkd = Buffer.from(partialResponse.slice(0, 32))
+//   //get public key len (variable)
+//   const raw_pkd = Buffer.from(partialResponse.slice(0, 32))
 
-  //"advance" buffer
-  partialResponse = partialResponse.slice(32)
+//   //"advance" buffer
+//   partialResponse = partialResponse.slice(32)
 
-  // get the length of the bech32m address
-  const bech32m_len = partialResponse[0]
+//   // get the length of the bech32m address
+//   const bech32m_len = partialResponse[0]
 
-  //"advance" buffer
-  partialResponse = partialResponse.slice(1)
+//   //"advance" buffer
+//   partialResponse = partialResponse.slice(1)
 
-  // get the bech32m encoding of the shielded address
-  const bech32m_addr = Buffer.from(partialResponse.slice(0, bech32m_len))
+//   // get the bech32m encoding of the shielded address
+//   const bech32m_addr = Buffer.from(partialResponse.slice(0, bech32m_len))
 
+//   return {
+//     raw_pkd,
+//     bech32m_len,
+//     bech32m_addr,
+//     returnCode,
+//     errorMessage: errorCodeToString(returnCode),
+//   }
+// }
 
-  return {
-    raw_pkd,
-    bech32m_len,
-    bech32m_addr,
-    returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  }
-}
+// function processIncomingViewingKeyResponse(response: Buffer) {
+//   console.log("Processing get IVK response")
 
+//   const partialResponse = response
 
-function processIncomingViewingKeyResponse(response: Buffer) {
-  console.log("Processing get IVK response")
+//   const errorCodeData = partialResponse.slice(-2)
+//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  const partialResponse = response
+//   //get public key len (variable)
+//   const raw_ivk = Buffer.from(partialResponse.slice(0, 32))
 
-  const errorCodeData = partialResponse.slice(-2)
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+//   return {
+//     raw_ivk,
+//     returnCode,
+//     errorMessage: errorCodeToString(returnCode),
+//   }
+// }
 
-  //get public key len (variable)
-  const raw_ivk = Buffer.from(partialResponse.slice(0, 32))
+// function processNullifierResponse(response: Buffer) {
+//   console.log("Processing get nullifier response")
 
-  return {
-    raw_ivk,
-    returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  }
-}
+//   const partialResponse = response
 
-function processNullifierResponse(response: Buffer) {
-  console.log("Processing get nullifier response")
+//   const errorCodeData = partialResponse.slice(-2)
+//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  const partialResponse = response
+//   const raw_nf = Buffer.from(partialResponse.slice(0, 32))
 
-  const errorCodeData = partialResponse.slice(-2)
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+//   return {
+//     raw_nf,
+//     returnCode,
+//     errorMessage: errorCodeToString(returnCode),
+//   }
+// }
 
-  const raw_nf = Buffer.from(partialResponse.slice(0, 32))
+// function processOutgoingViewingKeyResponse(response: Buffer) {
+//   console.log("Processing get OVK response")
 
-  return {
-    raw_nf,
-    returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  }
-}
+//   const partialResponse = response
 
+//   const errorCodeData = partialResponse.slice(-2)
+//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-function processOutgoingViewingKeyResponse(response: Buffer) {
-  console.log("Processing get OVK response")
+//   //get public key len (variable)
+//   const raw_ovk = Buffer.from(partialResponse.slice(0, 32))
 
-  const partialResponse = response
-
-  const errorCodeData = partialResponse.slice(-2)
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-  //get public key len (variable)
-  const raw_ovk = Buffer.from(partialResponse.slice(0, 32))
-
-  return {
-    raw_ovk,
-    returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  }
-}
+//   return {
+//     raw_ovk,
+//     returnCode,
+//     errorMessage: errorCodeToString(returnCode),
+//   }
+// }

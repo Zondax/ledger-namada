@@ -47,6 +47,7 @@ extern "C" {
 #define ADDRESS_LEN_MAINNET 80u
 #define ADDRESS_LEN_TESTNET 84u
 
+#define SALT_LEN     8
 #define HASH_LEN    32
 #define SIG_R_LEN   32
 #define SIG_S_LEN   32
@@ -94,6 +95,8 @@ typedef enum {
 #define INS_GET_IVK 0xf0
 #define INS_GET_OVK 0xf1
 #define INS_GET_NF 0xf2
+
+#define INS_GET_SIGNATURE 0x0A
 
 #ifdef __cplusplus
 }

@@ -29,6 +29,23 @@
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
 
 typedef struct {
+    uint8_t salt[SALT_LEN];
+    uint8_t hash[HASH_LEN];
+    uint8_t pubkey[PK_LEN_25519];
+    uint8_t signature[SIG_ED25519_LEN];
+} crypto_signatures_t[3];
+
+crypto_signatures_t NV_CONST
+N_signatures_impl __attribute__ ((aligned(64)));
+#define N_signatures (*(NV_VOLATILE crypto_signatures_t *)PIC(&N_signatures_impl))
+
+typedef enum {
+    signature_header = 0,
+    signature_data,
+    signature_code,
+} signature_slot_e;
+
+typedef struct {
     uint8_t r[32];
     uint8_t s[32];
     uint8_t v;
@@ -39,8 +56,47 @@ typedef struct {
 
 } __attribute__((packed)) rsv_signature_t;
 
-zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen)
-{
+static zxerr_t crypto_store_signature(const bytes_t *salt, const bytes_t *hash, const bytes_t *pubkey, const bytes_t *signature, signature_slot_e slot){
+    if (salt == NULL || hash == NULL || pubkey == NULL || signature == NULL || slot > signature_code) {
+        return zxerr_no_data;
+    }
+
+    if (salt->len != SALT_LEN || hash->len != HASH_LEN || pubkey->len != PK_LEN_25519 || signature->len != SIG_ED25519_LEN) {
+        return zxerr_invalid_crypto_settings;
+    }
+
+    MEMCPY_NV((void*) &N_signatures[slot].salt, (uint8_t*)salt->ptr, salt->len);
+    MEMCPY_NV((void *)&N_signatures[slot].hash, (uint8_t*)hash->ptr, hash->len);
+    MEMCPY_NV((void *)&N_signatures[slot].pubkey, (uint8_t*)pubkey->ptr, pubkey->len);
+    MEMCPY_NV((void *)&N_signatures[slot].signature, (uint8_t*)signature->ptr, signature->len);
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_getSignature(uint8_t *output, uint16_t outputLen, uint8_t slot) {
+    const uint8_t minimum_output_len = SALT_LEN + HASH_LEN + PK_LEN_25519 + SIG_ED25519_LEN;
+    if (output == NULL || outputLen < minimum_output_len || slot > signature_code) {
+        return zxerr_out_of_bounds;
+    }
+
+    const uint8_t *saltPtr = (uint8_t *)&N_signatures[slot].salt;
+    const uint8_t *hashPtr = (uint8_t *)&N_signatures[slot].hash;
+    const uint8_t *pubkeyPtr = (uint8_t *)&N_signatures[slot].pubkey;
+    const uint8_t *sigPtr = (uint8_t *)&N_signatures[slot].signature;
+
+    MEMCPY(output, saltPtr, SALT_LEN);
+    output += SALT_LEN;
+    MEMCPY(output, hashPtr, HASH_LEN);
+    output += HASH_LEN;
+    MEMCPY(output, pubkeyPtr, PK_LEN_25519);
+    output += PK_LEN_25519;
+    MEMCPY(output, sigPtr, ED25519_SIGNATURE_SIZE);
+
+    return zxerr_ok;
+}
+
+
+zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen) {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[SK_LEN_25519];
@@ -132,7 +188,7 @@ zxerr_t crypto_sign_ed25519(uint8_t *signature, uint16_t signatureMaxLen, const 
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[SK_LEN_25519] = {0};
 
-    zxerr_t err = zxerr_ok;
+    zxerr_t err = zxerr_unknown;
     BEGIN_TRY
     {
         TRY
@@ -162,6 +218,7 @@ zxerr_t crypto_sign_ed25519(uint8_t *signature, uint16_t signatureMaxLen, const 
                           signatureMaxLen,
                           NULL);
 
+            err = zxerr_ok;
         }
         CATCH_ALL
         {
@@ -273,7 +330,7 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
 
 zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen)
 {
-    zxerr_t err = zxerr_ok;
+    zxerr_t err = zxerr_unknown;
     switch (addressKind) {
         case key_ed25519:
             err = crypto_fillAddress_ed25519(buffer, bufferLen, addrResponseLen);
@@ -285,116 +342,100 @@ zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint
     return err;
 }
 
-#if 0
-zxerr_t crypto_hashSigningTx(const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output) {
-    // Build SigningTx -> data replaced by [data : innerSig] and hash it
-    uint8_t tmpBuff[10] = {0};
-    cx_sha256_t ctx;
-    cx_sha256_init(&ctx);
 
-    // Code
-    tmpBuff[0] = TAG_CODE;
-    tmpBuff[1] = CX_SHA256_SIZE;
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
-    cx_sha256_update(&ctx, innerTxn->code.ptr, innerTxn->code.len);
-
-    // Data + InnerSig
-    MEMZERO(&tmpBuff, sizeof(tmpBuff));
-    tmpBuff[0] = TAG_DATA;
-    uint8_t dataSize = 0;
-    CHECK_ZXERR(encodeLEB128(innerTxn->data.len + CX_SHA256_SIZE, tmpBuff + 1, MAX_LEB128_OUTPUT, &dataSize))
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, dataSize + 1);
-    cx_sha256_update(&ctx, innerTxn->data.ptr, innerTxn->data.len);
-    cx_sha256_update(&ctx, innerSig->ptr, innerSig->len);
-
-    //Timestamp
-    MEMZERO(&tmpBuff, sizeof(tmpBuff));
-    uint8_t timestampSize = 0;
-    CHECK_ZXERR(crypto_serializeTimestamp(&innerTxn->timestamp, tmpBuff, sizeof(tmpBuff), &timestampSize))
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, timestampSize);
-
-    cx_sha256_final(&ctx, output->ptr);
-    output->len = CX_SHA256_SIZE;
-    return zxerr_ok;
-}
-
-zxerr_t crypto_hashWrapperTx(const wrapperTx_t *wrapperTxn, mut_bytes_t *output) {
-    if (wrapperTxn == NULL ||  output == NULL) {
-        return zxerr_no_data;
+zxerr_t crypto_hashHeader(const header_t *header, uint8_t *output, uint32_t outputLen) {
+    if (header == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
+         return zxerr_invalid_crypto_settings;
     }
-    uint8_t tmpBuff[10] = {0};
-    cx_sha256_t ctx;
-    cx_sha256_init(&ctx);
-
-    // InnerTxn hash
-    tmpBuff[0] = TAG_INNER_TX_HASH;
-    tmpBuff[1] = CX_SHA256_SIZE;
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
-    cx_sha256_update(&ctx, wrapperTxn->innerTxHash.ptr, wrapperTxn->innerTxHash.len);
-
-    // Rest of the wrapper transaction
-    cx_sha256_update(&ctx, wrapperTxn->buff.ptr, wrapperTxn->buff.len);
-
-    cx_sha256_final(&ctx, output->ptr);
+    cx_hash_sha256(header->bytes.ptr, header->bytes.len, output, outputLen);
     return zxerr_ok;
 }
 
-zxerr_t crypto_signInnerTxn(const inner_tx_t *innerTxn, mut_bytes_t *output) {
-    if (innerTxn == NULL ||  output == NULL) {
+
+zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t outputLen) {
+    if (data == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
         return zxerr_no_data;
     }
 
-    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
-    CHECK_ZXERR(crypto_sha256(innerTxn->buff.ptr, innerTxn->buff.len, (uint8_t*) bytes_to_sign, sizeof(bytes_to_sign)))
-    CHECK_ZXERR(crypto_sign_ed25519(output->ptr, output->len, bytes_to_sign, sizeof(bytes_to_sign)))
+    cx_sha256_t sha256 = {0};
+    cx_sha256_init(&sha256);
+    cx_sha256_update(&sha256, &data->discriminant, 1);
+    cx_sha256_update(&sha256, data->salt.ptr, data->salt.len);
+    cx_sha256_update(&sha256, (uint8_t*) &data->bytes.len, sizeof(data->bytes.len));
+    cx_sha256_update(&sha256, data->bytes.ptr, data->bytes.len);
+    cx_sha256_final(&sha256, output);
 
     return zxerr_ok;
 }
 
-zxerr_t crypto_signOuterTxn(wrapperTx_t *wrapperTxn, const inner_tx_t *innerTxn, const mut_bytes_t *innerSig, mut_bytes_t *output) {
-    // 2. Build outer transaction from WrapperTx and InnerTxn + innerSignature
-    uint8_t innerTxnHash[CX_SHA256_SIZE] = {0};
-    mut_bytes_t hash = {.ptr = innerTxnHash, .len = sizeof(innerTxnHash)};
-    CHECK_ZXERR(crypto_hashSigningTx(innerTxn, innerSig, &hash))
+zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t outputLen) {
+    if (code == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
+         return zxerr_invalid_crypto_settings;
+    }
 
-
-    // Code and Timestamp from Outer transaction ???
-    wrapperTxn->innerTxHash.ptr = (const uint8_t*) &hash;
-    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
-    mut_bytes_t outerDataHashed = {.ptr = bytes_to_sign, .len = CX_SHA256_SIZE};
-    CHECK_ZXERR(crypto_hashWrapperTx(wrapperTxn, &outerDataHashed))
-
-    // 3. Sign outer transaction
-    CHECK_ZXERR(crypto_sign_ed25519(output->ptr, output->len, bytes_to_sign, CX_SHA256_SIZE))
+    cx_sha256_t sha256 = {0};
+    cx_sha256_init(&sha256);
+    cx_sha256_update(&sha256, &code->discriminant, 1);
+    cx_sha256_update(&sha256, code->salt.ptr, code->salt.len);
+    cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len);
+    cx_sha256_final(&sha256, output);
 
     return zxerr_ok;
 }
-#endif
 
-
-#if 0
-zxerr_t crypto_signOuterLayerTxn(const outer_layer_tx_t *outerTxn, uint8_t *output, uint16_t outputLen) {
-    if (outerTxn == NULL || output == NULL) {
+zxerr_t crypto_signHeader(const header_t *header, const bytes_t *pubkey) {
+    if (header == NULL || pubkey == NULL) {
         return zxerr_no_data;
     }
 
-    if (outputLen < ED25519_SIGNATURE_SIZE) {
-        return zxerr_buffer_too_small;
-    }
+    uint8_t hash[HASH_LEN] = {0};
+    CHECK_ZXERR(crypto_hashHeader(header, hash, sizeof(hash)))
 
-    // 1 - Serialize transaction and hash it
-    uint8_t bytes_to_sign[CX_SHA256_SIZE] = {0};
-    CHECK_ZXERR(crypto_getBytesToSign(outerTxn, bytes_to_sign, sizeof(bytes_to_sign)))
+    uint8_t signature[SIG_ED25519_LEN] = {0};
+    CHECK_ZXERR(crypto_sign_ed25519(signature, sizeof(signature), hash, sizeof(hash)))
 
-#ifdef APP_TESTING
-    uint8_t tmpArray[65] = {0};
-    array_to_hexstr_uppercase(tmpArray, sizeof(tmpArray), bytes_to_sign, sizeof(bytes_to_sign));
-    ZEMU_LOGF(100, "bytes_to_sign: %s\n", (char*)tmpArray)
-#endif
+    const bytes_t hash_bytes = {.ptr = hash, .len = HASH_LEN};
+    const bytes_t signature_bytes = {.ptr = signature, .len = SIG_ED25519_LEN};
 
-    // 2 - Sign ED25519
-    CHECK_ZXERR(crypto_sign_ed25519(output, outputLen, bytes_to_sign, sizeof(bytes_to_sign)))
+    const uint8_t salt[SALT_LEN] = {0};
+    const bytes_t salt_bytes = {.ptr = salt, .len = sizeof(salt)};
+    CHECK_ZXERR(crypto_store_signature(&salt_bytes, &hash_bytes, pubkey, &signature_bytes, signature_header))
 
     return zxerr_ok;
 }
-#endif
+
+zxerr_t crypto_signDataSection(const section_t *data, const bytes_t *pubkey) {
+    if (data == NULL || pubkey == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t hash[HASH_LEN] = {0};
+    CHECK_ZXERR(crypto_hashDataSection(data, hash, sizeof(hash)))
+
+    uint8_t signature[SIG_ED25519_LEN] = {0};
+    CHECK_ZXERR(crypto_sign_ed25519(signature, sizeof(signature), hash, sizeof(hash)))
+
+    const bytes_t hash_bytes = {.ptr = hash, .len = HASH_LEN};
+    const bytes_t signature_bytes = {.ptr = signature, .len = SIG_ED25519_LEN};
+    CHECK_ZXERR(crypto_store_signature(&data->salt, &hash_bytes, pubkey, &signature_bytes, signature_data))
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_signCodeSection(const section_t *code, const bytes_t *pubkey) {
+    if (code == NULL || pubkey == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t hash[HASH_LEN] = {0};
+    CHECK_ZXERR(crypto_hashCodeSection(code, hash, sizeof(hash)))
+
+    uint8_t signature[SIG_ED25519_LEN] = {0};
+    CHECK_ZXERR(crypto_sign_ed25519(signature, sizeof(signature), hash, sizeof(hash)))
+
+    const bytes_t hash_bytes = {.ptr = hash, .len = HASH_LEN};
+    const bytes_t signature_bytes = {.ptr = signature, .len = SIG_ED25519_LEN};
+    CHECK_ZXERR(crypto_store_signature(&code->salt, &hash_bytes, pubkey, &signature_bytes, signature_code))
+
+    return zxerr_ok;
+}

@@ -21,6 +21,12 @@
 
 #define ADDRESS_LEN_BYTES   45
 
+#define DISCRIMINANT_DATA 0x00
+#define DISCRIMINANT_EXTRA_DATA 0x01
+#define DISCRIMINANT_CODE 0x02
+#define DISCRIMINANT_SIGNATURE 0x03
+
+
 static const uint8_t hash_transfer[] = {0xc6, 0x38, 0x68, 0xb8, 0x10, 0x27, 0x13, 0x77, 0x1b, 0xf4, 0xdb, 0x94, 0x51, 0x4b, 0x89, 0x23, 0x08, 0xbd, 0xa0, 0x74, 0x4c, 0x69, 0x1f, 0x55, 0xd6, 0xcb, 0xfd, 0xa5, 0xf5, 0x69, 0x8c, 0x09};
 static const uint8_t hash_bond[] = {0x21, 0xc6, 0x3b, 0x00, 0xf0, 0x18, 0x63, 0x9a, 0xfa, 0xf0, 0xe3, 0x20, 0xe1, 0x68, 0x4b, 0xf0, 0x0a, 0x54, 0x01, 0x0a, 0x28, 0x2b, 0xde, 0x66, 0xcf, 0x64, 0x23, 0xcb, 0x49, 0x3d, 0x26, 0xb6};
 static const uint8_t hash_unbond[] = {0xfc, 0x56, 0xa1, 0x7b, 0x2b, 0x43, 0x3d, 0x8a, 0x70, 0x2d, 0x04, 0xe2, 0xa0, 0x57, 0x73, 0x19, 0xfe, 0x54, 0x4b, 0xf8, 0x66, 0xc5, 0x98, 0x45, 0xd2, 0x83, 0x70, 0xec, 0x59, 0x31, 0xc1, 0x5e};
@@ -293,6 +299,12 @@ parser_error_t readTimestamp(parser_context_t *ctx, bytes_t *timestamp) {
 
 // WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
+    if (ctx == NULL || v == NULL) {
+        return parser_unexpected_value;
+    }
+    const uint16_t tmpOffset = ctx->offset;
+    v->transaction.header.bytes.ptr = ctx->buffer + ctx->offset;
+
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.fees.amount))
@@ -313,57 +325,79 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.header.codeHash.len = 32;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.codeHash.ptr, v->transaction.header.codeHash.len))
 
+    // PoW None
+    CHECK_ERROR(checkTag(ctx, 0x00))
+
+    v->transaction.header.bytes.len = ctx->offset - tmpOffset;
+
     return parser_ok;
 }
 
-static parser_error_t readSalt(parser_context_t *ctx) {
-    if (ctx == NULL) {
+static parser_error_t readSalt(parser_context_t *ctx, bytes_t *salt) {
+    if (ctx == NULL || salt == NULL) {
         return parser_unexpected_error;
     }
-    const uint8_t *tmpPtr = NULL;
-    const uint8_t saltSize = 0x08;
-    CHECK_ERROR(readBytes(ctx, &tmpPtr, saltSize))
+    salt->len = SALT_LEN;
+    CHECK_ERROR(readBytes(ctx, &salt->ptr, salt->len))
 
     return parser_ok;
 }
 
-static parser_error_t readExtraDataSection(parser_context_t *ctx, bytes_t *extraData) {
+static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *extraData) {
     if (ctx == NULL || extraData == NULL) {
         return parser_unexpected_error;
     }
-    CHECK_ERROR(readSalt(ctx))
-    extraData->len = HASH_LEN;
-    CHECK_ERROR(readBytes(ctx, &extraData->ptr, extraData->len))
+
+    CHECK_ERROR(readByte(ctx, &extraData->discriminant))
+    if (extraData->discriminant != DISCRIMINANT_EXTRA_DATA) {
+        return parser_unexpected_value;
+    }
+    CHECK_ERROR(readSalt(ctx, &extraData->salt))
+    extraData->bytes.len = HASH_LEN;
+    CHECK_ERROR(readBytes(ctx, &extraData->bytes.ptr, extraData->bytes.len))
 
     return parser_ok;
 }
 
-static parser_error_t readDataSection(parser_context_t *ctx, bytes_t *data) {
+static parser_error_t readDataSection(parser_context_t *ctx, section_t *data) {
     if (ctx == NULL || data == NULL) {
         return parser_unexpected_error;
     }
-    CHECK_ERROR(readSalt(ctx))
-    CHECK_ERROR(readUint32(ctx, &data->len))
-    CHECK_ERROR(readBytes(ctx, &data->ptr, data->len))
+
+    CHECK_ERROR(readByte(ctx, &data->discriminant))
+    if (data->discriminant != DISCRIMINANT_DATA) {
+        return parser_unexpected_value;
+    }
+    CHECK_ERROR(readSalt(ctx, &data->salt))
+    CHECK_ERROR(readUint32(ctx, &data->bytes.len))
+    CHECK_ERROR(readBytes(ctx, &data->bytes.ptr, data->bytes.len))
 
     return parser_ok;
 }
 
-static parser_error_t readCodeSection(parser_context_t *ctx, bytes_t *code) {
+static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     if (ctx == NULL || code == NULL) {
         return parser_unexpected_error;
     }
 
-    CHECK_ERROR(readSalt(ctx))
-    uint16_t hashType = 0;
-    CHECK_ERROR(readUint16(ctx, &hashType))
-    code->len = HASH_LEN;
-    CHECK_ERROR(readBytes(ctx, &code->ptr, code->len))
+    CHECK_ERROR(readByte(ctx, &code->discriminant))
+    if (code->discriminant != DISCRIMINANT_CODE) {
+        return parser_unexpected_value;
+    }
+    CHECK_ERROR(readSalt(ctx, &code->salt))
+    // Check this byte
+    uint8_t hashType = 0;
+    CHECK_ERROR(readByte(ctx, &hashType))
+    code->bytes.len = HASH_LEN;
+    CHECK_ERROR(readBytes(ctx, &code->bytes.ptr, code->bytes.len))
 
     return parser_ok;
 }
 
 static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *signature) {
+    (void) ctx;
+    (void) signature;
+#if 0
     if (ctx == NULL || signature == NULL) {
         return parser_unexpected_error;
     }
@@ -393,33 +427,42 @@ static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *
     CHECK_ERROR(checkTag(ctx, ED25519_TAG))
     signature->pubKey.len = PK_LEN_25519;
     CHECK_ERROR(readBytes(ctx, &signature->pubKey.ptr, signature->pubKey.len))
-
+#endif
     return parser_ok;
 }
 
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
-    //                                                  Sections size
-    // TODO: Check these bytes -->               00     | 0500     | 00 -> No ExtraData
-    //                                           00     | 0600     | 01 ->    ExtraData
-
-    const uint8_t *tmpPtr = NULL;
-    CHECK_ERROR(readBytes(ctx, &tmpPtr, 6))
-
-    // ExtraData
-    const bool readExtraData = false;
-    if (readExtraData) {
-        CHECK_ERROR(readExtraDataSection(ctx, &v->transaction.sections.extraData))
+    if (ctx == NULL || v == NULL) {
+        return parser_unexpected_value;
     }
-    // Data
-    CHECK_ERROR(readDataSection(ctx, &v->transaction.sections.data))
+    CHECK_ERROR(readUint32(ctx, &v->transaction.sections.sectionLen))
 
-    // Code
-    CHECK_ERROR(readCodeSection(ctx, &v->transaction.sections.code))
+    if (v->transaction.sections.sectionLen > 6) {
+        return parser_unexpected_value;
+    }
 
-    // Signatures
-    CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[0]))
-    CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[1]))
-    CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[2]))
+    for (uint32_t i = 0; i < v->transaction.sections.sectionLen; i++) {
+        const uint8_t discriminant = *(ctx->buffer + ctx->offset);
+        switch (discriminant) {
+            case DISCRIMINANT_DATA:
+                CHECK_ERROR(readDataSection(ctx, &v->transaction.sections.data))
+                break;
+
+            case DISCRIMINANT_EXTRA_DATA:
+                CHECK_ERROR(readExtraDataSection(ctx, &v->transaction.sections.extraData))
+                break;
+
+            case DISCRIMINANT_CODE:
+                CHECK_ERROR(readCodeSection(ctx, &v->transaction.sections.code))
+                break;
+
+            case DISCRIMINANT_SIGNATURE:
+                CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[0]))
+                break;
+            default:
+                return parser_unexpected_field;
+        }
+    }
 
     return parser_ok;
 }
@@ -429,14 +472,14 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         return parser_unexpected_error;
     }
 
-    CHECK_ERROR(readTransactionType(txObj->transaction.sections.code, &txObj->typeTx))
+    CHECK_ERROR(readTransactionType(txObj->transaction.sections.code.bytes, &txObj->typeTx))
     switch (txObj->typeTx) {
         case Bond:
         case Unbond:
-            CHECK_ERROR(readBondUnbondTxn(&txObj->transaction.sections.data, txObj))
+            CHECK_ERROR(readBondUnbondTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case Transfer:
-            CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data, txObj))
+            CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         // case InitAccount:
         //     CHECK_ERROR(readInitAccountTxn(&v->innerTx.data, v))

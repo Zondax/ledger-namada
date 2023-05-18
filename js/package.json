@@ -19,7 +19,14 @@
     "Namada"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "copy-files": "copyfiles -u 0 src/**/*.proto dist/",
+    "test:integration": "yarn build && jest -t 'Integration'",
+    "test:key-derivation": "yarn build && jest -t 'KeyDerivation'",
+    "supported": "ts-node src/cmd/cli.ts supported",
+    "linter": "eslint --max-warnings 0 .",
+    "linter:fix": "yarn linter --fix",
+    "format": "prettier -w ."
   },
   "bugs": {
     "url": "https://github.com/zondax/ledger-namada/issues"

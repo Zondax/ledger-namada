@@ -69,6 +69,10 @@ uint8_t *tx_get_buffer() {
     return buffering_get_buffer()->data;
 }
 
+parser_tx_t* tx_get_txObject() {
+    return &tx_obj;
+}
+
 const char *tx_parse() {
     MEMZERO(&tx_obj, sizeof(tx_obj));
 

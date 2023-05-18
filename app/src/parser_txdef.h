@@ -38,14 +38,7 @@ typedef struct {
 } signature_section_t;
 
 typedef struct {
-    /* data */
-} proof_of_work_section_t;
-
-typedef struct {
-    /* data */
-} encrypted_section_t;
-
-typedef struct {
+    bytes_t bytes;
     fees_t fees;
     bytes_t pubkey;
     uint64_t epoch;
@@ -55,9 +48,16 @@ typedef struct {
 } header_t;
 
 typedef struct {
-    bytes_t extraData;
-    bytes_t data;
-    bytes_t code;
+    uint8_t discriminant;
+    bytes_t salt;
+    bytes_t bytes;
+} section_t;
+
+typedef struct {
+    uint32_t sectionLen;
+    section_t data;
+    section_t extraData;
+    section_t code;
     signature_section_t signatures[3];
 } sections_t;
 typedef struct {
