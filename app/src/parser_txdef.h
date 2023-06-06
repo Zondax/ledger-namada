@@ -29,6 +29,10 @@ typedef struct {
     const char *symbol;
 } tokens_t;
 
+typedef struct {
+    uint8_t hash[SHA256_SIZE];
+    const char *text;
+} vp_types_t;
 // -----------------------------------------------------------------
 typedef struct {
     bytes_t hash;
@@ -75,6 +79,7 @@ typedef struct{
         tx_init_account_t initAccount;
         tx_withdraw_t withdraw;
         tx_init_validator_t initValidator;
+        tx_update_vp_t updateVp;
     };
 
     transaction_t transaction;

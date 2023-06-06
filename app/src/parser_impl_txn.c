@@ -27,14 +27,19 @@
 #define DISCRIMINANT_SIGNATURE 0x03
 
 
-static const uint8_t hash_transfer[] = {0xc6, 0x38, 0x68, 0xb8, 0x10, 0x27, 0x13, 0x77, 0x1b, 0xf4, 0xdb, 0x94, 0x51, 0x4b, 0x89, 0x23, 0x08, 0xbd, 0xa0, 0x74, 0x4c, 0x69, 0x1f, 0x55, 0xd6, 0xcb, 0xfd, 0xa5, 0xf5, 0x69, 0x8c, 0x09};
 static const uint8_t hash_bond[] = {0x21, 0xc6, 0x3b, 0x00, 0xf0, 0x18, 0x63, 0x9a, 0xfa, 0xf0, 0xe3, 0x20, 0xe1, 0x68, 0x4b, 0xf0, 0x0a, 0x54, 0x01, 0x0a, 0x28, 0x2b, 0xde, 0x66, 0xcf, 0x64, 0x23, 0xcb, 0x49, 0x3d, 0x26, 0xb6};
 static const uint8_t hash_unbond[] = {0xfc, 0x56, 0xa1, 0x7b, 0x2b, 0x43, 0x3d, 0x8a, 0x70, 0x2d, 0x04, 0xe2, 0xa0, 0x57, 0x73, 0x19, 0xfe, 0x54, 0x4b, 0xf8, 0x66, 0xc5, 0x98, 0x45, 0xd2, 0x83, 0x70, 0xec, 0x59, 0x31, 0xc1, 0x5e};
-
-// Update these hashes
-// static const uint8_t hash_init_account[] = {0x2b ,0x00 ,0x2a ,0x75 ,0x1a ,0xea ,0x6f ,0xf1 ,0x46 ,0x08 ,0x03 ,0xed ,0xdb ,0x05 ,0xbf ,0x20 ,0x3c ,0xe2 ,0xf7 ,0x46 ,0xd3 ,0xfa ,0xac ,0x13 ,0xb1 ,0x66 ,0x78 ,0x0a ,0xb2 ,0x7a ,0x0e ,0x7c};
-// static const uint8_t hash_withdraw[] = {0xa7 ,0x44 ,0xc3 ,0x61 ,0xe4 ,0xab ,0xec ,0x97 ,0x5a ,0x3f ,0xaf ,0x79 ,0x02 ,0xf2 ,0x6a ,0x42 ,0xb8 ,0x22 ,0x0f ,0x80 ,0x9a ,0x3c ,0x6b ,0x65 ,0x01 ,0x8e ,0xfc ,0x2c ,0x28 ,0xd8 ,0x88 ,0x48};
-// static const uint8_t hash_init_validator[] = {0xd1 ,0xd9 ,0xad ,0x36 ,0x48 ,0x9a ,0xbf ,0x1b ,0x15 ,0x91 ,0xeb ,0x3b ,0x35 ,0x6e ,0xcb ,0x19 ,0xf7 ,0x04 ,0x67 ,0x7c ,0xb1 ,0x28 ,0xf3 ,0xb8 ,0x16 ,0x78 ,0xeb ,0xf2 ,0x76 ,0x1b ,0xcb ,0xab};
+//static const uint8_t hash_ibc[] = {0x0f, 0x7b, 0x3e, 0x11, 0xf1, 0x3b, 0xe3, 0xef, 0x99, 0x82, 0x9d, 0x84, 0xa6, 0x75, 0xbb, 0x97, 0x13, 0x3c, 0x0f, 0x69, 0xb2, 0xcf, 0xfe, 0x8d, 0x6b, 0x02, 0x8c, 0x5a, 0x38, 0x1b, 0x46, 0x2e};
+static const uint8_t hash_init_account[] = {0x2d, 0x7d, 0x19, 0xf, 0x5f, 0xc3, 0x5a, 0xf1, 0xfc, 0x1e, 0x28, 0x27, 0x4, 0x29, 0x3a, 0x27, 0x18, 0xaf, 0x38, 0x8a, 0x54, 0x72, 0x7f, 0xbf, 0xf8, 0xc9, 0xe7, 0x8d, 0xae, 0x7d, 0xe2, 0x46};
+static const uint8_t hash_init_validator[] = { 0xe9, 0x50, 0x87, 0xd4, 0xcd, 0x16, 0xd6, 0xe5, 0x22, 0x75, 0x27, 0xe8, 0x15, 0xe4, 0xc6, 0x0, 0xbc, 0x66, 0x3a, 0x1a, 0xcd, 0x6d, 0x32, 0xb3, 0x3e, 0xef, 0xff, 0xc3, 0xff, 0xee, 0x3d, 0x36};
+static const uint8_t hash_transfer[] = {0xc6, 0x38, 0x68, 0xb8, 0x10, 0x27, 0x13, 0x77, 0x1b, 0xf4, 0xdb, 0x94, 0x51, 0x4b, 0x89, 0x23, 0x08, 0xbd, 0xa0, 0x74, 0x4c, 0x69, 0x1f, 0x55, 0xd6, 0xcb, 0xfd, 0xa5, 0xf5, 0x69, 0x8c, 0x09};
+static const uint8_t hash_update_vp[] = {0x83, 0x78, 0x7c, 0xfe, 0xc2, 0xb8, 0xf3, 0xc7, 0x32, 0x90, 0xb, 0x5b, 0xcd, 0x3a, 0x1a, 0x8a, 0x66, 0x29, 0x91, 0x5d, 0xb0, 0x64, 0xd7, 0x45, 0xc, 0xd, 0xa8, 0x1, 0x3, 0x9a, 0x86, 0xe5};
+static const uint8_t hash_withdraw[] = {0x78, 0x70, 0x1e, 0xa2, 0x44, 0x1e, 0xf2, 0x7b, 0xa7, 0xbf, 0x86, 0x5a, 0xda, 0x8b, 0x7e, 0x66, 0x73, 0x9d, 0x50, 0x6d, 0xef, 0x8d, 0x93, 0x93, 0x26, 0xa0, 0x32, 0xcc, 0x0f, 0xbc, 0x54, 0xec};
+// Update VP types
+static const vp_types_t vp_user = {
+        {0x74, 0x22, 0xae, 0x02, 0x3f, 0x42, 0x0d, 0x62, 0x91, 0x5a, 0x89, 0x24, 0x50, 0x43, 0x7e, 0xda, 0x3c, 0x60, 0x58, 0xa8, 0x64, 0x35, 0x07, 0xd9, 0x2f, 0xa0, 0x75, 0xfb, 0x11, 0xce, 0x37, 0x95},
+        "User"
+};
 
 // Add blindsigning code hash
 
@@ -72,6 +77,21 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
             *symbol = (char*) PIC(nam_tokens[i].symbol);
             return parser_ok;
         }
+    }
+
+    return parser_unexpected_value;
+}
+
+parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text) {
+    if (vp_type_hash == NULL || vp_type_text == NULL) {
+        return parser_unexpected_value;
+    }
+
+    // Type is User
+    if (!memcmp(vp_type_hash->ptr, vp_user.hash, SHA256_SIZE))
+    {
+        *vp_type_text = (char*) PIC(vp_user.text);
+        return parser_ok;
     }
 
     return parser_unexpected_value;
@@ -142,31 +162,44 @@ static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *
         *type = Transfer;
         return parser_ok;
     }
-    #if 0
+
+
     // Init account
     if (!memcmp(codeHash.ptr, hash_init_account, SHA256_SIZE)) {
         *type = InitAccount;
         return parser_ok;
     }
-    // Withdraw
-    if (!memcmp(codeHash.ptr, hash_withdraw, SHA256_SIZE)) {
-        *type = Withdraw;
-        return parser_ok;
-    }
+
     // Init validator
     if (!memcmp(codeHash.ptr, hash_init_validator, SHA256_SIZE)) {
         *type = InitValidator;
         return parser_ok;
     }
-    #endif
+
+    // Withdraw
+    if (!memcmp(codeHash.ptr, hash_withdraw, SHA256_SIZE)) {
+        *type = Withdraw;
+        return parser_ok;
+    }
+
+    // Update VP
+    if (!memcmp(codeHash.ptr,hash_update_vp,SHA256_SIZE))
+    {
+        *type = UpdateVP;
+        return parser_ok;
+    }
 
     *type = Unknown;
     return parser_unexpected_method;
 }
 
-#if 0
-static parser_error_t readInitValidatorTxn(bytes_t *buffer, parser_tx_t *v) {
-    parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
+static parser_error_t readInitValidatorTxn(bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
+            .bufferLen = extra_data->len,
+            .offset = 0,
+            .tx_obj = NULL};
 
     v->initValidator.account_key.len = 33;
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.account_key.ptr, v->initValidator.account_key.len))
@@ -180,6 +213,18 @@ static parser_error_t readInitValidatorTxn(bytes_t *buffer, parser_tx_t *v) {
     v->initValidator.dkg_key.len = 100; //Check this size. Is fixed?
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.dkg_key.ptr, v->initValidator.dkg_key.len))
 
+    // Commission rate
+    CHECK_ERROR(readDecimal(&ctx, &v->initValidator.commission_rate));
+
+    // Max commission rate change
+    CHECK_ERROR(readDecimal(&ctx, &v->initValidator.max_commission_rate_change));
+
+    // VP code hash
+    v->initValidator.vp_type_hash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&extra_data_ctx, &v->initValidator.vp_type_hash.ptr, v->initValidator.vp_type_hash.len))
+    // Get text from hash
+    CHECK_ERROR(readVPType(&v->initValidator.vp_type_hash, &v->initValidator.vp_type_text))
+
     // Skip the rest of the fields
     ctx.offset = ctx.bufferLen;
 
@@ -189,8 +234,8 @@ static parser_error_t readInitValidatorTxn(bytes_t *buffer, parser_tx_t *v) {
     return parser_ok;
 }
 
-static parser_error_t readInitAccountTxn(bytes_t *buffer, parser_tx_t *v) {
-    parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
+static parser_error_t readInitAccountTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Pubkey
     if (ctx.bufferLen != 33) {
@@ -210,7 +255,7 @@ static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
 
     // Validator
     v->withdraw.validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->bond.validator.ptr, v->bond.validator.len))
+    CHECK_ERROR(readBytes(&ctx, &v->withdraw.validator.ptr, v->withdraw.validator.len))
 
     ctx.offset++;  // Skip byte --> Check this
 
@@ -226,7 +271,33 @@ static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
     }
     return parser_ok;
 }
-#endif
+
+static parser_error_t readUpdateVPTxn(const bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
+                                       .bufferLen = extra_data->len,
+                                       .offset = 0,
+                                       .tx_obj = NULL};
+
+    // Address
+    v->updateVp.address.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->updateVp.address.ptr, v->updateVp.address.len))
+
+    // VP code hash
+    v->updateVp.vp_type_hash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&extra_data_ctx, &v->updateVp.vp_type_hash.ptr, v->updateVp.vp_type_hash.len))
+    // Get text from hash
+    CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
+
+    ctx.offset += 32; // TODO: check this
+
+    if ((ctx.offset != ctx.bufferLen) || (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
 
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
@@ -353,6 +424,9 @@ static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *ext
         return parser_unexpected_value;
     }
     CHECK_ERROR(readSalt(ctx, &extraData->salt))
+    // TODO Check this byte
+    uint8_t hashType = 0;
+    CHECK_ERROR(readByte(ctx, &hashType))
     extraData->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &extraData->bytes.ptr, extraData->bytes.len))
 
@@ -481,15 +555,18 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         case Transfer:
             CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
-        // case InitAccount:
-        //     CHECK_ERROR(readInitAccountTxn(&v->innerTx.data, v))
-        //     break;
-        // case Withdraw:
-        //     CHECK_ERROR(readWithdrawTxn(&v->innerTx.data, v))
-        //     break;
-        // case InitValidator:
-        //     CHECK_ERROR(readInitValidatorTxn(&v->innerTx.data, v))
-        //     break;
+        case InitAccount:
+             CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes, txObj))
+             break;
+        case Withdraw:
+             CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
+             break;
+        case InitValidator:
+             CHECK_ERROR(readInitValidatorTxn(&txObj->transaction.sections.data.bytes, &txObj->transaction.sections.extraData.bytes,txObj))
+             break;
+        case UpdateVP:
+            CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, &txObj->transaction.sections.extraData.bytes, txObj))
+            break;
         default:
             return parser_unexpected_method;
     }

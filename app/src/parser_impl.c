@@ -61,6 +61,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS);
             break;
 
+        case UpdateVP:
+            *numItems = (app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS);
+
+
         default:
             break;
     }

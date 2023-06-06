@@ -44,6 +44,12 @@ typedef enum {
     Unknown,
 } transaction_type_e;
 
+// Structure to match the Rust serialized Decimal format
+typedef struct {
+    int64_t num;
+    uint32_t scale;
+} serialized_decimal;
+
 typedef struct {
     const uint8_t *ptr;
     uint32_t len;
@@ -57,6 +63,7 @@ typedef struct {
 
 typedef struct {
     bytes_t pubkey;
+    bytes_t vp_code_hash;
 } tx_init_account_t;
 
 typedef struct {
@@ -65,6 +72,7 @@ typedef struct {
     uint8_t has_source;
     bytes_t source;
 } tx_bond_t;
+
 typedef struct {
     bytes_t validator;
     uint8_t has_source;
@@ -76,10 +84,17 @@ typedef struct {
     bytes_t consensus_key;
     bytes_t protocol_key;
     bytes_t dkg_key;
-    // commission rate
-    // max commission rate change
-    // validator VP
+    serialized_decimal commission_rate;
+    serialized_decimal max_commission_rate_change;
+    bytes_t vp_type_hash;
+    const char* vp_type_text;
 } tx_init_validator_t;
+
+typedef struct {
+    bytes_t address;
+    bytes_t vp_type_hash;
+    const char* vp_type_text;
+} tx_update_vp_t;
 
 typedef struct {
     bytes_t source;

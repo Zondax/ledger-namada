@@ -114,7 +114,6 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-#if 0
 static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
                                             uint8_t displayIdx,
                                             char *outKey, uint16_t outKeyLen,
@@ -127,7 +126,7 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Reveal Pubkey");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->innerTx.code, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -139,7 +138,7 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             break;
         default:
             if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
+                return parser_display_idx_out_of_range;
             }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
@@ -148,11 +147,61 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
+parser_error_t printVPTypeHash(bytes_t *codeHash,
+                             char *outKey, uint16_t outKeyLen,
+                             char *outVal, uint16_t outValLen,
+                             uint8_t pageIdx, uint8_t *pageCount) {
+
+    char hexString[65] = {0};
+    snprintf(outKey, outKeyLen, "VP type");
+    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
+    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
+static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
+                                       uint8_t displayIdx,
+                                       char *outKey, uint16_t outKeyLen,
+                                       char *outVal, uint16_t outValLen,
+                                       uint8_t pageIdx, uint8_t *pageCount){
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Update VP");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Address");
+            CHECK_ERROR(printAddress(ctx->tx_obj->updateVp.address, outVal, outValLen, pageIdx, pageCount))
+            break;
+        case 2:
+            snprintf(outKey, outKeyLen, "VP type");
+            pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
+            if (app_mode_expert()) {
+                CHECK_ERROR(printVPTypeHash(&ctx->tx_obj->updateVp.vp_type_hash, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        default:
+            if (!app_mode_expert()) {
+                return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 3;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
 static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
-                                            uint8_t displayIdx,
-                                            char *outKey, uint16_t outKeyLen,
-                                            char *outVal, uint16_t outValLen,
-                                            uint8_t pageIdx, uint8_t *pageCount) {
+                                              uint8_t displayIdx,
+                                              char *outKey, uint16_t outKeyLen,
+                                              char *outVal, uint16_t outValLen,
+                                              uint8_t pageIdx, uint8_t *pageCount) {
 
     char hexString[205] = {0};
     switch (displayIdx) {
@@ -160,7 +209,7 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init Validator");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->innerTx.code, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -190,17 +239,23 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             break;
         case 5:
             snprintf(outKey, outKeyLen, "Commission rate");
+            CHECK_ERROR(printDecimal(ctx->tx_obj->initValidator.commission_rate, outVal, outValLen, pageIdx, pageCount))
             break;
         case 6:
-            snprintf(outKey, outKeyLen, "Maximmum commission rate change");
+            snprintf(outKey, outKeyLen, "Maximum commission rate change");
+            CHECK_ERROR(printDecimal(ctx->tx_obj->initValidator.max_commission_rate_change, outVal, outValLen, pageIdx, pageCount))
             break;
         case 7:
-            snprintf(outKey, outKeyLen, "Validator VP type");
-            snprintf(outVal, outValLen, "User");
+            snprintf(outKey, outKeyLen, "VP type");
+            pageString(outVal, outValLen,ctx->tx_obj->initValidator.vp_type_text, pageIdx, pageCount);
+            if (app_mode_expert()) {
+                CHECK_ERROR(printVPTypeHash(&ctx->tx_obj->initValidator.vp_type_hash, outKey, outKeyLen,
+                                            outVal, outValLen, pageIdx, pageCount))
+            }
             break;
         default:
             if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
+                return parser_display_idx_out_of_range;
             }
             displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
@@ -209,7 +264,6 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
-// ------------------------------
 
 static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
@@ -227,7 +281,7 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Withdraw");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->innerTx.code, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -252,7 +306,7 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
 
     return parser_ok;
 }
-#endif
+
 
 parser_error_t printTxnFields(const parser_context_t *ctx,
                               uint8_t displayIdx,
@@ -268,14 +322,17 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
         case Transfer:
             return printTransferTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-        // case InitAccount:
-        //     return printInitAccountTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        case InitAccount:
+             return printInitAccountTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-        // case Withdraw:
-        //     return printWithdrawTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        case Withdraw:
+             return printWithdrawTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-        // case InitValidator:
-        //     return printInitValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        case InitValidator:
+             return printInitValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case UpdateVP:
+            return printUpdateVPTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         default:
             break;
