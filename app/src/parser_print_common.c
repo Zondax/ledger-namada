@@ -90,6 +90,17 @@ parser_error_t printAmount( uint64_t amount, const char* symbol,
     return parser_ok;
 }
 
+parser_error_t printVPTypeHash(bytes_t *codeHash,
+                               char *outVal, uint16_t outValLen,
+                               uint8_t pageIdx, uint8_t *pageCount) {
+
+    char hexString[65] = {0};
+    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
+    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
 void decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
     if (strDec == NULL || bufferSize == 0) {
         return; // Invalid output buffer
@@ -119,17 +130,17 @@ void decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferS
     if (integerPart == 0) {
         strDec[index++] = '0';
     } else {
-        int64_t temp = integerPart;
-        while (temp > 0 && index < bufferSize - 1) {
-            strDec[index++] = '0' + (temp % 10);
-            temp /= 10;
+        int64_t tmp_int = integerPart;
+        while (tmp_int > 0 && index < bufferSize - 1) {
+            strDec[index++] = '0' + (tmp_int % 10);
+            tmp_int /= 10;
         }
 
         // Reverse the integer part
         for (size_t i = (num < 0) ? 1 : 0, j = index - 1; i < j; i++, j--) {
-            char temp = strDec[i];
+            char tmp_char = strDec[i];
             strDec[i] = strDec[j];
-            strDec[j] = temp;
+            strDec[j] = tmp_char;
         }
     }
 
@@ -154,7 +165,7 @@ parser_error_t printDecimal( const serialized_decimal decimal,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
     char strDec[100] = {0};
-    decimal_to_string(decimal.num, decimal.scale, &strDec, 100);
+    decimal_to_string(decimal.num, decimal.scale, (char*) strDec, 100);
     number_inplace_trimming(strDec, 1);
     pageString(outVal, outValLen, strDec, pageIdx, pageCount);
 

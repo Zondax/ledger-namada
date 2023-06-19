@@ -21,7 +21,7 @@
 #include "parser_impl_common.h"
 
 parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
-    CHECK_ERROR(readTimestamp(ctx, &v->transaction.timestamp))
+
     CHECK_ERROR(readHeader(ctx, v))
     CHECK_ERROR(readSections(ctx, v))
 
@@ -45,12 +45,31 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
             break;
 
+        case Custom:
+            *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
+            break;
+
         case Transfer:
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             break;
 
         case InitAccount:
             *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
+            break;
+
+#if(0)
+        case InitProposal:
+            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
+            break;
+#endif
+        case VoteProposal:
+        {
+            uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
+            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators;
+            break;
+        }
+        case RevealPubkey:
+            *numItems = (app_mode_expert() ? REVEAL_PUBKEY_EXPERT_PARAMS : REVEAL_PUBKEY_NORMAL_PARAMS);
             break;
 
         case Withdraw:
@@ -63,7 +82,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case UpdateVP:
             *numItems = (app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS);
-
+            break;
 
         default:
             break;

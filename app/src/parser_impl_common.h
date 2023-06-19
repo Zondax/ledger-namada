@@ -27,11 +27,23 @@ extern "C" {
 #define BOND_NORMAL_PARAMS  3
 #define BOND_EXPERT_PARAMS  8
 
-#define INIT_ACCOUNT_NORMAL_PARAMS  2
-#define INIT_ACCOUNT_EXPERT_PARAMS  7
+#define CUSTOM_NORMAL_PARAMS  0
+#define CUSTOM_EXPERT_PARAMS  6
+
+#define INIT_ACCOUNT_NORMAL_PARAMS  3
+#define INIT_ACCOUNT_EXPERT_PARAMS  8
+
+#define INIT_PROPOSAL_NORMAL_PARAMS  15
+#define INIT_PROPOSAL_EXPERT_PARAMS  20
+
+#define VOTE_PROPOSAL_NORMAL_PARAMS 4
+#define VOTE_PROPOSAL_EXPERT_PARAMS 9
 
 #define INIT_VALIDATOR_NORMAL_PARAMS  8
 #define INIT_VALIDATOR_EXPERT_PARAMS  13
+
+#define REVEAL_PUBKEY_NORMAL_PARAMS  2
+#define REVEAL_PUBKEY_EXPERT_PARAMS  7
 
 #define TRANSFER_NORMAL_PARAMS  4
 #define TRANSFER_EXPERT_PARAMS  9
@@ -56,7 +68,6 @@ parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLe
 
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
-parser_error_t readTimestamp(parser_context_t *ctx, bytes_t *timestamp);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
 
 #ifdef __cplusplus

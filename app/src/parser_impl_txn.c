@@ -25,19 +25,41 @@
 #define DISCRIMINANT_EXTRA_DATA 0x01
 #define DISCRIMINANT_CODE 0x02
 #define DISCRIMINANT_SIGNATURE 0x03
+#define DISCRIMINANT_CIPHERTEXT 0x04
+#define DISCRIMINANT_MASP_TX 0x05
+#define DISCRIMINANT_MASP_BUILDER 0x06
 
 
-static const uint8_t hash_bond[] = {0x21, 0xc6, 0x3b, 0x00, 0xf0, 0x18, 0x63, 0x9a, 0xfa, 0xf0, 0xe3, 0x20, 0xe1, 0x68, 0x4b, 0xf0, 0x0a, 0x54, 0x01, 0x0a, 0x28, 0x2b, 0xde, 0x66, 0xcf, 0x64, 0x23, 0xcb, 0x49, 0x3d, 0x26, 0xb6};
-static const uint8_t hash_unbond[] = {0xfc, 0x56, 0xa1, 0x7b, 0x2b, 0x43, 0x3d, 0x8a, 0x70, 0x2d, 0x04, 0xe2, 0xa0, 0x57, 0x73, 0x19, 0xfe, 0x54, 0x4b, 0xf8, 0x66, 0xc5, 0x98, 0x45, 0xd2, 0x83, 0x70, 0xec, 0x59, 0x31, 0xc1, 0x5e};
-//static const uint8_t hash_ibc[] = {0x0f, 0x7b, 0x3e, 0x11, 0xf1, 0x3b, 0xe3, 0xef, 0x99, 0x82, 0x9d, 0x84, 0xa6, 0x75, 0xbb, 0x97, 0x13, 0x3c, 0x0f, 0x69, 0xb2, 0xcf, 0xfe, 0x8d, 0x6b, 0x02, 0x8c, 0x5a, 0x38, 0x1b, 0x46, 0x2e};
-static const uint8_t hash_init_account[] = {0x2d, 0x7d, 0x19, 0xf, 0x5f, 0xc3, 0x5a, 0xf1, 0xfc, 0x1e, 0x28, 0x27, 0x4, 0x29, 0x3a, 0x27, 0x18, 0xaf, 0x38, 0x8a, 0x54, 0x72, 0x7f, 0xbf, 0xf8, 0xc9, 0xe7, 0x8d, 0xae, 0x7d, 0xe2, 0x46};
-static const uint8_t hash_init_validator[] = { 0xe9, 0x50, 0x87, 0xd4, 0xcd, 0x16, 0xd6, 0xe5, 0x22, 0x75, 0x27, 0xe8, 0x15, 0xe4, 0xc6, 0x0, 0xbc, 0x66, 0x3a, 0x1a, 0xcd, 0x6d, 0x32, 0xb3, 0x3e, 0xef, 0xff, 0xc3, 0xff, 0xee, 0x3d, 0x36};
-static const uint8_t hash_transfer[] = {0xc6, 0x38, 0x68, 0xb8, 0x10, 0x27, 0x13, 0x77, 0x1b, 0xf4, 0xdb, 0x94, 0x51, 0x4b, 0x89, 0x23, 0x08, 0xbd, 0xa0, 0x74, 0x4c, 0x69, 0x1f, 0x55, 0xd6, 0xcb, 0xfd, 0xa5, 0xf5, 0x69, 0x8c, 0x09};
-static const uint8_t hash_update_vp[] = {0x83, 0x78, 0x7c, 0xfe, 0xc2, 0xb8, 0xf3, 0xc7, 0x32, 0x90, 0xb, 0x5b, 0xcd, 0x3a, 0x1a, 0x8a, 0x66, 0x29, 0x91, 0x5d, 0xb0, 0x64, 0xd7, 0x45, 0xc, 0xd, 0xa8, 0x1, 0x3, 0x9a, 0x86, 0xe5};
-static const uint8_t hash_withdraw[] = {0x78, 0x70, 0x1e, 0xa2, 0x44, 0x1e, 0xf2, 0x7b, 0xa7, 0xbf, 0x86, 0x5a, 0xda, 0x8b, 0x7e, 0x66, 0x73, 0x9d, 0x50, 0x6d, 0xef, 0x8d, 0x93, 0x93, 0x26, 0xa0, 0x32, 0xcc, 0x0f, 0xbc, 0x54, 0xec};
+static const uint8_t hash_bond[] = {0x06, 0xa9, 0x07, 0xd1, 0x83, 0x74, 0x4b, 0x4b, 0xf8, 0x26, 0xa6, 0xfa, 0xb4, 0xf3, 0x0a, 0x9e, 0x8c, 0x7, 0x84, 0xf5, 0xf8, 0x37, 0xfc, 0x78, 0x34, 0x42, 0x0d, 0x3e, 0xba, 0x7f, 0xd5, 0xc0};
+static const uint8_t hash_unbond[] = {0x3f, 0xd3, 0x50, 0x60, 0x9d, 0x98, 0x86, 0x48, 0xdf, 0xac, 0x86, 0x90, 0xe4, 0x37, 0x82, 0x12, 0x12, 0xf3, 0xe9, 0x5f, 0x3f, 0x14, 0xcf, 0x78, 0x67, 0x9e, 0x10, 0xd1, 0xb3, 0x5f, 0xb5, 0xfc};
+static const uint8_t hash_custom[] = {0xc2, 0x40, 0x33, 0xc0, 0xa3, 0xaf, 0x1a, 0xaf, 0x6f, 0xaa, 0x82, 0xae, 0x1, 0xae, 0x9f, 0xb4, 0x6f, 0x52, 0x41, 0xe3, 0x9b, 0xaf, 0xae, 0xff, 0xdd, 0x47, 0x18, 0x55, 0xe7, 0xaf, 0xab, 0x4a};
+static const uint8_t hash_init_account[] = {0x36, 0xb6, 0xb9, 0x76, 0x92, 0xbb, 0x9d, 0xd3, 0xe8, 0xe3, 0xcc, 0x68, 0xf9, 0xe3, 0xf1, 0x9, 0x86, 0x45, 0xb3, 0xa3, 0xf4, 0x3e, 0x3e, 0x25, 0x96, 0xc9, 0x4b, 0x84, 0xcf, 0x8, 0x36, 0xa4};
+#if(0)
+static const uint8_t hash_init_proposal[] ={0xb5, 0x43, 0xd9, 0xba, 0x1f, 0x37, 0x00, 0xb4, 0x74, 0xe4, 0x88, 0x51, 0x44, 0x2a, 0x4e, 0xa7, 0xd5, 0xab, 0xaf, 0x2f, 0xcf, 0xb1, 0x4c, 0x2d, 0xf4, 0xad, 0xc8, 0x1b, 0x08, 0xd5, 0x44, 0x92};
+#endif
+static const uint8_t hash_vote_proposal[] = {0xd6, 0xf2, 0xe7, 0x29, 0xa9, 0x9f, 0xd7, 0xea, 0x1a, 0x20, 0xd7, 0x9e, 0x6f, 0x3, 0xfc, 0x98, 0x81, 0xbb, 0x1a, 0x7, 0xc, 0xac, 0xd, 0x17, 0x6d, 0xf1, 0xbf, 0x99, 0x5d, 0xd7, 0xb6, 0x23};
+static const uint8_t hash_init_validator[] = {0x5f, 0xb7, 0xa6, 0xcd, 0x6f, 0x4c, 0x6e, 0x83, 0x77, 0x98, 0xc3, 0xa9, 0x99, 0x40, 0x3d, 0x76, 0x76, 0x61, 0xe6, 0x59, 0xe7, 0xc1, 0xa5, 0x64, 0x6f, 0x5c, 0x72, 0x54, 0xd2, 0x5b, 0x9f, 0xc9};
+static const uint8_t hash_reveal_pubkey[] ={0x2c, 0x31, 0x46, 0xf9, 0xa8, 0x30, 0xd8, 0xa4, 0xbe, 0xbc, 0xe3, 0x1c, 0xe0, 0xf8, 0x97, 0x74, 0x36, 0x46, 0xee, 0xab, 0x84, 0xa2, 0x42, 0x1a, 0x36, 0x5d, 0xe2, 0xcc, 0xd8, 0xf1, 0x50, 0x4a};
+static const uint8_t hash_transfer[] = {0xeb, 0xa, 0xde, 0x49, 0xc1, 0x3c, 0xa1, 0x2b, 0x3b, 0x82, 0x4c, 0x67, 0xc4, 0x81, 0xf8, 0x6a, 0x36, 0x53, 0x6f, 0x56, 0x88, 0x4b, 0xef, 0x66, 0x4f, 0x2b, 0x6, 0x5c, 0xec, 0xa9, 0xe1, 0xc6};
+static const uint8_t hash_update_vp[] = {0xe, 0x44, 0xd6, 0x57, 0x1a, 0x4, 0xe6, 0xda, 0x2b, 0x34, 0x7a, 0xc6, 0xee, 0x49, 0xa2, 0xb9, 0x53, 0x6a, 0x6e, 0x33, 0x76, 0x3f, 0x8, 0xec, 0x2, 0x8f, 0x68, 0xaf, 0x33, 0xdc, 0x80, 0x36};
+static const uint8_t hash_withdraw[] = {0x07, 0xba, 0xdb, 0xcd, 0x85, 0xfe, 0x23, 0xd4, 0xac, 0xa8, 0xa3, 0xca, 0x1e, 0xd4, 0xfc, 0x91, 0x9f, 0x72, 0xa6, 0xac, 0x81, 0x9f, 0xc2, 0xf1, 0xc1, 0xea, 0x9e, 0x68, 0xd2, 0x32, 0xf6, 0xd0};
+
+#if(0)
+// The following are strings used for reading content for init proposal
+static const uint8_t proposal_abstract[] ={ 0x61, 0x62, 0x73, 0x74, 0x72, 0x61, 0x63, 0x74};
+static const uint8_t proposal_authors[] = { 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x73};
+static const uint8_t proposal_created[] ={ 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64};
+static const uint8_t proposal_details[] = { 0x64, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73};
+static const uint8_t proposal_discussions_to[] = { 0x64, 0x69, 0x73, 0x63, 0x75, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x2d, 0x74, 0x6f};
+static const uint8_t proposal_license[] ={ 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65};
+static const uint8_t proposal_motivation[] ={ 0x6d, 0x6f, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e};
+static const uint8_t proposal_requires[] ={ 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x73};
+static const uint8_t proposal_title[] ={ 0x74, 0x69, 0x74, 0x6c, 0x65};
+#endif
+
 // Update VP types
 static const vp_types_t vp_user = {
-        {0x74, 0x22, 0xae, 0x02, 0x3f, 0x42, 0x0d, 0x62, 0x91, 0x5a, 0x89, 0x24, 0x50, 0x43, 0x7e, 0xda, 0x3c, 0x60, 0x58, 0xa8, 0x64, 0x35, 0x07, 0xd9, 0x2f, 0xa0, 0x75, 0xfb, 0x11, 0xce, 0x37, 0x95},
+        {0xea, 0x33, 0xf4, 0xff, 0x36, 0x8b, 0x85, 0x89, 0x3a, 0xb0, 0x79, 0x25, 0x69, 0x31, 0xa, 0x18, 0x39, 0x71, 0xfe, 0x99, 0x3f, 0xa8, 0x1b, 0xc3, 0x38, 0xe0, 0x36, 0x5c, 0xbc, 0xf8, 0x16, 0xad},
         "User"
 };
 
@@ -96,6 +118,158 @@ parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text
 
     return parser_unexpected_value;
 }
+#if(0)
+parser_error_t readProposalContent(parser_context_t *ctx, parser_tx_t *v) {
+
+    // Read the number of elements in the content
+    uint32_t num_items = 0;
+    CHECK_ERROR(readUint32(ctx, &num_items))
+
+    uint32_t field_name_length = 0;
+    uint8_t *field_name_ptr = NULL;
+
+    while ( num_items > 0 ){
+        // Read length of json field name
+        CHECK_ERROR(readUint32(ctx, &field_name_length))
+
+        // Read content abstract
+        CHECK_ERROR(readBytes(ctx, &field_name_ptr,field_name_length ))
+
+        // Abstract
+        if (!memcmp(field_name_ptr, proposal_abstract, field_name_length)) {
+            // Read length abstract
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.abstract.len))
+
+            // Read abstract
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.abstract.ptr,v->initProposal.content.abstract.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Authors
+        else if (!memcmp(field_name_ptr, proposal_authors, field_name_length)) {
+            // Read length authors
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.authors.len))
+
+            // Read authors
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.authors.ptr,v->initProposal.content.authors.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Created
+        else if (!memcmp(field_name_ptr, proposal_created, field_name_length)) {
+            // Read length of created
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.created.len))
+
+            // Read created
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.created.ptr,v->initProposal.content.created.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Details
+        else if (!memcmp(field_name_ptr, proposal_details, field_name_length)) {
+            // Read length details
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.details.len))
+
+            // Read details
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.details.ptr,v->initProposal.content.details.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Discussions to
+        else if (!memcmp(field_name_ptr, proposal_discussions_to, field_name_length)) {
+            // Read length discussions_to
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.discussions_to.len))
+
+            // Read discussions_to
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.discussions_to.ptr,
+                                  v->initProposal.content.discussions_to.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // License
+        else if (!memcmp(field_name_ptr, proposal_license, field_name_length)) {
+            // Read length license
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.license.len))
+
+            // Read license
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.license.ptr,
+                                  v->initProposal.content.license.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Motivation
+        else if (!memcmp(field_name_ptr, proposal_motivation, field_name_length)) {
+            // Read length motivation
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.motivation.len))
+
+            // Read motivation
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.motivation.ptr,
+                                  v->initProposal.content.motivation.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Require
+        else if (!memcmp(field_name_ptr, proposal_requires, field_name_length)) {
+            // Read length require
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.require.len))
+
+            // Read require
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.require.ptr,
+                                  v->initProposal.content.require.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        }
+
+        // Title
+        else if (!memcmp(field_name_ptr, proposal_title, field_name_length)) {
+            // Read length title
+            CHECK_ERROR(readUint32(ctx, &v->initProposal.content.title.len))
+
+            // Read title
+            CHECK_ERROR(readBytes(ctx, &v->initProposal.content.title.ptr,
+                                  v->initProposal.content.title.len ))
+
+            field_name_length = 0;
+            field_name_ptr = NULL;
+            num_items -= 1;
+            continue;
+        } else return parser_unexpected_value;
+    }
+
+    return parser_ok;
+}
+#endif
 
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen) {
     const uint8_t addressType = *pubkeyHash.ptr++;
@@ -157,12 +331,17 @@ static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *
         *type = Unbond;
         return parser_ok;
     }
+    // Custom
+    if (!memcmp(codeHash.ptr, hash_custom, SHA256_SIZE)) {
+        *type = Custom;
+        return parser_ok;
+    }
+
     // Transfer
     if (!memcmp(codeHash.ptr, hash_transfer, SHA256_SIZE)) {
         *type = Transfer;
         return parser_ok;
     }
-
 
     // Init account
     if (!memcmp(codeHash.ptr, hash_init_account, SHA256_SIZE)) {
@@ -170,9 +349,28 @@ static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *
         return parser_ok;
     }
 
+#if(0)
+    // Init proposal
+    if(!memcmp(codeHash.ptr, hash_init_proposal, SHA256_SIZE)){
+        *type = InitProposal;
+        return parser_ok;
+    }
+#endif
+    // Vote proposal
+    if(!memcmp(codeHash.ptr, hash_vote_proposal, SHA256_SIZE)){
+        *type = VoteProposal;
+        return parser_ok;
+    }
+
     // Init validator
     if (!memcmp(codeHash.ptr, hash_init_validator, SHA256_SIZE)) {
         *type = InitValidator;
+        return parser_ok;
+    }
+
+    // Reveal pubkey
+    if(!memcmp(codeHash.ptr, hash_reveal_pubkey, SHA256_SIZE)){
+        *type = RevealPubkey;
         return parser_ok;
     }
 
@@ -234,15 +432,155 @@ static parser_error_t readInitValidatorTxn(bytes_t *data,const bytes_t *extra_da
     return parser_ok;
 }
 
-static parser_error_t readInitAccountTxn(const bytes_t *data, parser_tx_t *v) {
+static parser_error_t readInitAccountTxn(const bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
+            .bufferLen = extra_data->len,
+            .offset = 0,
+            .tx_obj = NULL};
+    // Pubkey
+    v->initAccount.pubkey.len = 33;
+    CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkey.ptr, v->initAccount.pubkey.len))
+
+    // Skip leftover bytes
+    ctx.offset = ctx.bufferLen;
+
+    // VP code hash
+    v->initAccount.vp_type_hash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&extra_data_ctx, &v->initAccount.vp_type_hash.ptr, v->initAccount.vp_type_hash.len))
+    // Get text from hash
+    CHECK_ERROR(readVPType(&v->initAccount.vp_type_hash, &v->initAccount.vp_type_text))
+
+
+    if ((ctx.offset != ctx.bufferLen)|| (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+#if(0)
+static parser_error_t readInitProposalTxn(const bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
+            .bufferLen = extra_data->len,
+            .offset = 0,
+            .tx_obj = NULL};
+
+    ctx.offset += 5; // TODO: check this
+    // Read content
+    CHECK_ERROR(readProposalContent(&ctx, v))
+
+    v->initProposal.has_id = 0;
+    if ((ctx.bufferLen - ctx.offset) > ADDRESS_LEN_BYTES + 3*sizeof(uint64_t) + 33 ){ // TODO check this, what are the last 33 bytes?
+        v->initProposal.has_id = 1;
+        CHECK_ERROR(readUint32(&ctx, &v->initProposal.proposal_id.len));
+        CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_id.ptr, v->initProposal.proposal_id.len))
+    }
+
+    // Author, should be of length ADDRESS_LEN_BYTES
+    v->initProposal.author.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->initProposal.author.ptr, v->initProposal.author.len))
+
+    // Voting start epoch
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.voting_start_epoch))
+
+    // Voting end epoch
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.voting_end_epoch))
+
+    // Grace epoch
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.grace_epoch))
+
+    ctx.offset+=33; // TODO what are these leftover bytes?
+
+    // Proposal code
+    v->initProposal.proposal_code.len = SHA256_SIZE ;
+    CHECK_ERROR(readBytes(&extra_data_ctx, &v->initProposal.proposal_code.ptr,  v->initProposal.proposal_code.len))
+
+
+    if ((ctx.offset != ctx.bufferLen)|| (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+#endif
+
+static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Proposal ID
+    CHECK_ERROR(readUint64(&ctx, &v->voteProposal.proposal_id))
+
+    // Proposal vote
+    CHECK_ERROR(readByte(&ctx, &v->voteProposal.proposal_vote))
+
+    if (v->voteProposal.proposal_vote == Yay){
+        uint8_t vote_type = 0;
+        CHECK_ERROR(readByte(&ctx, &vote_type))
+        switch (vote_type) {
+            // Default
+            case 0:
+                break;
+
+            // PGFCouncil(HashSet<Council>)
+            case 1:
+                {
+                 uint32_t size_of_hashset = 0;
+                 CHECK_ERROR(readUint32(&ctx, &size_of_hashset))
+                 // A council consists of an Address (45 bytes) and an Amount (uint64)
+                 uint32_t size_of_council = ADDRESS_LEN_BYTES + sizeof(uint64_t);
+                 ctx.offset += size_of_hashset * size_of_council;
+                 break;
+                }
+
+            // ETHBridge(Signature)
+            case 2:
+            {
+                uint8_t signature_type = 0;
+                CHECK_ERROR(readByte(&ctx, &signature_type))
+                if(signature_type == 0){
+                    // Ed25519 the signature consists of r (32 bytes), s (32 bytes)
+                    ctx.offset += SIG_ED25519_LEN;
+                }
+                else if (signature_type == 1){
+                    // Secp256k1 the signature consists of r [u32; 8], s [u32; 8]
+                    // and the RecoveryId (1 byte)
+                    ctx.offset += 65;
+                } else return parser_unexpected_value;
+                break;
+            }
+            default:
+                return parser_unexpected_value;
+        }
+    }
+
+    // Voter, should be of length ADDRESS_LEN_BYTES
+    v->voteProposal.voter.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->voteProposal.voter.ptr, v->voteProposal.voter.len))
+
+    // Delegators
+    v->voteProposal.number_of_delegations = 0;
+    CHECK_ERROR(readUint32(&ctx, &v->voteProposal.number_of_delegations))
+    v->voteProposal.delegations.len = 0;
+    if (v->voteProposal.number_of_delegations > 0 ){
+        v->voteProposal.delegations.len = ADDRESS_LEN_BYTES*v->voteProposal.number_of_delegations;
+        CHECK_ERROR(readBytes(&ctx, &v->voteProposal.delegations.ptr, v->voteProposal.delegations.len))
+    }
+
+    if ((ctx.offset != ctx.bufferLen)) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Pubkey
     if (ctx.bufferLen != 33) {
         return parser_unexpected_value;
     }
-    v->initAccount.pubkey.len = 33;
-    CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkey.ptr, v->initAccount.pubkey.len))
+    v->revealPubkey.pubkey.len = 33;
+    CHECK_ERROR(readBytes(&ctx, &v->revealPubkey.pubkey.ptr, v->revealPubkey.pubkey.len))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -290,7 +628,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data,const bytes_t *extra_d
     // Get text from hash
     CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
 
-    ctx.offset += 32; // TODO: check this
+    ctx.offset += 32; // Skip tx_code_path (?)
 
     if ((ctx.offset != ctx.bufferLen) || (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
         return parser_unexpected_characters;
@@ -298,18 +636,17 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data,const bytes_t *extra_d
     return parser_ok;
 }
 
-
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Source
-    v->transfer.source.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.source.ptr, v->transfer.source.len))
+    v->transfer.source_address.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.source_address.ptr, v->transfer.source_address.len))
 
     // Target
-    v->transfer.target.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.target.ptr, v->transfer.target.len))
+    v->transfer.target_address.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.target_address.ptr, v->transfer.target_address.len))
 
     // Token
     v->transfer.token.len = ADDRESS_LEN_BYTES;
@@ -317,14 +654,30 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
 
-    // Subprefix: read until null terminator is found
-    uint8_t tmp = 0;
-    CHECK_ERROR(readByte(&ctx, &tmp))
+    // Subprefix, check if it is there
+    CHECK_ERROR(readByte(&ctx, &v->transfer.has_sub_prefix))
+    if (v->transfer.has_sub_prefix){
+        CHECK_ERROR(readUint32(&ctx, &v->transfer.sub_prefix.len))
+        CHECK_ERROR(readBytes(&ctx, &v->transfer.sub_prefix.ptr, v->transfer.sub_prefix.len))
+    }
 
     // Amount
     CHECK_ERROR(readUint64(&ctx, &v->transfer.amount))
 
-    ctx.offset += 2;   // Skip last 2 bytes --> Check this
+    // Key, check if it is there
+    CHECK_ERROR(readByte(&ctx, &v->transfer.has_key))
+    if (v->transfer.has_key){
+        CHECK_ERROR(readUint32(&ctx, &v->transfer.key.len))
+        // we are not displaying these bytes
+        ctx.offset += v->transfer.key.len;
+    }
+    // shielded hash, check if it is there
+    CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
+    if (v->transfer.has_shielded_hash){
+        v->transfer.shielded_hash.len = SHA256_SIZE;
+        // we are not displaying these bytes
+        ctx.offset += v->transfer.shielded_hash.len;
+    }
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -359,21 +712,40 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
-parser_error_t readTimestamp(parser_context_t *ctx, bytes_t *timestamp) {
-    if (ctx == NULL || timestamp == NULL) {
-        return parser_unexpected_error;
-    }
-    CHECK_ERROR(readUint32(ctx, &timestamp->len))
-    CHECK_ERROR(readBytes(ctx, &timestamp->ptr, timestamp->len))
-    return parser_ok;
-}
-
 // WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
     }
     const uint16_t tmpOffset = ctx->offset;
+
+    // Read length of chain_id
+    uint32_t chain_id_len = 0;
+    CHECK_ERROR(readUint32(ctx, &chain_id_len))
+
+    ctx->offset += chain_id_len;
+
+    // Check if an expiration is set
+    uint8_t has_expiration = 0;
+    CHECK_ERROR(readByte(ctx, &has_expiration))
+    if (has_expiration){
+        // If so, read the length of expiration, and skip it
+        uint32_t expiration_len = 0;
+        CHECK_ERROR(readUint32(ctx, &expiration_len))
+        ctx->offset += expiration_len;
+    }
+    // Timestamp
+    CHECK_ERROR(readUint32(ctx, &v->transaction.timestamp.len))
+    CHECK_ERROR(readBytes(ctx, &v->transaction.timestamp.ptr, v->transaction.timestamp.len))
+
+    // Code hash
+    v->transaction.header.codeHash.len = SHA256_SIZE;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.codeHash.ptr, v->transaction.header.codeHash.len))
+
+    // Data hash
+    v->transaction.header.dataHash.len = SHA256_SIZE;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
+
     v->transaction.header.bytes.ptr = ctx->buffer + ctx->offset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
@@ -389,15 +761,17 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
-    // Data hash
-    v->transaction.header.dataHash.len = 32;
-    CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
-    // Code hash
-    v->transaction.header.codeHash.len = 32;
-    CHECK_ERROR(readBytes(ctx, &v->transaction.header.codeHash.ptr, v->transaction.header.codeHash.len))
 
-    // PoW None
-    CHECK_ERROR(checkTag(ctx, 0x00))
+    // Check if a PoW solution is present (should only exist in mainnet)
+    uint8_t num_pow_solution = 0;
+    CHECK_ERROR(readByte(ctx, &num_pow_solution))
+    if (num_pow_solution){
+        // A PoW solution consists of :
+        // - challenge parameters = Difficulty (u8) and a Counter (u64)
+        // - a SolutionValue (u64)
+        // so we skip 17 bytes
+        ctx->offset += num_pow_solution * 17;
+    }
 
     v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
@@ -504,14 +878,33 @@ static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *
 #endif
     return parser_ok;
 }
+#if(0)
+static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
+    (void) ctx;
+    (void) ciphertext;
+    return parser_ok;
+}
 
+
+static parser_error_t readMaspTx(parser_context_t *ctx, section_t *maspTx) {
+    ctx->offset += 1171; // <- Transfer 2 // Transfer 1 -> 2403;//todo figure out correct number, fix this hack
+    (void) maspTx;
+    return parser_ok;
+}
+
+static parser_error_t readMaspBuilder(parser_context_t *ctx, section_t *maspBuilder) {
+    ctx->offset += 941; // <- Transfer 2 // Transfer 1 -> 3060; //todo figure out correct number, fix this hack
+    (void) maspBuilder;
+    return parser_ok;
+}
+#endif
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
     }
     CHECK_ERROR(readUint32(ctx, &v->transaction.sections.sectionLen))
 
-    if (v->transaction.sections.sectionLen > 6) {
+    if (v->transaction.sections.sectionLen > 7) {
         return parser_unexpected_value;
     }
 
@@ -533,6 +926,19 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
             case DISCRIMINANT_SIGNATURE:
                 CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[0]))
                 break;
+#if(0)
+            case DISCRIMINANT_CIPHERTEXT:
+                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
+                break;
+
+            case DISCRIMINANT_MASP_TX:
+                CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
+                break;
+
+            case DISCRIMINANT_MASP_BUILDER:
+                CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
+                break;
+#endif
             default:
                 return parser_unexpected_field;
         }
@@ -552,12 +958,25 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         case Unbond:
             CHECK_ERROR(readBondUnbondTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
+        case Custom:
+            break;
         case Transfer:
             CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case InitAccount:
-             CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes, txObj))
+             CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes,&txObj->transaction.sections.extraData.bytes, txObj))
              break;
+#if(0)
+        case InitProposal:
+            CHECK_ERROR(readInitProposalTxn(&txObj->transaction.sections.data.bytes, &txObj->transaction.sections.extraData.bytes, txObj))
+            break;
+#endif
+        case VoteProposal:
+            CHECK_ERROR(readVoteProposalTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case RevealPubkey:
+            CHECK_ERROR(readRevealPubkeyTxn(&txObj->transaction.sections.data.bytes,  txObj))
+            break;
         case Withdraw:
              CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
              break;

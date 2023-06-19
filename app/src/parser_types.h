@@ -36,13 +36,22 @@ typedef enum {
     Unbond,
     Transfer,
     InitAccount,
+#if(0)
     InitProposal,
+#endif
+    VoteProposal,
     InitValidator,
+    RevealPubkey,
     UpdateVP,
     Custom,
     Withdraw,
     Unknown,
 } transaction_type_e;
+
+typedef enum {
+    Yay = 0,
+    Nay = 1
+} proposal_vote_e;
 
 // Structure to match the Rust serialized Decimal format
 typedef struct {
@@ -60,10 +69,44 @@ typedef struct {
     uint32_t len;
 } mut_bytes_t;
 
+typedef struct {
+    bytes_t title;
+    bytes_t authors;
+    bytes_t discussions_to;
+    bytes_t created;
+    bytes_t license;
+    bytes_t abstract;
+    bytes_t motivation;
+    bytes_t details;
+    bytes_t require;
+} proposal_content_t;
+
+typedef struct {
+    uint8_t has_id;
+    bytes_t proposal_id;
+    proposal_content_t content;
+    bytes_t author;
+    // uint8_t proposal_type; // rust enum
+    uint64_t voting_start_epoch;
+    uint64_t voting_end_epoch;
+    uint64_t grace_epoch;
+    bytes_t proposal_code;
+} tx_init_proposal_t;
+
+typedef struct {
+    uint64_t proposal_id;
+    proposal_vote_e proposal_vote;
+    // proposal author address
+    bytes_t voter;
+    // Delegator addresses
+    uint32_t number_of_delegations;
+    bytes_t delegations;
+} tx_vote_proposal_t;
 
 typedef struct {
     bytes_t pubkey;
-    bytes_t vp_code_hash;
+    bytes_t vp_type_hash;
+    const char* vp_type_text;
 } tx_init_account_t;
 
 typedef struct {
@@ -72,6 +115,12 @@ typedef struct {
     uint8_t has_source;
     bytes_t source;
 } tx_bond_t;
+
+typedef struct {} tx_custom_t;
+
+typedef struct {
+    bytes_t pubkey;
+} tx_reveal_pubkey_t;
 
 typedef struct {
     bytes_t validator;
@@ -97,13 +146,18 @@ typedef struct {
 } tx_update_vp_t;
 
 typedef struct {
-    bytes_t source;
-    bytes_t target;
+    bytes_t source_address;
+    bytes_t target_address;
+    // Transferred token address
     bytes_t token;
     uint8_t has_sub_prefix;
-    const char* sub_prefix;
+    bytes_t sub_prefix;
     uint64_t amount;
     const char* symbol;
+    uint8_t has_key;
+    bytes_t key;
+    uint8_t has_shielded_hash;
+    bytes_t shielded_hash;
 } tx_transfer_t;
 
 typedef struct {

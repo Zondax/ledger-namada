@@ -97,7 +97,7 @@ parser_error_t readDecimal(parser_context_t *ctx, serialized_decimal *value) {
     uint8_t raw_decimal[sizeof(serialized_decimal)] = {0};
     MEMCPY(raw_decimal, ctx->buffer + ctx->offset, sizeof(serialized_decimal));
 
-    recover_decimal(&raw_decimal, &value->num, &value->scale);
+    recover_decimal((const uint8_t *) &raw_decimal, &value->num, &value->scale);
 
     ctx->offset += sizeof(serialized_decimal);
     return parser_ok;
