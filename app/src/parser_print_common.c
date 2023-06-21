@@ -40,6 +40,59 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
+parser_error_t printCouncilVote( uint32_t number_of_councils, council_t *councils,
+                                 char *outVal, uint16_t outValLen,
+                                 uint8_t pageIdx, uint8_t *pageCount) {
+    uint32_t number_printed = (number_of_councils < MAX_COUNCILS) ?
+            number_of_councils : MAX_COUNCILS;
+    uint8_t offset = 0;
+    char strVote[200] = {0};
+
+    for (uint32_t i = 0; i < number_printed; ++i) {
+        MEMZERO(strVote, sizeof (strVote));
+        council_t council = councils[i];
+
+        const char* prefix = NULL;
+        prefix = PIC("yay with councils:\n");
+        snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
+        offset += strlen(prefix);
+
+        const char* prefix_council = NULL;
+        prefix_council = PIC("Council: ");
+        snprintf((char*) strVote + offset, strlen(prefix_council) + 1, "%s", prefix_council);
+        offset+= strlen(prefix_council);
+
+        char address[110] = {0};
+        CHECK_ERROR(readAddress(council.council_address, address, sizeof(address)))
+        snprintf((char*) strVote + offset, strlen(address) + 1, "%s", address);
+        offset += strlen(address);
+
+        const char* prefix_spending_cap = NULL;
+        prefix_spending_cap = PIC(", spending cap: ");
+        snprintf((char*) strVote + offset, strlen(prefix_spending_cap) + 1, "%s", prefix_spending_cap);
+        offset += strlen(prefix_spending_cap);
+
+        char strSpendingCap[50] = {0};
+        if (uint64_to_str(strSpendingCap, sizeof(strSpendingCap), council.amount) != NULL ||
+            intstr_to_fpstr_inplace(strSpendingCap, sizeof(strSpendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
+            return parser_unexpected_error;
+        }
+        number_inplace_trimming(strSpendingCap, 1);
+        snprintf((char*) strVote + offset, strlen(strSpendingCap) + 1, "%s", strSpendingCap);
+        offset += strlen(strSpendingCap);
+    }
+
+    if (number_printed < number_of_councils){
+        const char* dots = NULL;
+        dots = PIC("...");
+        snprintf((char*) strVote + offset, strlen(dots) + 1, "%s", dots);
+    }
+
+    pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
+    return parser_ok;
+}
+
+
 parser_error_t printCodeHash(bytes_t *codeHash,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,

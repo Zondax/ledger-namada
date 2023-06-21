@@ -45,6 +45,10 @@ parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t printCouncilVote( uint32_t number_of_councils, council_t *councils,
+                                 char *outVal, uint16_t outValLen,
+                                 uint8_t pageIdx, uint8_t *pageCount);
+
 parser_error_t printAmount( uint64_t amount, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);

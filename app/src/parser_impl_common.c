@@ -80,7 +80,7 @@ zxerr_t recover_decimal(const uint8_t* bytes, int64_t* num, uint32_t* scale) {
     }
 
     uint64_t m = ((uint64_t)hi) << 32 | lo;
-    m |= ((uint64_t)mid) << 64;
+    m |= ((uint64_t)mid) << 32;
 
     if (is_negative) {
         m = ~m + 1; // Two's complement negation

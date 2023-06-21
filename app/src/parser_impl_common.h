@@ -33,8 +33,8 @@ extern "C" {
 #define INIT_ACCOUNT_NORMAL_PARAMS  3
 #define INIT_ACCOUNT_EXPERT_PARAMS  8
 
-#define INIT_PROPOSAL_NORMAL_PARAMS  15
-#define INIT_PROPOSAL_EXPERT_PARAMS  20
+#define INIT_PROPOSAL_NORMAL_PARAMS  6
+#define INIT_PROPOSAL_EXPERT_PARAMS  11
 
 #define VOTE_PROPOSAL_NORMAL_PARAMS 4
 #define VOTE_PROPOSAL_EXPERT_PARAMS 9
@@ -54,6 +54,9 @@ extern "C" {
 #define WITHDRAW_NORMAL_PARAMS  2
 #define WITHDRAW_EXPERT_PARAMS  7
 
+#define COMMISSION_CHANGE_NORMAL_PARAMS  3
+#define COMMISSION_CHANGE_EXPERT_PARAMS  8
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
@@ -65,6 +68,7 @@ parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
 
 parser_error_t readToken(const bytes_t *token, const char **symbol);
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
+parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint16_t strVoteLen);
 
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);

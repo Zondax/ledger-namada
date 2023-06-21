@@ -56,15 +56,13 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case InitAccount:
             *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
             break;
-
-#if(0)
         case InitProposal:
             *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
             break;
-#endif
         case VoteProposal:
         {
             uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
+            //uint8_t has_yay_vote_details = ((ctx->tx_obj->voteProposal.vote_type_is_council) || (ctx->tx_obj->voteProposal.vote_type_is_eth_bridge)) ? 1 : 0;
             *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators;
             break;
         }
@@ -74,6 +72,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case Withdraw:
             *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
+            break;
+
+        case CommissionChange:
+            *numItems = (app_mode_expert() ? COMMISSION_CHANGE_EXPERT_PARAMS : COMMISSION_CHANGE_NORMAL_PARAMS);
             break;
 
         case InitValidator:

@@ -180,7 +180,7 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
 
     return parser_ok;
 }
-#if(0)
+
 static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
@@ -242,112 +242,23 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             pageString(outVal, outValLen, strGraceEpoch, pageIdx, pageCount);
             break;
         case 6:
-            snprintf(outKey, outKeyLen, "Proposal code");
-            char hexString[65] = {0};
-            array_to_hexstr((char*) hexString, sizeof(hexString), ctx->tx_obj->initProposal.proposal_code.ptr, ctx->tx_obj->initProposal.proposal_code.len);
-            pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
-            break;
-        case 7:
-            snprintf(outKey, outKeyLen, "Content abstract");
-            char strAbstract[600] = {0};
-            if (ctx->tx_obj->initProposal.content.abstract.len > 600){
-                snprintf(outKey, outKeyLen, "Content abstract (truncated)");
-                memcpy(strAbstract, ctx->tx_obj->initProposal.content.abstract.ptr, 600);
-            } else{
-                memcpy(strAbstract, ctx->tx_obj->initProposal.content.abstract.ptr, ctx->tx_obj->initProposal.content.abstract.len);
-            }
-            pageString(outVal, outValLen, strAbstract, pageIdx, pageCount);
-            break;
-        case 8:
-            snprintf(outKey, outKeyLen, "Content authors");
-            char strAuthors[50] = {0};
-            if (ctx->tx_obj->initProposal.content.authors.len>50){
-                snprintf(outKey, outKeyLen, "Content authors (truncated)");
-                memcpy(strAuthors, ctx->tx_obj->initProposal.content.authors.ptr, 50);
-            } else{
-                memcpy(strAuthors, ctx->tx_obj->initProposal.content.authors.ptr, ctx->tx_obj->initProposal.content.authors.len);
-            }
-            pageString(outVal, outValLen, strAuthors, pageIdx, pageCount);
-            break;
-        case 9:
-            snprintf(outKey, outKeyLen, "Content created");
-            char strCreated[50] = {0};
-            memcpy(strCreated, ctx->tx_obj->initProposal.content.created.ptr, ctx->tx_obj->initProposal.content.created.len);
-            pageString(outVal, outValLen, strCreated, pageIdx, pageCount);
-            break;
-        case 10:
-            snprintf(outKey, outKeyLen, "Content details");
-            char strDetails[500] = {0};
-            if (ctx->tx_obj->initProposal.content.details.len > 500){
-                snprintf(outKey, outKeyLen, "Content details (truncated)");
-                memcpy(strDetails, ctx->tx_obj->initProposal.content.details.ptr, 500);
-            } else{
-                memcpy(strDetails, ctx->tx_obj->initProposal.content.details.ptr, ctx->tx_obj->initProposal.content.details.len);
-            }
-            pageString(outVal, outValLen, strDetails, pageIdx, pageCount);
-            break;
-        case 11:
-            snprintf(outKey, outKeyLen, "Content discussions-to");
-            char strDiscussionsTo[60] = {0};
-            if (ctx->tx_obj->initProposal.content.discussions_to.len > 60){
-                snprintf(outKey, outKeyLen, "Content discussions-to (truncated)");
-                memcpy(strDiscussionsTo, ctx->tx_obj->initProposal.content.discussions_to.ptr, 60);
-            } else{
-                memcpy(strDiscussionsTo, ctx->tx_obj->initProposal.content.discussions_to.ptr, ctx->tx_obj->initProposal.content.discussions_to.len);
-            }
-            pageString(outVal, outValLen, strDiscussionsTo, pageIdx, pageCount);
-            break;
-        case 12:
-            snprintf(outKey, outKeyLen, "Content license");
-            char strLicense[50] = {0};
-            if (ctx->tx_obj->initProposal.content.license.len>50){
-                snprintf(outKey, outKeyLen, "Content license (truncated)");
-                memcpy(strLicense, ctx->tx_obj->initProposal.content.license.ptr, 50);
-            } else{
-                memcpy(strLicense, ctx->tx_obj->initProposal.content.license.ptr, ctx->tx_obj->initProposal.content.license.len);
-            }
-            pageString(outVal, outValLen, strLicense, pageIdx, pageCount);
-            break;
-        case 13:
-            snprintf(outKey, outKeyLen, "Content motivation");
-            char strMotivation[500] = {0};
-            if (ctx->tx_obj->initProposal.content.motivation.len > 500){
-                snprintf(outKey, outKeyLen, "Content details (truncated)");
-                memcpy(strMotivation, ctx->tx_obj->initProposal.content.motivation.ptr, 500);
-            } else{
-                memcpy(strMotivation, ctx->tx_obj->initProposal.content.motivation.ptr, ctx->tx_obj->initProposal.content.motivation.len);
-            }
-            pageString(outVal, outValLen, strMotivation, pageIdx, pageCount);
-            break;
-        case 14:
-            snprintf(outKey, outKeyLen, "Content requires");
-            // minimum required votes is u64, can be displayed in 20 chars
-            char strRequires[20] = {0};
-            memcpy(strRequires, ctx->tx_obj->initProposal.content.require.ptr, ctx->tx_obj->initProposal.content.require.len);
-            pageString(outVal, outValLen, strRequires, pageIdx, pageCount);
-            break;
-        case 15:
-            snprintf(outKey, outKeyLen, "Content title");
-            char strTitle[50] = {0};
-            if (ctx->tx_obj->initProposal.content.title.len>50){
-                snprintf(outKey, outKeyLen, "Content title (truncated)");
-                memcpy(strTitle, ctx->tx_obj->initProposal.content.title.ptr, 50);
-            } else{
-                memcpy(strTitle, ctx->tx_obj->initProposal.content.title.ptr, ctx->tx_obj->initProposal.content.title.len);
-            }
-            pageString(outVal, outValLen, strTitle, pageIdx, pageCount);
+            snprintf(outKey, outKeyLen, "Content");
+            char strContent[65] = {0};
+            const bytes_t *content = &ctx->tx_obj->initProposal.content;
+            array_to_hexstr((char*) strContent, sizeof(strContent), content->ptr, content->len);
+            pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 16;
+            displayIdx -= 7;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
     return parser_ok;
 }
-#endif
+
 
 static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                                              uint8_t displayIdx,
@@ -379,18 +290,48 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Vote");
-            char strVote[5] = {0};
             switch (ctx->tx_obj->voteProposal.proposal_vote) {
                 case Yay:
-                    memcpy(strVote, "yay", 4);
+                {
+                    switch (ctx->tx_obj->voteProposal.vote_type) {
+                        case Default:
+                        {
+                            char strVote[5] = {0};
+                            const char* prefix = NULL;
+                            prefix = PIC("yay");
+                            snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
+                            pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
+                            break;
+                        }
+                        case Council:
+                        {
+                            CHECK_ERROR(printCouncilVote(ctx->tx_obj->voteProposal.number_of_councils, ctx->tx_obj->voteProposal.councils, outVal, outValLen, pageIdx, pageCount))
+                            break;
+                        }
+                        case EthBridge:
+                        {
+                            char strVote[25] = {0};
+                            const char* prefix = NULL;
+                            prefix = PIC("yay with Eth bridge");
+                            snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
+                            pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
+                            break;
+                        }
+                        default:
+                            return parser_unexpected_value;
+                    }
                     break;
+                }
                 case Nay:
+                {
+                    char strVote[5] = {0};
                     memcpy(strVote, "nay", 4);
+                    pageString(outVal, outValLen, strVote, pageIdx, pageCount);
                     break;
+                }
                 default:
                     return parser_unexpected_value;
             }
-            pageString(outVal, outValLen, strVote, pageIdx, pageCount);
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voter");
@@ -597,6 +538,39 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
+                                                uint8_t displayIdx,
+                                                char *outKey, uint16_t outKeyLen,
+                                                char *outVal, uint16_t outValLen,
+                                                uint8_t pageIdx, uint8_t *pageCount) {
+
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Change commission");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "New rate");
+            CHECK_ERROR(printDecimal(ctx->tx_obj->commissionChange.new_rate, outVal, outValLen, pageIdx, pageCount))
+            break;
+        case 2:
+            snprintf(outKey, outKeyLen, "Validator");
+            CHECK_ERROR(printAddress(ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
+            break;
+        default:
+            if (!app_mode_expert()) {
+                return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 3;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
 
 parser_error_t printTxnFields(const parser_context_t *ctx,
                               uint8_t displayIdx,
@@ -617,10 +591,10 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case InitAccount:
              return printInitAccountTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
-#if(0)
+
         case InitProposal:
             return printInitProposalTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
-#endif
+
         case VoteProposal:
             return printVoteProposalTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
@@ -629,6 +603,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case Withdraw:
              return printWithdrawTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case CommissionChange:
+            return printCommissionChangeTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case InitValidator:
              return printInitValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
