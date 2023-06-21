@@ -13,38 +13,34 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-//! Support library for Namada Ledger Nano S/S+/X apps
+//! Support library for Namada Ledger Nano S/S+/X/Stax apps
 
 #![deny(warnings, trivial_casts, trivial_numeric_casts)]
 #![deny(unused_import_braces, unused_qualifications)]
 #![deny(missing_docs)]
 #![doc(html_root_url = "https://docs.rs/ledger-namada/0.0.2")]
 
-use leb128;
 use ed25519_dalek::Verifier;
 use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::{App, AppExt, ChunkPayloadType, Version};
 
-use byteorder::{LittleEndian, WriteBytesExt};
-
 pub use ledger_zondax_generic::LedgerAppError;
 
 mod params;
+use params::{SignatureType, SALT_LEN, HASH_LEN, TOTAL_SIGNATURE_LEN};
 pub use params::{InstructionCode, CLA, ED25519_PUBKEY_LEN, ED25519_SIGNATURE_LEN, ADDRESS_LEN};
-use utils::{ResponseAddress, ResponseSignatureWrapperTransaction};
+use utils::{ResponseAddress, ResponseSignature, ResponseSignatureSection};
 
 use std::str;
 
 mod utils;
 pub use utils::BIP44Path;
 
-use prost_types::Timestamp;
-
 /// Ledger App Error
 #[derive(Debug, thiserror::Error)]
 pub enum NamError<E>
-where
-    E: std::error::Error,
+    where
+        E: std::error::Error,
 {
     #[error("Ledger | {0}")]
     /// Common Ledger errors
@@ -78,9 +74,9 @@ impl<E> NamadaApp<E> {
 }
 
 impl<E> NamadaApp<E>
-where
-    E: Exchange + Send + Sync,
-    E::Error: std::error::Error,
+    where
+        E: Exchange + Send + Sync,
+        E::Error: std::error::Error,
 {
     /// Retrieve the app version
     pub async fn version(&self) -> Result<Version, NamError<E::Error>> {
@@ -147,35 +143,72 @@ where
     }
 
     /// Sign wrapper transaction
-    pub async fn sign_wrapper_transaction(
+    pub async fn sign(
         &self,
         path: &BIP44Path,
-        code: &[u8],
-        data: &[u8],
-        timestamp: &Timestamp,
-    ) -> Result<ResponseSignatureWrapperTransaction, NamError<E::Error>> {
+        blob: &[u8],
+    ) -> Result<ResponseSignature, NamError<E::Error>> {
 
         let first_chunk = path.serialize_path().unwrap();
 
         let start_command = APDUCommand {
             cla: CLA,
-            ins: InstructionCode::SignWrapperTransaction as _,
+            ins: InstructionCode::Sign as _,
             p1: ChunkPayloadType::Init as u8,
             p2: 0x00,
             data: first_chunk,
         };
 
-        let mut message = Vec::new();
-        message.write_u32::<LittleEndian>(code.len() as u32).unwrap();
-        message.write_u32::<LittleEndian>(data.len() as u32).unwrap();
-        message.extend(code);
-        message.extend(data);
-        message.write_i64::<LittleEndian>(timestamp.seconds).unwrap();
-        message.write_i32::<LittleEndian>(timestamp.nanos).unwrap();
-
-
         let response =
-            <Self as AppExt<E>>::send_chunks(&self.apdu_transport, start_command, &message).await?;
+            <Self as AppExt<E>>::send_chunks(&self.apdu_transport, start_command, blob).await?;
+
+        match response.error_code() {
+            Ok(APDUErrorCode::NoError) => {}
+            Ok(err) => {
+                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
+                    err as _,
+                    err.description(),
+                )))
+            }
+            Err(err) => {
+                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
+                    err,
+                    "[APDU_ERROR] Unknown".to_string(),
+                )))
+            }
+        }
+
+        // Transactions is signed - Retrieve signatures
+        let header_signature: ResponseSignatureSection = self.get_signature(SignatureType::HeaderSignature).await?;
+        let data_signature: ResponseSignatureSection = self.get_signature(SignatureType::DataSignature).await?;
+        let code_signature: ResponseSignatureSection = self.get_signature(SignatureType::CodeSignature).await?;
+
+        Ok(ResponseSignature {
+            header_signature,
+            data_signature,
+            code_signature
+        })
+    }
+
+    /// Get signature section
+    async fn get_signature(
+        &self,
+        signature_type: SignatureType,
+    ) -> Result<ResponseSignatureSection, NamError<E::Error>> {
+
+        let command = APDUCommand {
+            cla: CLA,
+            ins: InstructionCode::GetSignature as _,
+            p1: 0x00,
+            p2: signature_type as u8,
+            data: Vec::new(),
+        };
+
+        let response = self
+            .apdu_transport
+            .exchange(&command)
+            .await
+            .map_err(LedgerAppError::TransportError)?;
 
         let response_data = response.data();
         match response.error_code() {
@@ -183,7 +216,7 @@ where
                 return Err(NamError::Ledger(LedgerAppError::NoSignature))
             }
             // Last response should contain the answer
-            Ok(APDUErrorCode::NoError) if response_data.len() < ED25519_SIGNATURE_LEN => {
+            Ok(APDUErrorCode::NoError) if response_data.len() < TOTAL_SIGNATURE_LEN => {
                 return Err(NamError::Ledger(LedgerAppError::InvalidSignature))
             }
             Ok(APDUErrorCode::NoError) => {}
@@ -201,87 +234,59 @@ where
             }
         }
 
-        let mut signature = [0; ED25519_SIGNATURE_LEN];
-        signature.copy_from_slice(&response_data[..ED25519_SIGNATURE_LEN]);
+        let salt: [u8; SALT_LEN] = {
+            let mut arr = [0u8; SALT_LEN];
+            arr.copy_from_slice(&response_data[0..SALT_LEN]);
+            arr
+        };
 
-        Ok(ResponseSignatureWrapperTransaction {
+        let hash: [u8; HASH_LEN] = {
+            let mut arr = [0u8; HASH_LEN];
+            arr.copy_from_slice(&response_data[SALT_LEN..SALT_LEN + HASH_LEN]);
+            arr
+        };
+
+        let pubkey: [u8; ED25519_PUBKEY_LEN] = {
+            let mut arr = [0u8; ED25519_PUBKEY_LEN];
+            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN]);
+            arr
+        };
+
+        let signature: [u8; ED25519_SIGNATURE_LEN] = {
+            let mut arr = [0u8; ED25519_SIGNATURE_LEN];
+            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN + ED25519_SIGNATURE_LEN]);
+            arr
+        };
+
+        Ok(ResponseSignatureSection {
+            salt,
+            hash,
+            pubkey,
             signature
         })
+
     }
 
-    fn serialize_timestamp(
+    /// Verify signature
+    pub fn verify_signature(
         &self,
-        timestamp: &Timestamp
-    ) -> Result<Vec<u8>, NamError<E::Error>> {
-
-        let mut buffer = Vec::new();
-        let mut leb_seconds = Vec::new();
-        let mut leb_nanos = Vec::new();
-
-        leb128::write::signed(&mut leb_seconds, timestamp.seconds).expect("Invalid seconds param");
-        leb128::write::signed(&mut leb_nanos, timestamp.nanos as i64).expect("Invalid nanos param");
-
-        if timestamp.seconds > 0 {
-            buffer.extend(&[0x08]);
-            buffer.append(&mut leb_seconds);
-        }
-        if timestamp.nanos > 0 {
-            buffer.extend(&[0x10]);
-            buffer.append(&mut leb_nanos);
-        }
-
-        let mut timestamp_size = Vec::new();
-        leb128::write::unsigned(&mut timestamp_size, buffer.len() as u64).expect("Invalid timestamp size");
-        buffer.insert(0, timestamp_size[0]);
-        buffer.insert(0, 0x1A);
-
-        Ok(buffer)
-    }
-
-    /// Verify signature from a wrapper transaction
-    pub fn verify_wrapper_transaction_signature(
-        &self,
-        code: &[u8],
-        data: &[u8],
-        timestamp: &Timestamp,
-        pubkey: &[u8],
-        signature: &[u8]
+        signature: &ResponseSignatureSection,
+        hash: &[u8],
+        pubkey: &[u8]
     ) -> bool {
 
-        use sha2::{Sha256, Digest};
+        // use sha2::{Sha256, Digest};
         use ed25519_dalek::{PublicKey, Signature};
 
-        let mut serialized_outer_transaction = Vec::new();
-        let mut serialized_code = Vec::new();
-        let mut serialized_data = Vec::new();
-
-
-        let code_hash = Sha256::digest(&code);
-        leb128::write::signed(&mut serialized_code, code_hash.len() as i64).expect("Invalid LEB128 encoding");
-        serialized_code.extend(code_hash);
-
-        leb128::write::signed(&mut serialized_data, data.len() as i64).expect("Invalid LEB128 encoding");
-        serialized_data.extend(data);
-
-        // Code
-        serialized_outer_transaction.extend(&[0x0A]);
-        serialized_outer_transaction.append(&mut serialized_code);
-
-        // Data
-        serialized_outer_transaction.extend(&[0x12]);
-        serialized_outer_transaction.append(&mut serialized_data);
-
-        // Timestamp
-        let mut serialized_timestamp = self.serialize_timestamp(timestamp).unwrap();
-        serialized_outer_transaction.append(&mut serialized_timestamp);
-
-        let bytes_to_sign = Sha256::digest(&serialized_outer_transaction);
+        if signature.hash != hash || signature.pubkey != pubkey {
+            return false;
+        }
 
         // Verify signature
-        let public_key = PublicKey::from_bytes(&pubkey).unwrap();
-        let signature = Signature::from_bytes(&signature).unwrap();
+        let public_key = PublicKey::from_bytes(&signature.pubkey).unwrap();
+        let signature = Signature::from_bytes(&signature.signature).unwrap();
 
-        public_key.verify(&bytes_to_sign, &signature).is_ok()
+        public_key.verify(&hash, &signature).is_ok()
     }
 
 }
