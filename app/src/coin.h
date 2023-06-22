@@ -52,6 +52,7 @@ extern "C" {
 #define SIG_R_LEN   32
 #define SIG_S_LEN   32
 #define SIG_ED25519_LEN (SIG_R_LEN + SIG_S_LEN)
+#define SIG_SECP256K1_LEN 65
 
 #define MAX_BECH32_HRP_LEN  83u
 

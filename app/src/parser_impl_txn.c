@@ -348,6 +348,26 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
+parser_error_t readCouncils(parser_context_t *ctx, uint32_t numberOfCouncils, council_t *council) {
+    if (ctx == NULL) return parser_unexpected_error;
+
+    council_t tmpCouncil;
+    tmpCouncil.council_address.len = ADDRESS_LEN_BYTES;
+    for (uint32_t i = 0; i < numberOfCouncils; ++i) {
+        CHECK_ERROR(readBytes(ctx,
+                              &tmpCouncil.council_address.ptr,
+                              ADDRESS_LEN_BYTES))
+        CHECK_ERROR(readUint64(ctx, &tmpCouncil.amount))
+    }
+
+    if (council != NULL) {
+        council->council_address.ptr = tmpCouncil.council_address.ptr;
+        council->council_address.len = tmpCouncil.council_address.len;
+        council->amount = tmpCouncil.amount;
+    }
+
+    return parser_ok;
+}
 
 static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
@@ -356,36 +376,25 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readUint64(&ctx, &v->voteProposal.proposal_id))
 
     // Proposal vote
-    CHECK_ERROR(readByte(&ctx, &v->voteProposal.proposal_vote))
+    CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.proposal_vote))
 
-    if (v->voteProposal.proposal_vote == Yay){
-        CHECK_ERROR(readByte(&ctx, &v->voteProposal.vote_type))
+    if (v->voteProposal.proposal_vote == Yay) {
+        CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.vote_type))
         switch (v->voteProposal.vote_type) {
             case Default:
                 break;
+
             // PGFCouncil(HashSet<Council>)
-            case Council:
-            {
-                // Get the number of councils that are in the hash set:
+            case Council: {
                 CHECK_ERROR(readUint32(&ctx, &v->voteProposal.number_of_councils))
-                uint32_t number_read = (v->voteProposal.number_of_councils < MAX_COUNCILS)?
-                       v->voteProposal.number_of_councils : MAX_COUNCILS;
-                 // A council consists of an Address (45 bytes) and an Amount (uint64)
-                for (uint32_t i = 0; i < number_read; ++i) {
-                    v->voteProposal.councils[i].council_address.len =  ADDRESS_LEN_BYTES;
-                    CHECK_ERROR(readBytes(&ctx,
-                                          &v->voteProposal.councils[i].council_address.ptr,
-                                          v->voteProposal.councils[i].council_address.len))
-                    CHECK_ERROR(readUint64(&ctx,&v->voteProposal.councils[i].amount))
-                }
-                ctx.offset += (v->voteProposal.number_of_councils - number_read)
-                              * (ADDRESS_LEN_BYTES + sizeof(uint64_t));
+                v->voteProposal.councils.ptr = ctx.buffer + ctx.offset;
+                v->voteProposal.councils.len = v->voteProposal.number_of_councils * (ADDRESS_LEN_BYTES + sizeof(uint64_t));
+                CHECK_ERROR(readCouncils(&ctx, v->voteProposal.number_of_councils, NULL))
                 break;
-                }
+            }
 
             // ETHBridge(Signature)
-            case EthBridge:
-            {
+            case EthBridge: {
                 uint8_t signature_type = 0;
                 CHECK_ERROR(readByte(&ctx, &signature_type))
                 if(signature_type == 0){
@@ -398,7 +407,7 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
                 else if (signature_type == 1){
                     // Secp256k1 the signature consists of r [u32; 8], s [u32; 8]
                     // and the RecoveryId (1 byte)
-                    v->voteProposal.eth_bridge_signature.len = 65;
+                    v->voteProposal.eth_bridge_signature.len = SIG_SECP256K1_LEN;
                     CHECK_ERROR(readBytes(&ctx,
                                           &v->voteProposal.eth_bridge_signature.ptr,
                                           v->voteProposal.eth_bridge_signature.len))
@@ -408,6 +417,8 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
             default:
                 return parser_unexpected_value;
         }
+    } else if (v->voteProposal.proposal_vote != Nay) {
+        return parser_unexpected_value;
     }
 
     // Voter, should be of length ADDRESS_LEN_BYTES

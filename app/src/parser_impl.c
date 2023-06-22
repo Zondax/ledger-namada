@@ -46,7 +46,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
 
         case Custom:
-            *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
+            *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS);
             break;
 
         case Transfer:
@@ -61,9 +61,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         case VoteProposal:
         {
-            uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
+            const uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
+            const uint8_t num_councils = (ctx->tx_obj->voteProposal.number_of_councils > 0) ? (ctx->tx_obj->voteProposal.number_of_councils  - 1) : 0;
             //uint8_t has_yay_vote_details = ((ctx->tx_obj->voteProposal.vote_type_is_council) || (ctx->tx_obj->voteProposal.vote_type_is_eth_bridge)) ? 1 : 0;
-            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators;
+            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators +  num_councils;
             break;
         }
         case RevealPubkey:

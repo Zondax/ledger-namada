@@ -22,12 +22,11 @@
 #include "timeutils.h"
 
 #include "coin.h"
-
 #include "bech32.h"
 
-// static const char* prefix_implicit = "imp::";
-// static const char* prefix_established = "est::";
-// static const char* prefix_internal = "int::";
+#define PREFIX "yay with councils:\n"
+#define PREFIX_COUNCIL "Council: "
+#define PREFIX_SPENDING "spending cap: "
 
 parser_error_t printAddress( bytes_t pubkeyHash,
                              char *outVal, uint16_t outValLen,
@@ -40,53 +39,44 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
-parser_error_t printCouncilVote( uint32_t number_of_councils, council_t *councils,
-                                 char *outVal, uint16_t outValLen,
-                                 uint8_t pageIdx, uint8_t *pageCount) {
-    uint32_t number_printed = (number_of_councils < MAX_COUNCILS) ?
-            number_of_councils : MAX_COUNCILS;
+parser_error_t printCouncilVote(const council_t *council,
+                                char *outVal, uint16_t outValLen,
+                                uint8_t pageIdx, uint8_t *pageCount) {
     uint8_t offset = 0;
     char strVote[200] = {0};
 
-    for (uint32_t i = 0; i < number_printed; ++i) {
-        MEMZERO(strVote, sizeof (strVote));
-        council_t council = councils[i];
+    // Print prefix
+    snprintf(strVote, sizeof(strVote) - offset, PREFIX);
+    offset = strlen(strVote);
 
-        const char* prefix = NULL;
-        prefix = PIC("yay with councils:\n");
-        snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
-        offset += strlen(prefix);
-
-        const char* prefix_council = NULL;
-        prefix_council = PIC("Council: ");
-        snprintf((char*) strVote + offset, strlen(prefix_council) + 1, "%s", prefix_council);
-        offset+= strlen(prefix_council);
-
-        char address[110] = {0};
-        CHECK_ERROR(readAddress(council.council_address, address, sizeof(address)))
-        snprintf((char*) strVote + offset, strlen(address) + 1, "%s", address);
-        offset += strlen(address);
-
-        const char* prefix_spending_cap = NULL;
-        prefix_spending_cap = PIC(", spending cap: ");
-        snprintf((char*) strVote + offset, strlen(prefix_spending_cap) + 1, "%s", prefix_spending_cap);
-        offset += strlen(prefix_spending_cap);
-
-        char strSpendingCap[50] = {0};
-        if (uint64_to_str(strSpendingCap, sizeof(strSpendingCap), council.amount) != NULL ||
-            intstr_to_fpstr_inplace(strSpendingCap, sizeof(strSpendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
-            return parser_unexpected_error;
-        }
-        number_inplace_trimming(strSpendingCap, 1);
-        snprintf((char*) strVote + offset, strlen(strSpendingCap) + 1, "%s", strSpendingCap);
-        offset += strlen(strSpendingCap);
+    // Print council prefix
+    char address[110] = {0};
+    CHECK_ERROR(readAddress(council->council_address, address, sizeof(address)))
+    if (offset + strlen(PREFIX_COUNCIL) + strnlen(address, sizeof(address)) + 2 > sizeof(strVote)) {
+        return parser_unexpected_buffer_end;
     }
+    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_COUNCIL "%s, ", address);
+    offset = strlen(strVote);
 
+    // Print spending cap
+    char spendingCap[50] = {0};
+    if (uint64_to_str(spendingCap, sizeof(spendingCap), council->amount) != NULL ||
+        intstr_to_fpstr_inplace(spendingCap, sizeof(spendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
+        return parser_unexpected_error;
+    }
+    number_inplace_trimming(spendingCap, 1);
+    if (offset + strlen(PREFIX_SPENDING) + strnlen(spendingCap, sizeof(spendingCap)) > sizeof(strVote)) {
+        return parser_unexpected_buffer_end;
+    }
+    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_SPENDING "%s", spendingCap);
+
+#if 0
     if (number_printed < number_of_councils){
         const char* dots = NULL;
         dots = PIC("...");
         snprintf((char*) strVote + offset, strlen(dots) + 1, "%s", dots);
     }
+#endif
 
     pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
     return parser_ok;

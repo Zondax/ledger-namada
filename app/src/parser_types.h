@@ -97,7 +97,7 @@ typedef struct {
     proposal_vote_e proposal_vote;
     yay_vote_type_e vote_type;
     uint32_t number_of_councils;
-    council_t councils[MAX_COUNCILS];
+    bytes_t councils;
     bytes_t eth_bridge_signature;
     // proposal author address
     bytes_t voter;

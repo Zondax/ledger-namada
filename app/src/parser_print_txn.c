@@ -14,6 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 #include "parser_print_common.h"
+#include "parser_impl_common.h"
 #include "app_mode.h"
 #include <zxmacros.h>
 #include <zxformat.h>
@@ -270,7 +271,19 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
         displayIdx++;
     }
 
-    switch (displayIdx) {
+    tx_vote_proposal_t *voteProposal = &ctx->tx_obj->voteProposal;
+
+    // Every council entry will be considered as a different field.
+    // We need to adjust the index to simplify the printing logic
+    // If number_of_councils > 0 && displayIdx points to council --> set idx = 2
+    // If number_of_councils > 0 && displayIdx points beyond councils --> adjust idx
+    // If number_of_councils == 0 || displayIdx < 2 --> use displayIdx
+    const uint8_t tmpDisplayIdx =  ((voteProposal->number_of_councils) && (displayIdx > 2)) ? ((displayIdx > 2 && displayIdx < 2 + voteProposal->number_of_councils)   ? 2
+                                                                                                                                                : displayIdx - (voteProposal->number_of_councils - 1))
+                                                                                            : displayIdx;
+
+    *pageCount = 1;
+    switch (tmpDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Vote Proposal");
@@ -283,67 +296,52 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "ID");
             // Less than 20 characters as proposal_id is an Option<u64>
             char strId[20] = {0};
-            if (uint64_to_str(strId, sizeof(strId), ctx->tx_obj->voteProposal.proposal_id) != NULL ) {
+            if (uint64_to_str(strId, sizeof(strId), voteProposal->proposal_id) != NULL ) {
                 return parser_unexpected_error;
             }
             pageString(outVal, outValLen, strId, pageIdx, pageCount);
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Vote");
-            switch (ctx->tx_obj->voteProposal.proposal_vote) {
-                case Yay:
-                {
-                    switch (ctx->tx_obj->voteProposal.vote_type) {
-                        case Default:
-                        {
-                            char strVote[5] = {0};
-                            const char* prefix = NULL;
-                            prefix = PIC("yay");
-                            snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
-                            pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
-                            break;
-                        }
-                        case Council:
-                        {
-                            CHECK_ERROR(printCouncilVote(ctx->tx_obj->voteProposal.number_of_councils, ctx->tx_obj->voteProposal.councils, outVal, outValLen, pageIdx, pageCount))
-                            break;
-                        }
-                        case EthBridge:
-                        {
-                            char strVote[25] = {0};
-                            const char* prefix = NULL;
-                            prefix = PIC("yay with Eth bridge");
-                            snprintf((char*) strVote, strlen(prefix) + 1, "%s", prefix);
-                            pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
-                            break;
-                        }
-                        default:
-                            return parser_unexpected_value;
+            if (voteProposal->proposal_vote == Yay) {
+                switch (voteProposal->vote_type) {
+                    case Default:
+                        snprintf(outVal, outValLen, "yay");
+                        break;
+
+                    case Council: {
+                        // Using displayIdx display different councils
+                        council_t council;
+                        const uint8_t councilIdx = (displayIdx - 2 + 1);
+                        parser_context_t tmpCtx = {.buffer = voteProposal->councils.ptr, .bufferLen = voteProposal->councils.len, .offset = 0};
+                        CHECK_ERROR(readCouncils(&tmpCtx, councilIdx, &council))
+                        CHECK_ERROR(printCouncilVote(&council, outVal, outValLen, pageIdx, pageCount))
+                        break;
                     }
-                    break;
+
+                    case EthBridge:
+                        snprintf(outVal, outValLen, "yay with Eth bridge");
+                        break;
+
+                    default:
+                        return parser_unexpected_value;
                 }
-                case Nay:
-                {
-                    char strVote[5] = {0};
-                    memcpy(strVote, "nay", 4);
-                    pageString(outVal, outValLen, strVote, pageIdx, pageCount);
-                    break;
-                }
-                default:
-                    return parser_unexpected_value;
+
+            } else {
+                snprintf(outVal, outValLen, "nay");
             }
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voter");
-            CHECK_ERROR(printAddress(ctx->tx_obj->voteProposal.voter, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddress(voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
-            if (ctx->tx_obj->voteProposal.number_of_delegations == 0) {
+            if (voteProposal->number_of_delegations == 0) {
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Delegations");
-            for (uint32_t i = 0; i < ctx->tx_obj->voteProposal.number_of_delegations; ++i) {
-                CHECK_ERROR(printAddress(ctx->tx_obj->voteProposal.delegations, outVal, outValLen, pageIdx, pageCount))
+            for (uint32_t i = 0; i < voteProposal->number_of_delegations; ++i) {
+                CHECK_ERROR(printAddress(voteProposal->delegations, outVal, outValLen, pageIdx, pageCount))
             }
             break;
         default:

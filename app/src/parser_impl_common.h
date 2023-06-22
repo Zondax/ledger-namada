@@ -74,6 +74,8 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
 
+parser_error_t readCouncils(parser_context_t *ctx, uint32_t numberOfCouncils, council_t *council);
+
 #ifdef __cplusplus
 }
 #endif
