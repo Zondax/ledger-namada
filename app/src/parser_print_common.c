@@ -28,6 +28,12 @@
 #define PREFIX_COUNCIL "Council: "
 #define PREFIX_SPENDING "spending cap: "
 
+
+#define CHECK_PTR_BOUNDS(count, dstLen)    \
+    if((count + 1) >= dstLen) {             \
+        return parser_decimal_too_big;     \
+    }
+
 parser_error_t printAddress( bytes_t pubkeyHash,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
@@ -144,15 +150,14 @@ parser_error_t printVPTypeHash(bytes_t *codeHash,
     return parser_ok;
 }
 
-void decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
+parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
+
     if (strDec == NULL || bufferSize == 0) {
-        return; // Invalid output buffer
+        return parser_invalid_output_buffer; // Invalid output buffer
     }
 
     // Initialize the output buffer
-    for (size_t i = 0; i < bufferSize; i++) {
-        strDec[i] = '\0';
-    }
+    MEMZERO(strDec, bufferSize);
 
     // Handle negative value
     if (num < 0) {
@@ -171,10 +176,12 @@ void decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferS
     int64_t fractionalPart = num % divisor;
 
     if (integerPart == 0) {
+        CHECK_PTR_BOUNDS(index, bufferSize);
         strDec[index++] = '0';
     } else {
         int64_t tmp_int = integerPart;
         while (tmp_int > 0 && index < bufferSize - 1) {
+            CHECK_PTR_BOUNDS(index, bufferSize);
             strDec[index++] = '0' + (tmp_int % 10);
             tmp_int /= 10;
         }
@@ -189,16 +196,19 @@ void decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferS
 
     // Append the decimal point
     if (scale > 0 && index < bufferSize - 1) {
+        CHECK_PTR_BOUNDS(index, bufferSize);
         strDec[index++] = '.';
     }
 
     // Convert the fractional part to string with leading zeros
     while (scale > 0 && index < bufferSize - 1) {
         divisor /= 10;
+        CHECK_PTR_BOUNDS(index, bufferSize);
         strDec[index++] = '0' + (fractionalPart / divisor);
         fractionalPart %= divisor;
         scale--;
     }
+    return parser_ok;
 }
 
 
@@ -208,7 +218,7 @@ parser_error_t printDecimal( const serialized_decimal decimal,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
     char strDec[100] = {0};
-    decimal_to_string(decimal.num, decimal.scale, (char*) strDec, 100);
+    CHECK_ERROR(decimal_to_string(decimal.num, decimal.scale, (char*) strDec, 100))
     number_inplace_trimming(strDec, 1);
     pageString(outVal, outValLen, strDec, pageIdx, pageCount);
 

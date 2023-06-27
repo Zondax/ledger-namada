@@ -127,7 +127,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display index out of range";
         case parser_display_page_out_of_range:
             return "display page out of range";
-
+        case parser_decimal_too_big:
+            return "decimal cannot be parsed";
+        case parser_invalid_output_buffer:
+            return "invalid output buffer";
         default:
             return "Unrecognized error code";
     }
