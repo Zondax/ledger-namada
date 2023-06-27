@@ -26,12 +26,31 @@ pub const ED25519_PUBKEY_LEN: usize = 32;
 pub const ADDRESS_LEN: usize = 84;  // 84 --> Testnet | 80 --> Mainnet
 /// ED25519 signature Length
 pub const ED25519_SIGNATURE_LEN: usize = 64;
-
+/// Salt Length
+pub const SALT_LEN: usize = 8;
+/// Hash Length
+pub const HASH_LEN: usize = 32;
+/// Get signature response
+pub const TOTAL_SIGNATURE_LEN: usize = SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN + ED25519_SIGNATURE_LEN;
 /// Available instructions to interact with the Ledger device
 #[repr(u8)]
 pub enum InstructionCode {
     /// Instruction to retrieve Pubkey and Address
     GetAddressAndPubkey = 1,
-    /// Instruction to sign a wrapper transaction
-    SignWrapperTransaction = 2,
+    /// Instruction to sign a transaction
+    Sign = 2,
+
+    /// Instruction to retrieve a signed section
+    GetSignature = 0x0a,
+}
+
+/// Different signed sections
+#[repr(u8)]
+pub enum SignatureType {
+    /// Header signature
+    HeaderSignature = 0,
+    /// Data signature
+    DataSignature = 1,
+    /// Code signature
+    CodeSignature = 2,
 }

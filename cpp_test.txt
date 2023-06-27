@@ -1,0 +1,2405 @@
+USERID                : 501
+GROUPID               : 20
+TESTS_ZEMU_DIR        : /Users/ftheirs/Repositories/ledger-namada/tests_zemu
+EXAMPLE_VUE_DIR       : /Users/ftheirs/Repositories/ledger-namada/example_vue
+TESTS_JS_DIR          : /Users/ftheirs/Repositories/ledger-namada/js
+TESTS_JS_PACKAGE      : "@zondax/ledger-namada"
+mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+-- Conan: checking conan executable in path
+-- Conan: Found program /opt/homebrew/bin/conan
+-- Conan: Version found Conan version 1.60.1
+
+-- Conan: Automatic detection of conan settings from cmake
+-- Conan: Settings= -s;build_type=Debug;-s;compiler=apple-clang;-s;compiler.version=14.0;-s;compiler.libcxx=libc++
+-- Conan executing: conan install /Users/ftheirs/Repositories/ledger-namada/conanfile.txt -s build_type=Debug -s compiler=apple-clang -s compiler.version=14.0 -s compiler.libcxx=libc++ -g=cmake --build=missing
+-- Configuration:
+[settings]
+arch=armv8
+arch_build=armv8
+build_type=Debug
+compiler=apple-clang
+compiler.libcxx=libc++
+compiler.version=14.0
+os=Macos
+os_build=Macos
+[options]
+[build_requires]
+[env]
+
+conanfile.txt: Installing package
+Requirements
+    fmt/7.0.2 from 'conancenter' - Cache
+    jsoncpp/1.9.3 from 'conancenter' - Cache
+Packages
+    fmt/7.0.2:8e7434fcc661c31c4aaeb10ac7df17b23eb3b4b7 - Cache
+    jsoncpp/1.9.3:dcdda45c74e4819365fdc09d8295453331965264 - Cache
+
+Installing (downloading, building) binaries...
+fmt/7.0.2: Already installed!
+jsoncpp/1.9.3: Already installed!
+conanfile.txt: Generator txt created conanbuildinfo.txt
+conanfile.txt: Generator cmake created conanbuildinfo.cmake
+conanfile.txt: Aggregating env generators
+conanfile.txt: Generated conaninfo.txt
+conanfile.txt: Generated graphinfo
+
+-- Conan: Loading conanbuildinfo.cmake
+-- Conan: Adjusting output directories
+-- Conan: Using cmake targets configuration
+-- Library jsoncpp found /Users/ftheirs/.conan/data/jsoncpp/1.9.3/_/_/package/dcdda45c74e4819365fdc09d8295453331965264/lib/libjsoncpp.a
+-- Library fmtd found /Users/ftheirs/.conan/data/fmt/7.0.2/_/_/package/8e7434fcc661c31c4aaeb10ac7df17b23eb3b4b7/lib/libfmtd.a
+-- Conan: Adjusting default RPATHs Conan policies
+-- Conan: Adjusting language standard
+-- Current conanbuildinfo.cmake directory: /Users/ftheirs/Repositories/ledger-namada/build
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/ftheirs/Repositories/ledger-namada/build/googletest-download
+[ 11%] Performing update step for 'googletest'
+[ 22%] No patch step for 'googletest'
+[ 33%] No configure step for 'googletest'
+[ 44%] No build step for 'googletest'
+[ 55%] No install step for 'googletest'
+[ 66%] No test step for 'googletest'
+[ 77%] Completed 'googletest'
+[100%] Built target googletest
+-- LEDGER_MAJOR_VERSION [0]: 0
+-- LEDGER_MINOR_VERSION [0]: 0
+-- Configuring done (0.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/ftheirs/Repositories/ledger-namada/build
+[ 60%] Built target app_lib
+[ 66%] Built target gtest
+[ 73%] Built target gtest_main
+[ 86%] Built target unittests
+[ 93%] Built target gmock
+[100%] Built target gmock_main
+cd build && GTEST_COLOR=1 ASAN_OPTIONS=detect_leaks=0 ctest -VV
+UpdateCTestConfiguration  from :/Users/ftheirs/Repositories/ledger-namada/build/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/Users/ftheirs/Repositories/ledger-namada/build/DartConfiguration.tcl
+Test project /Users/ftheirs/Repositories/ledger-namada/build
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: unittests
+
+1: Test command: /Users/ftheirs/Repositories/ledger-namada/build/bin/unittests
+1: Working Directory: /Users/ftheirs/Repositories/ledger-namada/tests
+1: Test timeout computed to be: 10000000
+1: Running main() from /Users/ftheirs/Repositories/ledger-namada/build/googletest-src/googletest/src/gtest_main.cc
+1: Number of testcases: 54
+1: Number of testcases: 54
+1: [0;32m[==========] [mRunning 110 tests from 3 test suites.
+1: [0;32m[----------] [mGlobal test environment set-up.
+1: [0;32m[----------] [m1 test from Address
+1: [0;32m[ RUN      ] [mAddress.NamadaEncodingTestnet
+1: [0;32m[       OK ] [mAddress.NamadaEncodingTestnet (0 ms)
+1: [0;32m[----------] [m1 test from Address (0 ms total)
+1: 
+1: [0;32m[----------] [m1 test from LEB128
+1: [0;32m[ RUN      ] [mLEB128.LEB128Encoding
+1: [0;32m[       OK ] [mLEB128.LEB128Encoding (0 ms)
+1: [0;32m[----------] [m1 test from LEB128 (0 ms total)
+1: 
+1: [0;32m[----------] [m108 tests from JsonTestCasesCurrentTxVer/JsonTestsA
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_0
+1: 
+1: 0 | Type : Transfer
+1: 1 | Sender [1/3] : atest1v4ehgw36gdz5vv34gsurvs6pg3p5gs3e
+1: 1 | Sender [2/3] : xerrzv3cg4zrzdjyg3ryzs34xvc5gve5xuc52v
+1: 1 | Sender [3/3] : j9nrutay
+1: 2 | Destination [1/3] : atest1v4ehgw36xqeyzdjpxyu5yvf4xdqnwwps
+1: 2 | Destination [2/3] : xcc5vv3hxu6njwfsxgurq334gvmn2vjpgerrxd
+1: 2 | Destination [3/3] : 2rny0fga
+1: 3 | Amount : BTC 23.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_1
+1: 
+1: 0 | Type : Transfer
+1: 1 | Sender [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Sender [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Sender [3/3] : ecdvt2tj
+1: 2 | Destination [1/3] : atest1v4ehgw36g5mnywp3xvcrxsesxve5vs35
+1: 2 | Destination [2/3] : xpznjven8qmrqse5xdp52sehxcenv32yxyen23
+1: 2 | Destination [3/3] : psmfq3rl
+1: 3 | Amount : BTC 23.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_2
+1: 
+1: 0 | Type : Transfer
+1: 1 | Sender [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Sender [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Sender [3/3] : jp4gcn9a
+1: 2 | Destination [1/3] : atest1v4ehgw36ggmyzvehxfpnwv2xxdpnsvek
+1: 2 | Destination [2/3] : xccryd2pxdzrzvehxfprj3fexezyzdfsxuunyv
+1: 2 | Destination [3/3] : jxt2vu2r
+1: 3 | Amount : BTC 23.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Transfer_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_1
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_2
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Source [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Source [3/3] : jyuetzra
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_3
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_4
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_5
+1: 
+1: 0 | Type : Bond
+1: 1 | Validator [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Validator [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Validator [3/3] : ecdvt2tj
+1: 2 | Amount : NAM 25.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_5 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_6
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_6 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_7
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Source [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Source [3/3] : pjksl96e
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_7 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_8
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_8 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_9
+1: 
+1: 0 | Type : Bond
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_9 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_10
+1: 
+1: 0 | Type : Bond
+1: 1 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Validator [3/3] : jp4gcn9a
+1: 2 | Amount : NAM 25.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Bond_10 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_0
+1: 
+1: 0 | Type : Reveal Pubkey
+1: 1 | Public key [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 1 | Public key [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_1
+1: 
+1: 0 | Type : Reveal Pubkey
+1: 1 | Public key [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 1 | Public key [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_2
+1: 
+1: 0 | Type : Reveal Pubkey
+1: 1 | Public key [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 1 | Public key [2/2] : b4612d4d8cc517e92682205a7477
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Reveal_Pubkey_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_UpdateVP_0
+1: 
+1: 0 | Type : Update VP
+1: 1 | Address [1/3] : atest1v4ehgw36gdz5vv34gsurvs6pg3p5gs3e
+1: 1 | Address [2/3] : xerrzv3cg4zrzdjyg3ryzs34xvc5gve5xuc52v
+1: 1 | Address [3/3] : j9nrutay
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_UpdateVP_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_UpdateVP_1
+1: 
+1: 0 | Type : Update VP
+1: 1 | Address [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Address [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Address [3/3] : ecdvt2tj
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_UpdateVP_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Update_VP_2
+1: 
+1: 0 | Type : Update VP
+1: 1 | Address [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Address [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Address [3/3] : jp4gcn9a
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Update_VP_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_0
+1: 
+1: 0 | Type : Init Account
+1: 1 | Public key [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 1 | Public key [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_1
+1: 
+1: 0 | Type : Init Account
+1: 1 | Public key [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 1 | Public key [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_2
+1: 
+1: 0 | Type : Init Account
+1: 1 | Public key [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 1 | Public key [2/2] : b4612d4d8cc517e92682205a7477
+1: 2 | VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Account_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_0
+1: 
+1: 0 | Type : Withdraw
+1: 1 | Validator [1/3] : atest1v4ehgw36g56nws3jg3pnzdzxgccrvd3j
+1: 1 | Validator [2/3] : xgunwse5xv6rzdzrgsunx33589qngd35x9zrvd
+1: 1 | Validator [3/3] : 3heqphwc
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_1
+1: 
+1: 0 | Type : Withdraw
+1: 1 | Validator [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Validator [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Validator [3/3] : jyuetzra
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_2
+1: 
+1: 0 | Type : Withdraw
+1: 1 | Validator [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Validator [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Validator [3/3] : pjksl96e
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Withdraw_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_0
+1: 
+1: 0 | Type : Unbond
+1: 1 | Validator [1/3] : atest1v4ehgw36xqeyzdjpxyu5yvf4xdqnwwps
+1: 1 | Validator [2/3] : xcc5vv3hxu6njwfsxgurq334gvmn2vjpgerrxd
+1: 1 | Validator [3/3] : 2rny0fga
+1: 2 | Amount : NAM 5.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_1
+1: 
+1: 0 | Type : Unbond
+1: 1 | Validator [1/3] : atest1v4ehgw36g5mnywp3xvcrxsesxve5vs35
+1: 1 | Validator [2/3] : xpznjven8qmrqse5xdp52sehxcenv32yxyen23
+1: 1 | Validator [3/3] : psmfq3rl
+1: 2 | Amount : NAM 5.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_2
+1: 
+1: 0 | Type : Unbond
+1: 1 | Validator [1/3] : atest1v4ehgw36ggmyzvehxfpnwv2xxdpnsvek
+1: 1 | Validator [2/3] : xccryd2pxdzrzvehxfprj3fexezyzdfsxuunyv
+1: 1 | Validator [3/3] : jxt2vu2r
+1: 2 | Amount : NAM 5.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Unbond_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_0
+1: 
+1: 0 | Type : Init Validator
+1: 1 | Account key [1/2] : 009b71ace52f0e7884f21db208a55354fdbb6b
+1: 1 | Account key [2/2] : 85c965e629e2bc6ac5c5fc609a2a
+1: 2 | Consensus key [1/2] : 0019920adf7b836381b48bdc7d0dae29cff3a9
+1: 2 | Consensus key [2/2] : 44304b55a54cc59adf879b67c5fc
+1: 3 | Protocol key [1/2] : 00c560e9a8c963d1dc32bff13ff2f147586869
+1: 3 | Protocol key [2/2] : 9a884add8ad31fa5d906f209c888
+1: 4 | DKG key [1/6] : 6000000005b8e49ca7c6bf63ca8adcfd4e365b
+1: 4 | DKG key [2/6] : d5e1c683b53bc293ee410e7d3f47677250cfd8
+1: 4 | DKG key [3/6] : 2dc167df6d249203445e5a28930937c985a6ba
+1: 4 | DKG key [4/6] : 06c3d9198185a2ee1cdb6979ea5570c3546126
+1: 4 | DKG key [5/6] : d536e485295e1409507bf581c988d09032578b
+1: 4 | DKG key [6/6] : 590f869589
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_1
+1: 
+1: 0 | Type : Init Validator
+1: 1 | Account key [1/2] : 001ea4e07a73edff32c5c4180412a007aa4078
+1: 1 | Account key [2/2] : 95f84fd20203f6867c7eba12b533
+1: 2 | Consensus key [1/2] : 005b1096c50642388c69a740fd31e1537971ad
+1: 2 | Consensus key [2/2] : b27e07876bef6d57ef1585a6ada0
+1: 3 | Protocol key [1/2] : 0048bfd36ab9fbbdd6db60bc363d5196ec91f7
+1: 3 | Protocol key [2/2] : ae47bc688d6c3f5d012ff82f60b0
+1: 4 | DKG key [1/6] : 60000000be9ef2789e87afc5dd50566484b4dd
+1: 4 | DKG key [2/6] : 6fc64beda8a33001a7cca96c71de94f11cc16f
+1: 4 | DKG key [3/6] : a02a1ae31af5f247e4761a7819191dcb07567e
+1: 4 | DKG key [4/6] : 488607758459724bba2e54f66801b6221e6a8b
+1: 4 | DKG key [5/6] : 30107ca1e54a84cdb871b81b1bae6f4ff2753d
+1: 4 | DKG key [6/6] : 4184c80008
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_2
+1: 
+1: 0 | Type : Init Validator
+1: 1 | Account key [1/2] : 00192c084fc9cd3432b08b5745bcdc5f5eb6f3
+1: 1 | Account key [2/2] : 03158aebd0b37c4d1b968e6f86b3
+1: 2 | Consensus key [1/2] : 007f58fff171179823d58a6abd4a1b7218a14f
+1: 2 | Consensus key [2/2] : e2cb5a13096435204e695f74f02e
+1: 3 | Protocol key [1/2] : 00faad2ea24a47bda7c85514d6b9ee03f6110b
+1: 3 | Protocol key [2/2] : 94bc41438c6049d35bd52396d8a0
+1: 4 | DKG key [1/6] : 6000000057680d3693d9f2cfddd5776af31b78
+1: 4 | DKG key [2/6] : 5383c395aa3035216d9fec466f7b3060add8d7
+1: 4 | DKG key [3/6] : cb59a692e4b020fa2861fb6857142cc25467ea
+1: 4 | DKG key [4/6] : 04985018b37c80a67a9873dca721e92c0c754d
+1: 4 | DKG key [5/6] : 5e4769cf3bce0adbe3d0269a4a50df5d3b2074
+1: 4 | DKG key [6/6] : 3bd38fc88a
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type : User
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Validator_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_0
+1: 
+1: 0 | Type : Init proposal
+1: 1 | Author [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Author [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Author [3/3] : jyuetzra
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : f8073848db6037887e84e03602dac5ade844fa
+1: 5 | Content [2/2] : 48e984c072931c7cdf7cdf0c97
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_1
+1: 
+1: 0 | Type : Init proposal
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 08b9d5dcf5dd094d46d6a401fc62e61893f691
+1: 5 | Content [2/2] : 622c08207028a8e7b89a279e5b
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_2
+1: 
+1: 0 | Type : Init proposal
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : f34c7c8ef99934a54da19a1698118fbd351706
+1: 5 | Content [2/2] : 13249ee369a5969a30d1d6dbb0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_3
+1: 
+1: 0 | Type : Init proposal
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 99076284e6bf18b016166cecec783f0af9caf8
+1: 5 | Content [2/2] : 2580137304f316d131ee9d33a7
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_4
+1: 
+1: 0 | Type : Init proposal
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 4d07ce9751a42ab7038b59f3da52844b8b52e9
+1: 5 | Content [2/2] : 6e449b8322286b7c06f323e263
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Init_Proposal_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34
+1: 2 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd
+1: 2 | Voter [3/3] : 345p5atp
+1: 3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34
+1: 3 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd
+1: 3 | Voter [3/3] : 345p5atp
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 8
+1:   expected.size()
+1:     Which is: 6
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1:   Actual: "2 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd"
+1:   Actual: "2 | Voter [3/3] : 345p5atp"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : 345p5atp"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-00 00-00 00-00 00-11 00-9A 81-42 01-00 00-00 10-06 00-00 00-00 00-00 20-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 D0-72 62-42 01-00 00-00 08-74 62-42 01-00 00-00 08-74 62-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx
+1: 2 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v
+1: 2 | Voter [3/3] : 6ruyw9dk
+1: 3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx
+1: 3 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v
+1: 3 | Voter [3/3] : 6ruyw9dk
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 8
+1:   expected.size()
+1:     Which is: 6
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1:   Actual: "2 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v"
+1:   Actual: "2 | Voter [3/3] : 6ruyw9dk"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : 6ruyw9dk"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-00 00-00 00-00 00-11 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_with_Delegations
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 2 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 2 | Voter [3/3] : ecdvt2tj
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 11
+1:   expected.size()
+1:     Which is: 9
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1:   Actual: "2 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1:   Actual: "2 | Voter [3/3] : ecdvt2tj"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : ecdvt2tj"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj"
+1:   Actual: "3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv"
+1:   Actual: "3 | Voter [3/3] : ecdvt2tj"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [3/3] : 3nss6z3p"
+1:   Actual: "4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_with_Delegations, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 60-FC 64-42 01-00 00-00 22-00 00-00 00-00 00-00 30-00 00-00 00-00 00-80 00-9A 81-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 20-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 10-7A 62-42 01-00 00-00 90-7B 62-42 01-00 00-00 90-7B 62-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_1
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 2 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 2 | Voter [3/3] : jyuetzra
+1: 3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 3 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 3 | Voter [3/3] : jyuetzra
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 8
+1:   expected.size()
+1:     Which is: 6
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1:   Actual: "2 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d"
+1:   Actual: "2 | Voter [3/3] : jyuetzra"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : jyuetzra"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_1, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 79-61 79-5F 31-00 00-00 00-13 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_with_councils_1
+1: 
+1: 0 | Type : Vote Proposal
+1: 1 | ID : 2
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36xumnxsj9gguyxdpkxvcngs3eg4q5vvzpgd
+1: 2 | Vote [3/4] : p5gwpjxqcrwvf3gccnqdzrgfrr2djyuetzra, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_with_councils_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_with_councils_2
+1: 
+1: 0 | Type : Vote Proposal
+1: 1 | ID : 3
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36xumnxsj9gguyxdpkxvcngs3eg4q5vvzpgd
+1: 2 | Vote [3/4] : p5gwpjxqcrwvf3gccnqdzrgfrr2djyuetzra, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_with_councils_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_2
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Voter [3/3] : jp4gcn9a
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 11
+1:   expected.size()
+1:     Which is: 9
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1:   Actual: "2 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1:   Actual: "2 | Voter [3/3] : jp4gcn9a"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : jp4gcn9a"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3"
+1:   Actual: "3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd"
+1:   Actual: "3 | Voter [3/3] : jp4gcn9a"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [3/3] : 69jx6t2q"
+1:   Actual: "4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-5F 32-00 00-00 00-13 00-9A 81-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 20-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 10-0C 63-42 01-00 00-00 90-0D 63-42 01-00 00-00 90-0D 63-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_2
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 2 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 2 | Voter [3/3] : pjksl96e
+1: 3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 3 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 3 | Voter [3/3] : pjksl96e
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 8
+1:   expected.size()
+1:     Which is: 6
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Type : Vote Proposal"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1:   Actual: "2 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3"
+1:   Actual: "2 | Voter [3/3] : pjksl96e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : pjksl96e"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-5F 32-00 00-00 00-13 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_3
+1: 
+1: 0 | Type : Vote Proposal
+1: 1 | ID : 2
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36gvmyy3jyxs65vd69gsu5vdzyg5urv3pngs
+1: 2 | Vote [3/4] : cyz3pjxscnjwz9gy6rw3z9xdz5v3pjksl96e, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_4
+1: 
+1: 0 | Type : Vote Proposal
+1: 1 | ID : 3
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36gvmyy3jyxs65vd69gsu5vdzyg5urv3pngs
+1: 2 | Vote [3/4] : cyz3pjxscnjwz9gy6rw3z9xdz5v3pjksl96e, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_0
+1: 
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_1
+1: 
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_2
+1: 
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Custom_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_0
+1: 
+1: 0 | Type : Change commission
+1: 1 | New rate : 0.02
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_1
+1: 
+1: 0 | Type : Change commission
+1: 1 | New rate : 0.05
+1: 2 | Validator [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 2 | Validator [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 2 | Validator [3/3] : pjksl96e
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_2
+1: 
+1: 0 | Type : Change commission
+1: 1 | New rate : 0.07
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_3
+1: 
+1: 0 | Type : Change commission
+1: 1 | New rate : 0.09
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_4
+1: 
+1: 0 | Type : Change commission
+1: 1 | New rate : 0.11
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Change_Commission_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_0
+1: 
+1: 0 | Code hash [1/2] : 225991ddf88d81b7a587e98fc45d4efe6df3b3
+1: 0 | Code hash [2/2] : bc62d9ba946a829b7a2d0025ed
+1: 1 | Sender [1/3] : atest1v4ehgw36gdz5vv34gsurvs6pg3p5gs3e
+1: 1 | Sender [2/3] : xerrzv3cg4zrzdjyg3ryzs34xvc5gve5xuc52v
+1: 1 | Sender [3/3] : j9nrutay
+1: 2 | Destination [1/3] : atest1v4ehgw36xqeyzdjpxyu5yvf4xdqnwwps
+1: 2 | Destination [2/3] : xcc5vv3hxu6njwfsxgurq334gvmn2vjpgerrxd
+1: 2 | Destination [3/3] : 2rny0fga
+1: 3 | Amount : BTC 23.0
+1: 4 | Timestamp : 2023-06-13 18:04:29.045657885 UTC
+1: 5 | Pubkey [1/2] : 00d04d39252f8f76ee4ce7ff1ce846f45d9bb0
+1: 5 | Pubkey [2/2] : aa4b84e10e7ee96382958f4c9d3a
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_1
+1: 
+1: 0 | Code hash [1/2] : 225991ddf88d81b7a587e98fc45d4efe6df3b3
+1: 0 | Code hash [2/2] : bc62d9ba946a829b7a2d0025ed
+1: 1 | Sender [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Sender [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Sender [3/3] : ecdvt2tj
+1: 2 | Destination [1/3] : atest1v4ehgw36g5mnywp3xvcrxsesxve5vs35
+1: 2 | Destination [2/3] : xpznjven8qmrqse5xdp52sehxcenv32yxyen23
+1: 2 | Destination [3/3] : psmfq3rl
+1: 3 | Amount : BTC 23.0
+1: 4 | Timestamp : 2023-06-19 11:09:28.930908666 UTC
+1: 5 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 5 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_2
+1: 
+1: 0 | Code hash [1/2] : 225991ddf88d81b7a587e98fc45d4efe6df3b3
+1: 0 | Code hash [2/2] : bc62d9ba946a829b7a2d0025ed
+1: 1 | Sender [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Sender [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Sender [3/3] : jp4gcn9a
+1: 2 | Destination [1/3] : atest1v4ehgw36ggmyzvehxfpnwv2xxdpnsvek
+1: 2 | Destination [2/3] : xccryd2pxdzrzvehxfprj3fexezyzdfsxuunyv
+1: 2 | Destination [3/3] : jxt2vu2r
+1: 3 | Amount : BTC 23.0
+1: 4 | Timestamp : 2023-06-19 12:55:38.322736177 UTC
+1: 5 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 5 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Transfer_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_1
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 11:08:35.246405369 UTC
+1: 5 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 5 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_2
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Source [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Source [3/3] : jyuetzra
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 11:08:51.718772869 UTC
+1: 5 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 5 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_3
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 11:08:57.681951754 UTC
+1: 5 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 5 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_4
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Source [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Source [3/3] : ecdvt2tj
+1: 2 | Validator [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 2 | Validator [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 2 | Validator [3/3] : 3nss6z3p
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 11:09:07.299292566 UTC
+1: 5 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 5 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_5
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Validator [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Validator [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Validator [3/3] : ecdvt2tj
+1: 2 | Amount : NAM 25.0
+1: 3 | Timestamp : 2023-06-19 11:09:32.377882526 UTC
+1: 4 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 4 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_5 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_6
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 12:54:27.746050522 UTC
+1: 5 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 5 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_6 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_7
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Source [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Source [3/3] : pjksl96e
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 12:54:49.374301356 UTC
+1: 5 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 5 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_7 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_8
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 12:54:59.306273381 UTC
+1: 5 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 5 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_8 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_9
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Source [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Source [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Source [3/3] : jp4gcn9a
+1: 2 | Validator [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 2 | Validator [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 2 | Validator [3/3] : 69jx6t2q
+1: 3 | Amount : NAM 900.0
+1: 4 | Timestamp : 2023-06-19 12:55:11.829903089 UTC
+1: 5 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 5 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_9 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_10
+1: 
+1: 0 | Code hash [1/2] : c5af313728e281c2578b4bd8cbc9cbbfb0209d
+1: 0 | Code hash [2/2] : 0785734b462c44b9a631012900
+1: 1 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Validator [3/3] : jp4gcn9a
+1: 2 | Amount : NAM 25.0
+1: 3 | Timestamp : 2023-06-19 12:55:41.937949102 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Bond_10 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_0
+1: 
+1: 0 | Code hash [1/2] : ccd2d3cf7eb36af965e52e10b300523e796b7c
+1: 0 | Code hash [2/2] : 5517278a0703c429d670fff479
+1: 1 | Public key [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 1 | Public key [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 2 | Timestamp : 2023-06-13 18:04:37.357400082 UTC
+1: 3 | Pubkey [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 3 | Pubkey [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 4 | Epoch : 1
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_1
+1: 
+1: 0 | Code hash [1/2] : ccd2d3cf7eb36af965e52e10b300523e796b7c
+1: 0 | Code hash [2/2] : 5517278a0703c429d670fff479
+1: 1 | Public key [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 1 | Public key [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 2 | Timestamp : 2023-06-19 11:09:35.756927194 UTC
+1: 3 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 3 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 4 | Epoch : 1
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_2
+1: 
+1: 0 | Code hash [1/2] : ccd2d3cf7eb36af965e52e10b300523e796b7c
+1: 0 | Code hash [2/2] : 5517278a0703c429d670fff479
+1: 1 | Public key [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 1 | Public key [2/2] : b4612d4d8cc517e92682205a7477
+1: 2 | Timestamp : 2023-06-19 12:55:50.007390357 UTC
+1: 3 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 3 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 4 | Epoch : 1
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Reveal_Pubkey_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_UpdateVP_0
+1: 
+1: 0 | Code hash [1/2] : 8d00c0f6b71511fd48da76679f3f9a5b41103b
+1: 0 | Code hash [2/2] : 93161a71b0c97b212906a71dbb
+1: 1 | Address [1/3] : atest1v4ehgw36gdz5vv34gsurvs6pg3p5gs3e
+1: 1 | Address [2/3] : xerrzv3cg4zrzdjyg3ryzs34xvc5gve5xuc52v
+1: 1 | Address [3/3] : j9nrutay
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-13 18:04:41.153429841 UTC
+1: 4 | Pubkey [1/2] : 00d04d39252f8f76ee4ce7ff1ce846f45d9bb0
+1: 4 | Pubkey [2/2] : aa4b84e10e7ee96382958f4c9d3a
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_UpdateVP_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_UpdateVP_1
+1: 
+1: 0 | Code hash [1/2] : 8d00c0f6b71511fd48da76679f3f9a5b41103b
+1: 0 | Code hash [2/2] : 93161a71b0c97b212906a71dbb
+1: 1 | Address [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 1 | Address [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 1 | Address [3/3] : ecdvt2tj
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-19 11:09:39.469858655 UTC
+1: 4 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 4 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_UpdateVP_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Update_VP_2
+1: 
+1: 0 | Code hash [1/2] : 8d00c0f6b71511fd48da76679f3f9a5b41103b
+1: 0 | Code hash [2/2] : 93161a71b0c97b212906a71dbb
+1: 1 | Address [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 1 | Address [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 1 | Address [3/3] : jp4gcn9a
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-19 12:55:54.789936948 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Update_VP_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_0
+1: 
+1: 0 | Code hash [1/2] : fbd9e66ce66fc8ae9257878a60c6affe5046f3
+1: 0 | Code hash [2/2] : fcb4148f394a6efa5789d8ef72
+1: 1 | Public key [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 1 | Public key [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-13 18:04:59.304251849 UTC
+1: 4 | Pubkey [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 4 | Pubkey [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_1
+1: 
+1: 0 | Code hash [1/2] : fbd9e66ce66fc8ae9257878a60c6affe5046f3
+1: 0 | Code hash [2/2] : fcb4148f394a6efa5789d8ef72
+1: 1 | Public key [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 1 | Public key [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-19 11:09:56.653976396 UTC
+1: 4 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 4 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_2
+1: 
+1: 0 | Code hash [1/2] : fbd9e66ce66fc8ae9257878a60c6affe5046f3
+1: 0 | Code hash [2/2] : fcb4148f394a6efa5789d8ef72
+1: 1 | Public key [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 1 | Public key [2/2] : b4612d4d8cc517e92682205a7477
+1: 2 | VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 2 | VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 3 | Timestamp : 2023-06-19 12:56:09.509959609 UTC
+1: 4 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 4 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 5 | Epoch : 2
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Account_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_0
+1: 
+1: 0 | Code hash [1/2] : f7a3acf046f3c216eaf4c6827a3f91433dac58
+1: 0 | Code hash [2/2] : 05d82f2d6ad7bdf1574d504140
+1: 1 | Validator [1/3] : atest1v4ehgw36g56nws3jg3pnzdzxgccrvd3j
+1: 1 | Validator [2/3] : xgunwse5xv6rzdzrgsunx33589qngd35x9zrvd
+1: 1 | Validator [3/3] : 3heqphwc
+1: 2 | Timestamp : 2023-06-13 18:04:55.596721751 UTC
+1: 3 | Pubkey [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 3 | Pubkey [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 4 | Epoch : 1
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_1
+1: 
+1: 0 | Code hash [1/2] : f7a3acf046f3c216eaf4c6827a3f91433dac58
+1: 0 | Code hash [2/2] : 05d82f2d6ad7bdf1574d504140
+1: 1 | Validator [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Validator [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Validator [3/3] : jyuetzra
+1: 2 | Timestamp : 2023-06-19 11:09:52.873983344 UTC
+1: 3 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 3 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 4 | Epoch : 1
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_2
+1: 
+1: 0 | Code hash [1/2] : f7a3acf046f3c216eaf4c6827a3f91433dac58
+1: 0 | Code hash [2/2] : 05d82f2d6ad7bdf1574d504140
+1: 1 | Validator [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Validator [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Validator [3/3] : pjksl96e
+1: 2 | Timestamp : 2023-06-19 12:56:05.746298449 UTC
+1: 3 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 3 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 4 | Epoch : 2
+1: 5 | Gas limit : 0
+1: 6 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Withdraw_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_0
+1: 
+1: 0 | Code hash [1/2] : 7c1851534a76b7b33516eb4897548bc54573e1
+1: 0 | Code hash [2/2] : c4792db1e695967a19a8c64848
+1: 1 | Validator [1/3] : atest1v4ehgw36xqeyzdjpxyu5yvf4xdqnwwps
+1: 1 | Validator [2/3] : xcc5vv3hxu6njwfsxgurq334gvmn2vjpgerrxd
+1: 1 | Validator [3/3] : 2rny0fga
+1: 2 | Amount : NAM 5.0
+1: 3 | Timestamp : 2023-06-13 18:04:50.611679830 UTC
+1: 4 | Pubkey [1/2] : 0030b40d3dd095dfeee4c4f57a03c100858df1
+1: 4 | Pubkey [2/2] : 000dd615f647e13c7d2c8482f55f
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_1
+1: 
+1: 0 | Code hash [1/2] : 7c1851534a76b7b33516eb4897548bc54573e1
+1: 0 | Code hash [2/2] : c4792db1e695967a19a8c64848
+1: 1 | Validator [1/3] : atest1v4ehgw36g5mnywp3xvcrxsesxve5vs35
+1: 1 | Validator [2/3] : xpznjven8qmrqse5xdp52sehxcenv32yxyen23
+1: 1 | Validator [3/3] : psmfq3rl
+1: 2 | Amount : NAM 5.0
+1: 3 | Timestamp : 2023-06-19 11:09:48.286269366 UTC
+1: 4 | Pubkey [1/2] : 00d92250d7017975b5e2a1dafca8aa230fb131
+1: 4 | Pubkey [2/2] : 232878a227c4713a149b3fab16f2
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_2
+1: 
+1: 0 | Code hash [1/2] : 7c1851534a76b7b33516eb4897548bc54573e1
+1: 0 | Code hash [2/2] : c4792db1e695967a19a8c64848
+1: 1 | Validator [1/3] : atest1v4ehgw36ggmyzvehxfpnwv2xxdpnsvek
+1: 1 | Validator [2/3] : xccryd2pxdzrzvehxfprj3fexezyzdfsxuunyv
+1: 1 | Validator [3/3] : jxt2vu2r
+1: 2 | Amount : NAM 5.0
+1: 3 | Timestamp : 2023-06-19 12:56:02.102135576 UTC
+1: 4 | Pubkey [1/2] : 00660a067bd53d3af5b8e1b63adacecb2bcace
+1: 4 | Pubkey [2/2] : cf3668c85dec22bdb0934deaeda2
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Unbond_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_0
+1: 
+1: 0 | Code hash [1/2] : 4703716233738ee20e161d5b8f1ae856f7096f
+1: 0 | Code hash [2/2] : 5142e28bbd79e5ede9b86f9c56
+1: 1 | Account key [1/2] : 009b71ace52f0e7884f21db208a55354fdbb6b
+1: 1 | Account key [2/2] : 85c965e629e2bc6ac5c5fc609a2a
+1: 2 | Consensus key [1/2] : 0019920adf7b836381b48bdc7d0dae29cff3a9
+1: 2 | Consensus key [2/2] : 44304b55a54cc59adf879b67c5fc
+1: 3 | Protocol key [1/2] : 00c560e9a8c963d1dc32bff13ff2f147586869
+1: 3 | Protocol key [2/2] : 9a884add8ad31fa5d906f209c888
+1: 4 | DKG key [1/6] : 6000000005b8e49ca7c6bf63ca8adcfd4e365b
+1: 4 | DKG key [2/6] : d5e1c683b53bc293ee410e7d3f47677250cfd8
+1: 4 | DKG key [3/6] : 2dc167df6d249203445e5a28930937c985a6ba
+1: 4 | DKG key [4/6] : 06c3d9198185a2ee1cdb6979ea5570c3546126
+1: 4 | DKG key [5/6] : d536e485295e1409507bf581c988d09032578b
+1: 4 | DKG key [6/6] : 590f869589
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 7 | Validator VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 8 | Timestamp : 2023-06-13 18:04:45.887757782 UTC
+1: 9 | Pubkey [1/2] : 00d04d39252f8f76ee4ce7ff1ce846f45d9bb0
+1: 9 | Pubkey [2/2] : aa4b84e10e7ee96382958f4c9d3a
+1: 10 | Epoch : 1
+1: 11 | Gas limit : 0
+1: 12 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_1
+1: 
+1: 0 | Code hash [1/2] : 4703716233738ee20e161d5b8f1ae856f7096f
+1: 0 | Code hash [2/2] : 5142e28bbd79e5ede9b86f9c56
+1: 1 | Account key [1/2] : 001ea4e07a73edff32c5c4180412a007aa4078
+1: 1 | Account key [2/2] : 95f84fd20203f6867c7eba12b533
+1: 2 | Consensus key [1/2] : 005b1096c50642388c69a740fd31e1537971ad
+1: 2 | Consensus key [2/2] : b27e07876bef6d57ef1585a6ada0
+1: 3 | Protocol key [1/2] : 0048bfd36ab9fbbdd6db60bc363d5196ec91f7
+1: 3 | Protocol key [2/2] : ae47bc688d6c3f5d012ff82f60b0
+1: 4 | DKG key [1/6] : 60000000be9ef2789e87afc5dd50566484b4dd
+1: 4 | DKG key [2/6] : 6fc64beda8a33001a7cca96c71de94f11cc16f
+1: 4 | DKG key [3/6] : a02a1ae31af5f247e4761a7819191dcb07567e
+1: 4 | DKG key [4/6] : 488607758459724bba2e54f66801b6221e6a8b
+1: 4 | DKG key [5/6] : 30107ca1e54a84cdb871b81b1bae6f4ff2753d
+1: 4 | DKG key [6/6] : 4184c80008
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 7 | Validator VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 8 | Timestamp : 2023-06-19 11:09:43.902064087 UTC
+1: 9 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 9 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 10 | Epoch : 1
+1: 11 | Gas limit : 0
+1: 12 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_2
+1: 
+1: 0 | Code hash [1/2] : 4703716233738ee20e161d5b8f1ae856f7096f
+1: 0 | Code hash [2/2] : 5142e28bbd79e5ede9b86f9c56
+1: 1 | Account key [1/2] : 00192c084fc9cd3432b08b5745bcdc5f5eb6f3
+1: 1 | Account key [2/2] : 03158aebd0b37c4d1b968e6f86b3
+1: 2 | Consensus key [1/2] : 007f58fff171179823d58a6abd4a1b7218a14f
+1: 2 | Consensus key [2/2] : e2cb5a13096435204e695f74f02e
+1: 3 | Protocol key [1/2] : 00faad2ea24a47bda7c85514d6b9ee03f6110b
+1: 3 | Protocol key [2/2] : 94bc41438c6049d35bd52396d8a0
+1: 4 | DKG key [1/6] : 6000000057680d3693d9f2cfddd5776af31b78
+1: 4 | DKG key [2/6] : 5383c395aa3035216d9fec466f7b3060add8d7
+1: 4 | DKG key [3/6] : cb59a692e4b020fa2861fb6857142cc25467ea
+1: 4 | DKG key [4/6] : 04985018b37c80a67a9873dca721e92c0c754d
+1: 4 | DKG key [5/6] : 5e4769cf3bce0adbe3d0269a4a50df5d3b2074
+1: 4 | DKG key [6/6] : 3bd38fc88a
+1: 5 | Commission rate : 0.05
+1: 6 | Maximum commission rate change : 0.01
+1: 7 | Validator VP type [1/2] : a464a5b93a5827e2c0eea0edb37b16c829676f
+1: 7 | Validator VP type [2/2] : e7879fcc36e872c4a40badf10d
+1: 8 | Timestamp : 2023-06-19 12:55:58.406266035 UTC
+1: 9 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 9 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 10 | Epoch : 1
+1: 11 | Gas limit : 0
+1: 12 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Validator_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_0
+1: 
+1: 0 | Code hash [1/2] : 659faad0bf46b689cea06b4d31040ca230db1b
+1: 0 | Code hash [2/2] : 0096e8640e40ad57434c9d4b16
+1: 1 | Author [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 1 | Author [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 1 | Author [3/3] : jyuetzra
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : f8073848db6037887e84e03602dac5ade844fa
+1: 5 | Content [2/2] : 48e984c072931c7cdf7cdf0c97
+1: 6 | Timestamp : 2023-06-19 11:08:39.766009196 UTC
+1: 7 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 7 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 8 | Epoch : 1
+1: 9 | Gas limit : 0
+1: 10 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_1
+1: 
+1: 0 | Code hash [1/2] : 659faad0bf46b689cea06b4d31040ca230db1b
+1: 0 | Code hash [2/2] : 0096e8640e40ad57434c9d4b16
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 08b9d5dcf5dd094d46d6a401fc62e61893f691
+1: 5 | Content [2/2] : 622c08207028a8e7b89a279e5b
+1: 6 | Timestamp : 2023-06-19 12:54:35.506068554 UTC
+1: 7 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 7 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 8 | Epoch : 1
+1: 9 | Gas limit : 0
+1: 10 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_2
+1: 
+1: 0 | Code hash [1/2] : 659faad0bf46b689cea06b4d31040ca230db1b
+1: 0 | Code hash [2/2] : 0096e8640e40ad57434c9d4b16
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : f34c7c8ef99934a54da19a1698118fbd351706
+1: 5 | Content [2/2] : 13249ee369a5969a30d1d6dbb0
+1: 6 | Timestamp : 2023-06-19 12:55:06.798469298 UTC
+1: 7 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 7 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 8 | Epoch : 1
+1: 9 | Gas limit : 0
+1: 10 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_3
+1: 
+1: 0 | Code hash [1/2] : 659faad0bf46b689cea06b4d31040ca230db1b
+1: 0 | Code hash [2/2] : 0096e8640e40ad57434c9d4b16
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 99076284e6bf18b016166cecec783f0af9caf8
+1: 5 | Content [2/2] : 2580137304f316d131ee9d33a7
+1: 6 | Timestamp : 2023-06-19 12:55:19.202655027 UTC
+1: 7 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 7 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 8 | Epoch : 1
+1: 9 | Gas limit : 0
+1: 10 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_4
+1: 
+1: 0 | Code hash [1/2] : 659faad0bf46b689cea06b4d31040ca230db1b
+1: 0 | Code hash [2/2] : 0096e8640e40ad57434c9d4b16
+1: 1 | Author [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 1 | Author [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 1 | Author [3/3] : pjksl96e
+1: 2 | Voting start epoch : 12
+1: 3 | Voting end epoch : 24
+1: 4 | Grace epoch : 30
+1: 5 | Content [1/2] : 4d07ce9751a42ab7038b59f3da52844b8b52e9
+1: 5 | Content [2/2] : 6e449b8322286b7c06f323e263
+1: 6 | Timestamp : 2023-06-19 12:55:23.282281601 UTC
+1: 7 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 7 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 8 | Epoch : 1
+1: 9 | Gas limit : 0
+1: 10 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Init_Proposal_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34
+1: 2 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd
+1: 2 | Voter [3/3] : 345p5atp
+1: 3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34
+1: 3 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd
+1: 3 | Voter [3/3] : 345p5atp
+1: 4 | Timestamp : 2023-06-16 13:10:37.228571980 UTC
+1: 5 | Pubkey [1/2] : 00d52a4b6c502bc42a2ad3e67ba860491500ad
+1: 5 | Pubkey [2/2] : 438071746c57bc060847ddf653bd
+1: 6 | Epoch : 26
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 14
+1:   expected.size()
+1:     Which is: 13
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1:   Actual: "2 | Voter [3/3] : 345p5atp"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xeznxv6zxpprqvp5x5myvd34"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : 345p5atp"
+1:   Actual: "3 | Voter [2/3] : xerrzv6rg9qnqs34xy6nxs3jx9py2df3xppngd"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Timestamp : 2023-06-16 13:10:37.228571980 UTC"
+1:   Actual: "3 | Voter [3/3] : 345p5atp"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [1/2] : 00d52a4b6c502bc42a2ad3e67ba860491500ad"
+1:   Actual: "4 | Timestamp : 2023-06-16 13:10:37.228571980 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [2/2] : 438071746c57bc060847ddf653bd"
+1:   Actual: "5 | Pubkey [1/2] : 00d52a4b6c502bc42a2ad3e67ba860491500ad"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Epoch : 26"
+1:   Actual: "5 | Pubkey [2/2] : 438071746c57bc060847ddf653bd"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Gas limit : 0"
+1:   Actual: "6 | Epoch : 26"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Fees : NAM 100.0"
+1:   Actual: "7 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-00 00-00 00-00 00-11 00-78 85-42 01-00 00-00 10-06 00-00 00-00 00-00 20-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx
+1: 2 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v
+1: 2 | Voter [3/3] : 6ruyw9dk
+1: 3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx
+1: 3 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v
+1: 3 | Voter [3/3] : 6ruyw9dk
+1: 4 | Timestamp : 2023-06-16 13:10:41.020160946 UTC
+1: 5 | Pubkey [1/2] : 006b4bdfc5ae6f3460323b355fb87d8caaef55
+1: 5 | Pubkey [2/2] : 4b8bb8dcb7c9bba59e9e4d67b83e
+1: 6 | Epoch : 26
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 14
+1:   expected.size()
+1:     Which is: 13
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1:   Actual: "2 | Voter [3/3] : 6ruyw9dk"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xdqngd3ex4zn2wfnxarrzwzx"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : 6ruyw9dk"
+1:   Actual: "3 | Voter [2/3] : g3qnswzzgvur2dp4g3p5vvzpx3pn2dpsxs6r2v"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Timestamp : 2023-06-16 13:10:41.020160946 UTC"
+1:   Actual: "3 | Voter [3/3] : 6ruyw9dk"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [1/2] : 006b4bdfc5ae6f3460323b355fb87d8caaef55"
+1:   Actual: "4 | Timestamp : 2023-06-16 13:10:41.020160946 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [2/2] : 4b8bb8dcb7c9bba59e9e4d67b83e"
+1:   Actual: "5 | Pubkey [1/2] : 006b4bdfc5ae6f3460323b355fb87d8caaef55"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Epoch : 26"
+1:   Actual: "5 | Pubkey [2/2] : 4b8bb8dcb7c9bba59e9e4d67b83e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Gas limit : 0"
+1:   Actual: "6 | Epoch : 26"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Fees : NAM 100.0"
+1:   Actual: "7 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-00 00-00 00-00 00-11 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_with_Delegations
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 2 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 2 | Voter [3/3] : ecdvt2tj
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 5 | Timestamp : 2023-06-19 11:08:44.206113299 UTC
+1: 6 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 6 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 17
+1:   expected.size()
+1:     Which is: 16
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1:   Actual: "2 | Voter [3/3] : ecdvt2tj"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : ecdvt2tj"
+1:   Actual: "3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj"
+1:   Actual: "3 | Voter [3/3] : ecdvt2tj"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv"
+1:   Actual: "4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [3/3] : 3nss6z3p"
+1:   Actual: "4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Timestamp : 2023-06-19 11:08:44.206113299 UTC"
+1:   Actual: "4 | Delegations [3/3] : 3nss6z3p"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379"
+1:   Actual: "5 | Timestamp : 2023-06-19 11:08:44.206113299 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8"
+1:   Actual: "6 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Epoch : 1"
+1:   Actual: "6 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Gas limit : 0"
+1:   Actual: "7 | Epoch : 1"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "9 | Fees : NAM 100.0"
+1:   Actual: "8 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_with_Delegations, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 D0-E7 66-42 01-00 00-00 22-00 00-00 00-00 00-00 30-00 00-00 00-00 00-80 00-78 85-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 E8-C1 66-42 01-00 00-00 E8-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 60-9C 66-42 01-00 00-00 60-9C 66-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_1
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 2 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 2 | Voter [3/3] : jyuetzra
+1: 3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e
+1: 3 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d
+1: 3 | Voter [3/3] : jyuetzra
+1: 4 | Timestamp : 2023-06-19 11:08:47.977931937 UTC
+1: 5 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 5 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 14
+1:   expected.size()
+1:     Which is: 13
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1:   Actual: "2 | Voter [3/3] : jyuetzra"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xumnxsj9gguyxdpkxvcngs3e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : jyuetzra"
+1:   Actual: "3 | Voter [2/3] : g4q5vvzpgdp5gwpjxqcrwvf3gccnqdzrgfrr2d"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Timestamp : 2023-06-19 11:08:47.977931937 UTC"
+1:   Actual: "3 | Voter [3/3] : jyuetzra"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b"
+1:   Actual: "4 | Timestamp : 2023-06-19 11:08:47.977931937 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373"
+1:   Actual: "5 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Epoch : 1"
+1:   Actual: "5 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Gas limit : 0"
+1:   Actual: "6 | Epoch : 1"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Fees : NAM 100.0"
+1:   Actual: "7 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_1, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 79-61 79-5F 31-00 00-00 00-13 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 90-18 61-42 01-00 00-00 20-19 61-42 01-00 00-00 20-19 61-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_with_councils_1
+1: 
+1: 0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a
+1: 0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272
+1: 1 | ID : 2
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36xumnxsj9gguyxdpkxvcngs3eg4q5vvzpgd
+1: 2 | Vote [3/4] : p5gwpjxqcrwvf3gccnqdzrgfrr2djyuetzra, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 5 | Timestamp : 2023-06-19 11:09:20.443572774 UTC
+1: 6 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 6 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_with_councils_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_with_councils_2
+1: 
+1: 0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a
+1: 0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272
+1: 1 | ID : 3
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36xumnxsj9gguyxdpkxvcngs3eg4q5vvzpgd
+1: 2 | Vote [3/4] : p5gwpjxqcrwvf3gccnqdzrgfrr2djyuetzra, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xsey2wzrgcc5ydzpxqeryvf4
+1: 3 | Voter [2/3] : g9znvv3jxvuyzdphxuuyvs3jxumy233e8qerzs
+1: 3 | Voter [3/3] : ecdvt2tj
+1: 4 | Delegations [1/3] : atest1v4ehgw36x5m5g33sxvunz32rg3znxwfj
+1: 4 | Delegations [2/3] : xppnjvjygyens3f5gezrww2xgfznzse3x4q5vv
+1: 4 | Delegations [3/3] : 3nss6z3p
+1: 5 | Timestamp : 2023-06-19 11:09:25.110004019 UTC
+1: 6 | Pubkey [1/2] : 00a99a391a750acf6424a3b0a0aaa3f2c8f379
+1: 6 | Pubkey [2/2] : f24cabaaeb2c23408f024e952de8
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_with_councils_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_2
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : nay
+1: 2 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Voter [3/3] : jp4gcn9a
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 5 | Timestamp : 2023-06-19 12:54:40.838003677 UTC
+1: 6 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 6 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 17
+1:   expected.size()
+1:     Which is: 16
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : nay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : nay"
+1:   Actual: "2 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1:   Actual: "2 | Voter [3/3] : jp4gcn9a"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : jp4gcn9a"
+1:   Actual: "3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3"
+1:   Actual: "3 | Voter [3/3] : jp4gcn9a"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd"
+1:   Actual: "4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Delegations [3/3] : 69jx6t2q"
+1:   Actual: "4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Timestamp : 2023-06-19 12:54:40.838003677 UTC"
+1:   Actual: "4 | Delegations [3/3] : 69jx6t2q"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127"
+1:   Actual: "5 | Timestamp : 2023-06-19 12:54:40.838003677 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1"
+1:   Actual: "6 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Epoch : 1"
+1:   Actual: "6 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Gas limit : 0"
+1:   Actual: "7 | Epoch : 1"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "9 | Fees : NAM 100.0"
+1:   Actual: "8 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-5F 32-00 00-00 00-13 00-78 85-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 10-44 61-42 01-00 00-00 E8-44 61-42 01-00 00-00 E8-44 61-42 01-00 00-00 D0-1A 61-42 01-00 00-00 50-1C 61-42 01-00 00-00 50-1C 61-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_2
+1: 
+1: 0 | ID : 0
+1: 1 | Vote : yay
+1: 2 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 2 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 2 | Voter [3/3] : pjksl96e
+1: 3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 3 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 3 | Voter [3/3] : pjksl96e
+1: 4 | Timestamp : 2023-06-19 12:54:44.525957298 UTC
+1: 5 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 5 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 6 | Epoch : 1
+1: 7 | Gas limit : 0
+1: 8 | Fees : NAM 100.0
+1: 
+1: 
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:120: Failure
+1: Expected equality of these values:
+1:   output.size()
+1:     Which is: 14
+1:   expected.size()
+1:     Which is: 13
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a"
+1:   Actual: "0 | ID : 0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272"
+1:   Actual: "1 | Vote : yay"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "1 | ID : 0"
+1:   Actual: "2 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "2 | Vote : yay"
+1:   Actual: "2 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1:   Actual: "2 | Voter [3/3] : pjksl96e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3"
+1:   Actual: "3 | Voter [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "3 | Voter [3/3] : pjksl96e"
+1:   Actual: "3 | Voter [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "4 | Timestamp : 2023-06-19 12:54:44.525957298 UTC"
+1:   Actual: "3 | Voter [3/3] : pjksl96e"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0"
+1:   Actual: "4 | Timestamp : 2023-06-19 12:54:44.525957298 UTC"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "5 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477"
+1:   Actual: "5 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "6 | Epoch : 1"
+1:   Actual: "5 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "7 | Gas limit : 0"
+1:   Actual: "6 | Epoch : 1"
+1: /Users/ftheirs/Repositories/ledger-namada/tests/ui_tests.cpp:123: Failure
+1: Value of: output[i]
+1: Expected: is equal to "8 | Fees : NAM 100.0"
+1:   Actual: "7 | Gas limit : 0"
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-5F 32-00 00-00 00-13 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 E0-EA 60-42 01-00 00-00 70-EB 60-42 01-00 00-00 70-EB 60-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00> (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_3
+1: 
+1: 0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a
+1: 0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272
+1: 1 | ID : 2
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36gvmyy3jyxs65vd69gsu5vdzyg5urv3pngs
+1: 2 | Vote [3/4] : cyz3pjxscnjwz9gy6rw3z9xdz5v3pjksl96e, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 5 | Timestamp : 2023-06-19 12:55:28.798434782 UTC
+1: 6 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 6 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_4
+1: 
+1: 0 | Code hash [1/2] : 269ed92fd7e68af006b95f1f4b9a911c0cf51a
+1: 0 | Code hash [2/2] : 2d6056b3c0619e10e8fd0ee272
+1: 1 | ID : 3
+1: 2 | Vote [1/4] : yay with councils:
+1: Council: atest1v4eh
+1: 2 | Vote [2/4] : gw36gvmyy3jyxs65vd69gsu5vdzyg5urv3pngs
+1: 2 | Vote [3/4] : cyz3pjxscnjwz9gy6rw3z9xdz5v3pjksl96e, 
+1: 2 | Vote [4/4] : spending cap: 0.0009
+1: 3 | Voter [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 3 | Voter [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 3 | Voter [3/3] : jp4gcn9a
+1: 4 | Delegations [1/3] : atest1v4ehgw36xyenqdf4g5urzve5g5cnwvp3
+1: 4 | Delegations [2/3] : g3qnwvesxqursd6xgvurwdjrgdry23p5xcuryd
+1: 4 | Delegations [3/3] : 69jx6t2q
+1: 5 | Timestamp : 2023-06-19 12:55:33.558038294 UTC
+1: 6 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 6 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 7 | Epoch : 1
+1: 8 | Gas limit : 0
+1: 9 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_4 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_0
+1: 
+1: 0 | Code hash [1/2] : 1c3e0c791aa8a43300e08a5e5408df66e67eed
+1: 0 | Code hash [2/2] : 26721f3f4897b017eddfc8cc78
+1: 1 | Timestamp : 2023-06-13 18:05:04.392625270 UTC
+1: 2 | Pubkey [1/2] : 008cd8ee423546ee43cf7dd4ee51638557682e
+1: 2 | Pubkey [2/2] : 045ec0303b8b8ce9e6714297e008
+1: 3 | Epoch : 1
+1: 4 | Gas limit : 0
+1: 5 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_1
+1: 
+1: 0 | Code hash [1/2] : 1c3e0c791aa8a43300e08a5e5408df66e67eed
+1: 0 | Code hash [2/2] : 26721f3f4897b017eddfc8cc78
+1: 1 | Timestamp : 2023-06-19 11:10:00.246743126 UTC
+1: 2 | Pubkey [1/2] : 00d9458d9ae70b725813fd13be8c26febd094b
+1: 2 | Pubkey [2/2] : b5a3f81654ddcd8416e45fc2b373
+1: 3 | Epoch : 1
+1: 4 | Gas limit : 0
+1: 5 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_2
+1: 
+1: 0 | Code hash [1/2] : 1c3e0c791aa8a43300e08a5e5408df66e67eed
+1: 0 | Code hash [2/2] : 26721f3f4897b017eddfc8cc78
+1: 1 | Timestamp : 2023-06-19 12:56:13.146246569 UTC
+1: 2 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 2 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 3 | Epoch : 2
+1: 4 | Gas limit : 0
+1: 5 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Custom_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_0
+1: 
+1: 0 | Code hash [1/2] : 63318782478028c3a4695104ff4aab6208f0fc
+1: 0 | Code hash [2/2] : 0752828d4ab486276c69cfd46c
+1: 1 | New rate : 0.02
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 3 | Timestamp : 2023-06-19 12:54:31.598398128 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_0 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_1
+1: 
+1: 0 | Code hash [1/2] : 63318782478028c3a4695104ff4aab6208f0fc
+1: 0 | Code hash [2/2] : 0752828d4ab486276c69cfd46c
+1: 1 | New rate : 0.05
+1: 2 | Validator [1/3] : atest1v4ehgw36gvmyy3jyxs65vd69gsu5vdzy
+1: 2 | Validator [2/3] : g5urv3pngscyz3pjxscnjwz9gy6rw3z9xdz5v3
+1: 2 | Validator [3/3] : pjksl96e
+1: 3 | Timestamp : 2023-06-19 12:54:53.158027319 UTC
+1: 4 | Pubkey [1/2] : 00bd3b6fb9aa9fb068a59a7e2c5c3210cb24b0
+1: 4 | Pubkey [2/2] : b4612d4d8cc517e92682205a7477
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_1 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_2
+1: 
+1: 0 | Code hash [1/2] : 63318782478028c3a4695104ff4aab6208f0fc
+1: 0 | Code hash [2/2] : 0752828d4ab486276c69cfd46c
+1: 1 | New rate : 0.07
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 3 | Timestamp : 2023-06-19 12:55:02.986469363 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_2 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_3
+1: 
+1: 0 | Code hash [1/2] : 63318782478028c3a4695104ff4aab6208f0fc
+1: 0 | Code hash [2/2] : 0752828d4ab486276c69cfd46c
+1: 1 | New rate : 0.09
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 3 | Timestamp : 2023-06-19 12:55:15.466270058 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_3 (0 ms)
+1: [0;32m[ RUN      ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_4
+1: 
+1: 0 | Code hash [1/2] : 63318782478028c3a4695104ff4aab6208f0fc
+1: 0 | Code hash [2/2] : 0752828d4ab486276c69cfd46c
+1: 1 | New rate : 0.11
+1: 2 | Validator [1/3] : atest1v4ehgw36xser2d69gdz5xseexv6rwvej
+1: 2 | Validator [2/3] : xdpyyvenx5erswphggeyxwpegccygv6p8quygv
+1: 2 | Validator [3/3] : jp4gcn9a
+1: 3 | Timestamp : 2023-06-19 12:55:45.510561505 UTC
+1: 4 | Pubkey [1/2] : 00ef8ffbbcf933342a6ba57bc159e222c7d127
+1: 4 | Pubkey [2/2] : df1fe1ce8fa0a8dbf1f062ee6ed1
+1: 5 | Epoch : 1
+1: 6 | Gas limit : 0
+1: 7 | Fees : NAM 100.0
+1: 
+1: 
+1: [0;32m[       OK ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Change_Commission_4 (0 ms)
+1: [0;32m[----------] [m108 tests from JsonTestCasesCurrentTxVer/JsonTestsA (7 ms total)
+1: 
+1: [0;32m[----------] [mGlobal test environment tear-down
+1: [0;32m[==========] [m110 tests from 3 test suites ran. (7 ms total)
+1: [0;32m[  PASSED  ] [m98 tests.
+1: [0;31m[  FAILED  ] [m12 tests, listed below:
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-00 00-00 00-00 00-11 00-9A 81-42 01-00 00-00 10-06 00-00 00-00 00-00 20-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 D0-72 62-42 01-00 00-00 08-74 62-42 01-00 00-00 08-74 62-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-00 00-00 00-00 00-11 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_with_Delegations, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 60-FC 64-42 01-00 00-00 22-00 00-00 00-00 00-00 30-00 00-00 00-00 00-80 00-9A 81-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 20-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 10-7A 62-42 01-00 00-00 90-7B 62-42 01-00 00-00 90-7B 62-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_yay_1, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 79-61 79-5F 31-00 00-00 00-13 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Nay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-5F 32-00 00-00 00-13 00-9A 81-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 20-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 F8-59 62-42 01-00 00-00 10-0C 63-42 01-00 00-00 90-0D 63-42 01-00 00-00 90-0D 63-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Normal/0_Vote_Proposal_Yay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-5F 32-00 00-00 00-13 00-9A 81-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 50-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 E0-71 62-42 01-00 00-00 20-59 62-42 01-00 00-00 58-5A 62-42 01-00 00-00 58-5A 62-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-00 00-00 00-00 00-11 00-78 85-42 01-00 00-00 10-06 00-00 00-00 00-00 20-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-00 00-00 00-00 00-11 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 A0-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_with_Delegations, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 D0-E7 66-42 01-00 00-00 22-00 00-00 00-00 00-00 30-00 00-00 00-00 00-80 00-78 85-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 10-C1 66-42 01-00 00-00 E8-C1 66-42 01-00 00-00 E8-C1 66-42 01-00 00-00 E0-9A 66-42 01-00 00-00 60-9C 66-42 01-00 00-00 60-9C 66-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_yay_1, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 79-61 79-5F 31-00 00-00 00-13 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 90-18 61-42 01-00 00-00 20-19 61-42 01-00 00-00 20-19 61-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Nay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 4E-61 79-5F 32-00 00-00 00-13 00-78 85-42 01-00 00-00 6A-06 00-00 00-00 00-00 70-06 00-00 00-00 00-80 10-44 61-42 01-00 00-00 E8-44 61-42 01-00 00-00 E8-44 61-42 01-00 00-00 D0-1A 61-42 01-00 00-00 50-1C 61-42 01-00 00-00 50-1C 61-42 01-00 00-00>
+1: [0;31m[  FAILED  ] [mJsonTestCasesCurrentTxVer/JsonTestsA.CheckUIOutput_CurrentTX_Expert/0_Vote_Proposal_Yay_2, where GetParam() = 104-byte object <00-00 00-00 00-00 00-00 56-6F 74-65 5F-50 72-6F 70-6F 73-61 6C-5F 59-61 79-5F 32-00 00-00 00-13 00-78 85-42 01-00 00-00 34-06 00-00 00-00 00-00 40-06 00-00 00-00 00-80 E0-EA 60-42 01-00 00-00 70-EB 60-42 01-00 00-00 70-EB 60-42 01-00 00-00 E0-9A 66-42 01-00 00-00 18-9C 66-42 01-00 00-00 18-9C 66-42 01-00 00-00>
+1: 
+1: 12 FAILED TESTS
+1/1 Test #1: unittests ........................***Failed    0.02 sec
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.03 sec
+
+The following tests FAILED:
+	  1 - unittests (Failed)

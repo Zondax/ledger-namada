@@ -21,7 +21,7 @@ use std::error::Error;
 
 const HARDENED: u32 = 0x80000000;
 
-use crate::params::{ED25519_PUBKEY_LEN, ADDRESS_LEN, ED25519_SIGNATURE_LEN};
+use crate::params::{ED25519_PUBKEY_LEN, ADDRESS_LEN, ED25519_SIGNATURE_LEN, SALT_LEN, HASH_LEN};
 use byteorder::{LittleEndian, WriteBytesExt};
 
 
@@ -32,10 +32,18 @@ pub struct ResponseAddress {
 }
 
 /// NamadaApp wrapper signature Ed25519 -> 64  bytes
-pub struct ResponseSignatureWrapperTransaction {
-    pub signature: [u8; ED25519_SIGNATURE_LEN],
+pub struct ResponseSignature {
+    pub header_signature: ResponseSignatureSection,
+    pub data_signature: ResponseSignatureSection,
+    pub code_signature: ResponseSignatureSection,
 }
 
+pub struct ResponseSignatureSection {
+    pub salt: [u8; SALT_LEN],
+    pub hash: [u8; HASH_LEN],
+    pub pubkey: [u8; ED25519_PUBKEY_LEN],
+    pub signature: [u8; ED25519_SIGNATURE_LEN],
+}
 
 /// BIP44 Path
 pub struct BIP44Path {
@@ -46,7 +54,7 @@ pub struct BIP44Path {
 impl BIP44Path {
     /**
     Serialize a [`BIP44Path`] in the format used in the app
-    */
+     */
     pub fn serialize_path(&self) -> Result<Vec<u8>, Box<dyn Error>> {
 
         if !self.path.starts_with('m') {
@@ -95,8 +103,8 @@ mod tests {
 
         assert_eq!(serialized_path.len(), 21);
         assert_eq!(
-             hex::encode(&serialized_path),
-             "052c0000801b010080000000000000000000000000"
+            hex::encode(&serialized_path),
+            "052c0000801b010080000000000000000000000000"
         );
     }
 }

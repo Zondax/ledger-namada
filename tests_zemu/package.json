@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@zondax/ledger-namada": "../js",
-    "@zondax/zemu": "^0.41.3"
+    "@zondax/zemu": "^0.42.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",

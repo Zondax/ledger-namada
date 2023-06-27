@@ -21,7 +21,7 @@
 #include "parser_impl_common.h"
 
 parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
-    CHECK_ERROR(readTimestamp(ctx, &v->transaction.timestamp))
+
     CHECK_ERROR(readHeader(ctx, v))
     CHECK_ERROR(readSections(ctx, v))
 
@@ -45,6 +45,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
             break;
 
+        case Custom:
+            *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS);
+            break;
+
         case Transfer:
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             break;
@@ -52,13 +56,35 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case InitAccount:
             *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
             break;
+        case InitProposal:
+            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
+            break;
+        case VoteProposal:
+        {
+            const uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
+            const uint8_t num_councils = (ctx->tx_obj->voteProposal.number_of_councils > 0) ? (ctx->tx_obj->voteProposal.number_of_councils  - 1) : 0;
+            //uint8_t has_yay_vote_details = ((ctx->tx_obj->voteProposal.vote_type_is_council) || (ctx->tx_obj->voteProposal.vote_type_is_eth_bridge)) ? 1 : 0;
+            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators +  num_councils;
+            break;
+        }
+        case RevealPubkey:
+            *numItems = (app_mode_expert() ? REVEAL_PUBKEY_EXPERT_PARAMS : REVEAL_PUBKEY_NORMAL_PARAMS);
+            break;
 
         case Withdraw:
             *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
             break;
 
+        case CommissionChange:
+            *numItems = (app_mode_expert() ? COMMISSION_CHANGE_EXPERT_PARAMS : COMMISSION_CHANGE_NORMAL_PARAMS);
+            break;
+
         case InitValidator:
             *numItems = (app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS);
+            break;
+
+        case UpdateVP:
+            *numItems = (app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS);
             break;
 
         default:
@@ -101,7 +127,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display index out of range";
         case parser_display_page_out_of_range:
             return "display page out of range";
-
+        case parser_decimal_too_big:
+            return "decimal cannot be parsed";
+        case parser_invalid_output_buffer:
+            return "invalid output buffer";
         default:
             return "Unrecognized error code";
     }

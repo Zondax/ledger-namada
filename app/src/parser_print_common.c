@@ -22,12 +22,17 @@
 #include "timeutils.h"
 
 #include "coin.h"
-
 #include "bech32.h"
 
-// static const char* prefix_implicit = "imp::";
-// static const char* prefix_established = "est::";
-// static const char* prefix_internal = "int::";
+#define PREFIX "yay with councils:\n"
+#define PREFIX_COUNCIL "Council: "
+#define PREFIX_SPENDING "spending cap: "
+
+
+#define CHECK_PTR_BOUNDS(count, dstLen)    \
+    if((count + 1) >= dstLen) {             \
+        return parser_decimal_too_big;     \
+    }
 
 parser_error_t printAddress( bytes_t pubkeyHash,
                              char *outVal, uint16_t outValLen,
@@ -39,6 +44,50 @@ parser_error_t printAddress( bytes_t pubkeyHash,
 
     return parser_ok;
 }
+
+parser_error_t printCouncilVote(const council_t *council,
+                                char *outVal, uint16_t outValLen,
+                                uint8_t pageIdx, uint8_t *pageCount) {
+    uint8_t offset = 0;
+    char strVote[200] = {0};
+
+    // Print prefix
+    snprintf(strVote, sizeof(strVote) - offset, PREFIX);
+    offset = strlen(strVote);
+
+    // Print council prefix
+    char address[110] = {0};
+    CHECK_ERROR(readAddress(council->council_address, address, sizeof(address)))
+    if (offset + strlen(PREFIX_COUNCIL) + strnlen(address, sizeof(address)) + 2 > sizeof(strVote)) {
+        return parser_unexpected_buffer_end;
+    }
+    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_COUNCIL "%s, ", address);
+    offset = strlen(strVote);
+
+    // Print spending cap
+    char spendingCap[50] = {0};
+    if (uint64_to_str(spendingCap, sizeof(spendingCap), council->amount) != NULL ||
+        intstr_to_fpstr_inplace(spendingCap, sizeof(spendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
+        return parser_unexpected_error;
+    }
+    number_inplace_trimming(spendingCap, 1);
+    if (offset + strlen(PREFIX_SPENDING) + strnlen(spendingCap, sizeof(spendingCap)) > sizeof(strVote)) {
+        return parser_unexpected_buffer_end;
+    }
+    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_SPENDING "%s", spendingCap);
+
+#if 0
+    if (number_printed < number_of_councils){
+        const char* dots = NULL;
+        dots = PIC("...");
+        snprintf((char*) strVote + offset, strlen(dots) + 1, "%s", dots);
+    }
+#endif
+
+    pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
+    return parser_ok;
+}
+
 
 parser_error_t printCodeHash(bytes_t *codeHash,
                              char *outKey, uint16_t outKeyLen,
@@ -89,6 +138,94 @@ parser_error_t printAmount( uint64_t amount, const char* symbol,
 
     return parser_ok;
 }
+
+parser_error_t printVPTypeHash(bytes_t *codeHash,
+                               char *outVal, uint16_t outValLen,
+                               uint8_t pageIdx, uint8_t *pageCount) {
+
+    char hexString[65] = {0};
+    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
+    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
+parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
+
+    if (strDec == NULL || bufferSize == 0) {
+        return parser_invalid_output_buffer; // Invalid output buffer
+    }
+
+    // Initialize the output buffer
+    MEMZERO(strDec, bufferSize);
+
+    // Handle negative value
+    if (num < 0) {
+        strDec[0] = '-';
+        num = -num;
+    }
+
+    // Convert the integer part to string
+    size_t index = (num < 0) ? 1 : 0;
+    int64_t divisor = 1;
+    for (uint32_t i = 0; i < scale; i++) {
+        divisor *= 10;
+    }
+
+    int64_t integerPart = num / divisor;
+    int64_t fractionalPart = num % divisor;
+
+    if (integerPart == 0) {
+        CHECK_PTR_BOUNDS(index, bufferSize);
+        strDec[index++] = '0';
+    } else {
+        int64_t tmp_int = integerPart;
+        while (tmp_int > 0 && index < bufferSize - 1) {
+            CHECK_PTR_BOUNDS(index, bufferSize);
+            strDec[index++] = '0' + (tmp_int % 10);
+            tmp_int /= 10;
+        }
+
+        // Reverse the integer part
+        for (size_t i = (num < 0) ? 1 : 0, j = index - 1; i < j; i++, j--) {
+            char tmp_char = strDec[i];
+            strDec[i] = strDec[j];
+            strDec[j] = tmp_char;
+        }
+    }
+
+    // Append the decimal point
+    if (scale > 0 && index < bufferSize - 1) {
+        CHECK_PTR_BOUNDS(index, bufferSize);
+        strDec[index++] = '.';
+    }
+
+    // Convert the fractional part to string with leading zeros
+    while (scale > 0 && index < bufferSize - 1) {
+        divisor /= 10;
+        CHECK_PTR_BOUNDS(index, bufferSize);
+        strDec[index++] = '0' + (fractionalPart / divisor);
+        fractionalPart %= divisor;
+        scale--;
+    }
+    return parser_ok;
+}
+
+
+// Print a decimal, which is characterised by an uint32_t scale and int64_t num
+// for example scale = 2 and num = 1 prints 0.01
+parser_error_t printDecimal( const serialized_decimal decimal,
+                             char *outVal, uint16_t outValLen,
+                             uint8_t pageIdx, uint8_t *pageCount) {
+    char strDec[100] = {0};
+    CHECK_ERROR(decimal_to_string(decimal.num, decimal.scale, (char*) strDec, 100))
+    number_inplace_trimming(strDec, 1);
+    pageString(outVal, outValLen, strDec, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
+
 
 parser_error_t printExpert( const parser_context_t *ctx,
                                    uint8_t displayIdx,

@@ -79,8 +79,8 @@ export class NamadaApp {
         major: response[1],
         minor: response[2],
         patch: response[3],
-        device_locked: response[4] === 1,
-        target_id: targetId.toString(16),
+        deviceLocked: response[4] === 1,
+        targetId: targetId.toString(16),
       }
     }, processErrorResponse)
   }
