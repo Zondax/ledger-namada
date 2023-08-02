@@ -65,7 +65,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     snprintf((char*) publicKeyHash, FIXED_LEN_STRING_BYTES, "imp::");
 
     // Step 4. The Public Key Hash consists of the first 40 characters of the hex encoding. ---> UPPERCASE
-    MEMCPY(publicKeyHash + 5, hexPubKeyHash, PK_HASH_LEN);
+    MEMCPY(publicKeyHash + 5, hexPubKeyHash, PK_HASH_STR_LEN);
 
     return zxerr_ok;
 }
@@ -122,6 +122,80 @@ zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, 
     return zxerr_ok;
 }
 
+zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output, uint32_t outputLen) {
+    if (extraData == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
+         return zxerr_invalid_crypto_settings;
+    }
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+    cx_sha256_t sha256 = {0};
+    cx_sha256_init(&sha256);
+    cx_sha256_update(&sha256, &extraData->discriminant, 1);
+    cx_sha256_update(&sha256, extraData->salt.ptr, extraData->salt.len);
+    cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    cx_sha256_final(&sha256, output);
+#else
+    picohash_ctx_t sha256 = {0};
+    picohash_init_sha256(&sha256);
+    picohash_update(&sha256, &extraData->discriminant, 1);
+    picohash_update(&sha256, extraData->salt.ptr, extraData->salt.len);
+    picohash_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    picohash_final(&sha256, output);
+#endif
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t outputLen) {
+    if (data == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
+        return zxerr_no_data;
+    }
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+    cx_sha256_t sha256 = {0};
+    cx_sha256_init(&sha256);
+    cx_sha256_update(&sha256, &data->discriminant, 1);
+    cx_sha256_update(&sha256, data->salt.ptr, data->salt.len);
+    cx_sha256_update(&sha256, (uint8_t*) &data->bytes.len, sizeof(data->bytes.len));
+    cx_sha256_update(&sha256, data->bytes.ptr, data->bytes.len);
+    cx_sha256_final(&sha256, output);
+#else
+    picohash_ctx_t sha256 = {0};
+    picohash_init_sha256(&sha256);
+    picohash_update(&sha256, &data->discriminant, 1);
+    picohash_update(&sha256, data->salt.ptr, data->salt.len);
+    picohash_update(&sha256, (uint8_t*) &data->bytes.len, sizeof(data->bytes.len));
+    picohash_update(&sha256, data->bytes.ptr, data->bytes.len);
+    picohash_final(&sha256, output);
+#endif
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t outputLen) {
+    if (code == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
+         return zxerr_invalid_crypto_settings;
+    }
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+    cx_sha256_t sha256 = {0};
+    cx_sha256_init(&sha256);
+    cx_sha256_update(&sha256, &code->discriminant, 1);
+    cx_sha256_update(&sha256, code->salt.ptr, code->salt.len);
+    cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len);
+    cx_sha256_final(&sha256, output);
+#else
+    picohash_ctx_t sha256 = {0};
+    picohash_init_sha256(&sha256);
+    picohash_update(&sha256, &code->discriminant, 1);
+    picohash_update(&sha256, code->salt.ptr, code->salt.len);
+    picohash_update(&sha256, code->bytes.ptr, code->bytes.len);
+    picohash_final(&sha256, output);
+#endif
+
+    return zxerr_ok;
+}
+
 zxerr_t crypto_serializeCodeHash(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < 2) {
         return zxerr_buffer_too_small;
@@ -146,92 +220,3 @@ zxerr_t crypto_serializeData(const uint64_t dataSize, uint8_t *buffer, uint16_t 
     (*dataInfoSize)++;
     return zxerr_ok;
 }
-
-#if 0
-zxerr_t crypto_serializeTimestamp(const prototimestamp_t *timestamp, uint8_t *buffer, uint16_t bufferLen, uint8_t *timestampSize) {
-    if (timestamp == NULL || buffer == NULL || timestampSize == NULL) {
-        return zxerr_encoding_failed;
-    }
-    MEMZERO(buffer, bufferLen);
-    *timestampSize = 0;
-
-    uint8_t offset = 0;
-    buffer[offset++] = 0x1A; // TAG_TS
-    buffer[offset++] = 0x00; // Size (reserved)
-
-    uint8_t tmpLebSize = 0;
-    if (timestamp->seconds > 0) {
-        buffer[offset++] = 0x08; //TAG_S
-        CHECK_ZXERR(encodeLEB128(timestamp->seconds, buffer + offset, MAX_LEB128_OUTPUT, &tmpLebSize))
-        offset += tmpLebSize;
-    }
-
-    if (timestamp->nanos > 0) {
-        buffer[offset++] = 0x10; //TAG_N
-        CHECK_ZXERR(encodeLEB128(timestamp->nanos, buffer + offset, MAX_LEB128_OUTPUT, &tmpLebSize))
-        offset += tmpLebSize;
-    }
-
-    // Update size with correct value
-    buffer[1] = offset - 2;
-    *timestampSize = offset; // Total size timestamp serialized struct
-    return zxerr_ok;
-}
-
-zxerr_t crypto_getBytesToSign(const outer_layer_tx_t *outerTxn, uint8_t *toSign, size_t toSignLen) {
-    if (outerTxn == NULL || toSign == NULL || toSignLen < CX_SHA256_SIZE) {
-        return zxerr_encoding_failed;
-    }
-
-    MEMZERO(toSign, toSignLen);
-
-    uint8_t code_hash[32] = {0};
-    CHECK_ZXERR(crypto_sha256(outerTxn->code, outerTxn->codeSize, (uint8_t*) &code_hash, sizeof(code_hash)))
-
-    uint8_t tmpBuff[20] = {0};
-    uint8_t tmpSize = 0;
-    #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
-    cx_sha256_t ctx;
-    cx_sha256_init(&ctx);
-
-    // Code - Code hash
-    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) tmpBuff, sizeof(tmpBuff)))
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, 2);
-    cx_sha256_update(&ctx, (const uint8_t*) code_hash, sizeof(code_hash));
-
-    // Data
-    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, tmpSize);
-    cx_sha256_update(&ctx, outerTxn->data, outerTxn->dataSize);
-
-    // Timestamp
-    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
-    cx_sha256_update(&ctx, (const uint8_t*) tmpBuff, tmpSize);
-
-
-    // Hash SigningTxn
-    cx_sha256_final(&ctx, toSign);
-    #else
-    picohash_ctx_t ctx;
-    picohash_init_sha256(&ctx);
-
-    // Code - Code hash
-    CHECK_ZXERR(crypto_serializeCodeHash((uint8_t*) tmpBuff, sizeof(tmpBuff)))
-    picohash_update(&ctx, tmpBuff, 2);
-    picohash_update(&ctx, code_hash, sizeof(code_hash));
-
-    // Data
-    CHECK_ZXERR(crypto_serializeData((const uint64_t)outerTxn->dataSize, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
-    picohash_update(&ctx, &tmpBuff, tmpSize);
-    picohash_update(&ctx, outerTxn->data, outerTxn->dataSize);
-
-    // Timestamp
-    CHECK_ZXERR(crypto_serializeTimestamp(&outerTxn->timestamp, (uint8_t*) tmpBuff, sizeof(tmpBuff), &tmpSize))
-    picohash_update(&ctx, tmpBuff, tmpSize);
-
-    picohash_final(&ctx, toSign);
-    #endif
-
-    return zxerr_ok;
-}
-#endif

@@ -27,14 +27,14 @@ extern "C" {
 #define BOND_NORMAL_PARAMS  3
 #define BOND_EXPERT_PARAMS  8
 
-#define CUSTOM_NORMAL_PARAMS  0
+#define CUSTOM_NORMAL_PARAMS  1
 #define CUSTOM_EXPERT_PARAMS  6
 
 #define INIT_ACCOUNT_NORMAL_PARAMS  3
 #define INIT_ACCOUNT_EXPERT_PARAMS  8
 
-#define INIT_PROPOSAL_NORMAL_PARAMS  6
-#define INIT_PROPOSAL_EXPERT_PARAMS  11
+#define INIT_PROPOSAL_NORMAL_PARAMS  7
+#define INIT_PROPOSAL_EXPERT_PARAMS  12
 
 #define VOTE_PROPOSAL_NORMAL_PARAMS 4
 #define VOTE_PROPOSAL_EXPERT_PARAMS 9
@@ -62,6 +62,7 @@ parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
+parser_error_t readUint256(parser_context_t *ctx, uint256_t *value);
 parser_error_t readDecimal(parser_context_t *ctx, serialized_decimal *value);
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
 parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
