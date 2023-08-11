@@ -64,6 +64,10 @@ static const txn_types_t allowed_txn[] = {
 
     {{0x00, 0xe4, 0x1e, 0x22, 0x72, 0xcb, 0x17, 0xda, 0xb3, 0x19, 0xea, 0x05, 0x98, 0x85, 0x4d, 0xb7, 0x38, 0xee, 0x90, 0x1d, 0x75, 0x89, 0x3b, 0x61, 0xb8, 0xb7, 0x54, 0x46, 0x0f, 0x23, 0xdf, 0x78},
     CommissionChange},
+
+    {{0xf8, 0x05, 0x6f, 0x46, 0x5d, 0x17, 0x04, 0x3d, 0x28, 0x64, 0x30, 0x9d, 0x1c, 0x50, 0xa8, 0x97, 0xa0, 0x28, 0xb6, 0xeb, 0xf9, 0x70, 0x2e, 0x5c, 0x40, 0x3e, 0x1b, 0xf8, 0xc6, 0x70, 0xf6, 0xe6},
+    IBC},
+
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -667,6 +671,86 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *timestamp) {
+    // uint64_t timestampSize = 0;
+    uint8_t consumed = 0;
+    uint64_t tmp = 0;
+
+    CHECK_ERROR(checkTag(ctx, 0x38))
+    const uint64_t timestampSize = ctx->bufferLen - ctx->offset;
+    decodeLEB128(ctx->buffer + ctx->offset, timestampSize, &consumed, &tmp);
+    ctx->offset += consumed;
+
+    const uint32_t e9 = 1000000000;
+    timestamp->millis = tmp / e9;
+    timestamp->nanos = (uint32_t)(tmp - timestamp->millis*e9);
+
+    return parser_ok;
+}
+
+static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Read tag
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    // Skip URL: /ibc.applications.transfer.v1.MsgTransfer
+    uint8_t tmp = 0;
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    ctx.offset += tmp;
+
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    // Missing bytes
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+
+    // Read port id
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.port_id.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.port_id.ptr, v->ibc.port_id.len))
+
+    // Read channel id
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.channel_id.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.channel_id.ptr, v->ibc.channel_id.len))
+
+    // Read token address
+    CHECK_ERROR(checkTag(&ctx, 0x1A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.token_address.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_address.ptr, v->ibc.token_address.len))
+
+    // Read token amount
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.token_amount.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_amount.ptr, v->ibc.token_amount.len))
+
+    // Read sender
+    CHECK_ERROR(checkTag(&ctx, 0x22))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.sender_address.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+
+    // Read receiver
+    CHECK_ERROR(checkTag(&ctx, 0x2A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.receiver.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.receiver.ptr, v->ibc.receiver.len))
+
+    // Read timeout height
+    CHECK_ERROR(checkTag(&ctx, 0x32))
+    CHECK_ERROR(readByte(&ctx, &v->ibc.timeout_height))
+
+    // Read timeout timestamp
+    CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
+
+    return parser_ok;
+}
+
 // WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
@@ -933,6 +1017,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case UpdateVP:
             CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            break;
+        case IBC:
+            CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         default:
             return parser_unexpected_method;

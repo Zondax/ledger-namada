@@ -57,6 +57,9 @@ extern "C" {
 #define COMMISSION_CHANGE_NORMAL_PARAMS  3
 #define COMMISSION_CHANGE_EXPERT_PARAMS  8
 
+#define IBC_NORMAL_PARAMS  8
+#define IBC_EXPERT_PARAMS  13
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
