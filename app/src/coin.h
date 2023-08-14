@@ -35,14 +35,20 @@ extern "C" {
 #define SECP256K1_SK_LEN            32u
 #define SCALAR_LEN_SECP256K1        32u
 
-#define SK_LEN_25519 64u
+#define SK_LEN_25519 32u
 #define SCALAR_LEN_ED25519 32u
 #define SIG_PLUS_TYPE_LEN 65u
 
 #define ED25519_SIGNATURE_SIZE 64u
 
 #define PK_LEN_25519 32u
-#define PK_HASH_LEN 40u
+#define PK_HASH_LEN 20u
+#define PK_HASH_STR_LEN 40u
+
+// Extra byte at the beginning to indicate type (ED25519 = 0)
+#define PK_LEN_25519_PLUS_TAG 33u
+#define SIG_LEN_25519_PLUS_TAG 65u
+
 
 #define ADDRESS_LEN_MAINNET 80u
 #define ADDRESS_LEN_TESTNET 84u
@@ -64,6 +70,8 @@ extern "C" {
 
 #define COIN_AMOUNT_DECIMAL_PLACES 6
 #define COIN_TICKER "NAM "
+
+#define POS_DECIMAL_PRECISION 12
 
 #define MENU_MAIN_APP_LINE1 "Namada"
 #define MENU_MAIN_APP_LINE2 "Ready"

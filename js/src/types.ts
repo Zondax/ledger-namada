@@ -56,38 +56,39 @@ export interface ResponseNullifier extends ResponseBase {
 }
 
 export interface ISignature {
-  salt: Buffer
-  hash: Buffer
   pubkey: Buffer
-  signature: Buffer
+  raw_salt: Buffer
+  raw_signature: Buffer
+  wrapper_salt: Buffer
+  wrapper_signature: Buffer
 }
 export class Signature implements ISignature {
-  salt: Buffer
-  hash: Buffer
   pubkey: Buffer
-  signature: Buffer
-
+  raw_salt: Buffer
+  raw_signature: Buffer
+  wrapper_salt: Buffer
+  wrapper_signature: Buffer
   isFilled: boolean
 
   constructor(signature?: ISignature) {
     if (signature == null) {
       this.isFilled = false
-      this.salt = Buffer.from([])
-      this.hash = Buffer.from([])
       this.pubkey = Buffer.from([])
-      this.signature = Buffer.from([])
+      this.raw_salt = Buffer.from([])
+      this.raw_signature = Buffer.from([])
+      this.wrapper_salt = Buffer.from([])
+      this.wrapper_signature = Buffer.from([])
     } else {
       this.isFilled = true
-      this.salt = signature.salt
-      this.hash = signature.hash
       this.pubkey = signature.pubkey
-      this.signature = signature.signature
+      this.raw_salt = signature.raw_salt
+      this.raw_signature = signature.raw_signature
+      this.wrapper_salt = signature.wrapper_salt
+      this.wrapper_signature = signature.wrapper_signature
     }
   }
 }
 
 export interface ResponseSign extends ResponseBase {
-  headerSignature: Signature
-  dataSignature: Signature
-  codeSignature: Signature
+  signature?: Signature
 }

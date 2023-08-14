@@ -23,10 +23,8 @@ export const INS = {
   GET_IVK: 0x04,
   GET_OVK: 0x05,
   GET_NF: 0x06,
-
-  GET_SIGNATURE: 0x0a,
 }
 export const SALT_LEN = 8
 export const HASH_LEN = 32
-export const PK_LEN_25519 = 32
-export const ED25519_SIGNATURE_LEN = 64
+export const PK_LEN_PLUS_TAG = 33
+export const SIG_LEN_PLUS_TAG = 65

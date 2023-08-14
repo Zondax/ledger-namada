@@ -15,41 +15,43 @@
  ******************************************************************************* */
 
 import { errorCodeToString } from './common'
-import { HASH_LEN, PK_LEN_25519, SALT_LEN } from './config'
+import { PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
 import { ISignature } from './types'
 
-export function processGetSignatureResponse(response: Buffer): ISignature {
+export function getSignatureResponse(response: Buffer): ISignature {
   console.log('Processing get signature response')
 
-  const salt = Buffer.from(response.subarray(0, SALT_LEN))
-  const hash = Buffer.from(response.subarray(SALT_LEN, SALT_LEN + HASH_LEN))
-  const pubkey = Buffer.from(response.subarray(SALT_LEN + HASH_LEN, SALT_LEN + HASH_LEN + PK_LEN_25519))
-  const signature = Buffer.from(response.subarray(SALT_LEN + HASH_LEN + PK_LEN_25519, -2))
+  // App sign response: [ pubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) ]
+  let offset = 0;
+  const pubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
+
+  offset += PK_LEN_PLUS_TAG;
+  const raw_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
+  offset += SALT_LEN;
+  const raw_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG));
+
+  offset += SIG_LEN_PLUS_TAG;
+  const wrapper_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
+  offset += SALT_LEN;
+  const wrapper_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG));
 
   return {
-    salt,
-    hash,
     pubkey,
-    signature,
+    raw_salt,
+    raw_signature,
+    wrapper_salt,
+    wrapper_signature,
   }
 }
 
 export function processGetAddrResponse(response: Buffer) {
   console.log('Processing get address response')
 
-  let partialResponse = response
-
-  const errorCodeData = partialResponse.subarray(-2)
+  const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  //get public key len (variable)
-  const publicKey = Buffer.from(partialResponse.slice(0, PK_LEN_25519))
-
-  //"advance" buffer
-  partialResponse = partialResponse.slice(PK_LEN_25519)
-
-  // get the implicit address corresponding to the public key
-  const address = Buffer.from(partialResponse.slice(0, -2))
+  const publicKey = Buffer.from(response.subarray(0, PK_LEN_PLUS_TAG))
+  const address = Buffer.from(response.subarray(PK_LEN_PLUS_TAG, -2))
 
   return {
     publicKey,

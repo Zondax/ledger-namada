@@ -15,11 +15,13 @@
 ********************************************************************************/
 #include "parser_impl_common.h"
 #include "parser_txdef.h"
+#include "crypto_helper.h"
 #include "leb128.h"
 #include "bech32.h"
 #include "stdbool.h"
+#include <zxformat.h>
 
-#define ADDRESS_LEN_BYTES   45
+#define ADDRESS_LEN_BYTES   21
 
 #define DISCRIMINANT_DATA 0x00
 #define DISCRIMINANT_EXTRA_DATA 0x01
@@ -29,27 +31,48 @@
 #define DISCRIMINANT_MASP_TX 0x05
 #define DISCRIMINANT_MASP_BUILDER 0x06
 
+static const txn_types_t allowed_txn[] = {
+    {{0xf4, 0x4f, 0x82, 0x15, 0x02, 0xb1, 0xd8, 0xef, 0x3b, 0xb1, 0x1a, 0xf6, 0x45, 0xba, 0xbe, 0x35, 0x03, 0x94, 0xc3, 0x9c, 0x6b, 0x8b, 0x1c, 0xef, 0x84, 0x8b, 0xf6, 0x0a, 0xa4, 0xaa, 0xaf, 0x8d},
+    Bond},
 
-static const uint8_t hash_bond[] = {0xc5, 0xaf, 0x31, 0x37, 0x28, 0xe2, 0x81, 0xc2, 0x57, 0x8b, 0x4b, 0xd8, 0xcb, 0xc9, 0xcb, 0xbf, 0xb0, 0x20, 0x9d, 0x07, 0x85, 0x73, 0x4b, 0x46, 0x2c, 0x44, 0xb9, 0xa6, 0x31, 0x01, 0x29, 0x00 };
-static const uint8_t hash_unbond[] = {0x7c, 0x18, 0x51, 0x53, 0x4a, 0x76, 0xb7, 0xb3, 0x35, 0x16, 0xeb, 0x48, 0x97, 0x54, 0x8b, 0xc5, 0x45, 0x73, 0xe1, 0xc4, 0x79, 0x2d, 0xb1, 0xe6, 0x95, 0x96, 0x7a, 0x19, 0xa8, 0xc6, 0x48, 0x48};
-static const uint8_t hash_custom[] = {0x1c, 0x3e, 0x0c, 0x79, 0x1a, 0xa8, 0xa4, 0x33, 0x00, 0xe0, 0x8a, 0x5e, 0x54, 0x08, 0xdf, 0x66, 0xe6, 0x7e, 0xed, 0x26, 0x72, 0x1f, 0x3f, 0x48, 0x97, 0xb0, 0x17, 0xed, 0xdf, 0xc8, 0xcc, 0x78};
-static const uint8_t hash_init_account[] = {0xfb, 0xd9, 0xe6, 0x6c, 0xe6, 0x6f, 0xc8, 0xae, 0x92, 0x57, 0x87, 0x8a, 0x60, 0xc6, 0xaf, 0xfe, 0x50, 0x46, 0xf3, 0xfc, 0xb4, 0x14, 0x8f, 0x39, 0x4a, 0x6e, 0xfa, 0x57, 0x89, 0xd8, 0xef, 0x72};
-static const uint8_t hash_init_proposal[] ={0x65, 0x9f, 0xaa, 0xd0, 0xbf, 0x46, 0xb6, 0x89, 0xce, 0xa0, 0x6b, 0x4d, 0x31, 0x04, 0x0c, 0xa2, 0x30, 0xdb, 0x1b, 0x00, 0x96, 0xe8, 0x64, 0x0e, 0x40, 0xad, 0x57, 0x43, 0x4c, 0x9d, 0x4b, 0x16};
-static const uint8_t hash_vote_proposal[] = {0x26, 0x9e, 0xd9, 0x2f, 0xd7, 0xe6, 0x8a, 0xf0, 0x06, 0xb9, 0x5f, 0x1f, 0x4b, 0x9a, 0x91, 0x1c, 0x0c, 0xf5, 0x1a, 0x2d, 0x60, 0x56, 0xb3, 0xc0, 0x61, 0x9e, 0x10, 0xe8, 0xfd, 0x0e, 0xe2, 0x72};
-static const uint8_t hash_init_validator[] = {0x47, 0x03, 0x71, 0x62, 0x33, 0x73, 0x8e, 0xe2, 0x0e, 0x16, 0x1d, 0x5b, 0x8f, 0x1a, 0xe8, 0x56, 0xf7, 0x09, 0x6f, 0x51, 0x42, 0xe2, 0x8b, 0xbd, 0x79, 0xe5, 0xed, 0xe9, 0xb8, 0x6f, 0x9c, 0x56};
-static const uint8_t hash_reveal_pubkey[] ={0xcc, 0xd2, 0xd3, 0xcf, 0x7e, 0xb3, 0x6a, 0xf9, 0x65, 0xe5, 0x2e, 0x10, 0xb3, 0x00, 0x52, 0x3e, 0x79, 0x6b, 0x7c, 0x55, 0x17, 0x27, 0x8a, 0x07, 0x03, 0xc4, 0x29, 0xd6, 0x70, 0xff, 0xf4, 0x79};
-static const uint8_t hash_transfer[] = {0x22, 0x59, 0x91, 0xdd, 0xf8, 0x8d, 0x81, 0xb7, 0xa5, 0x87, 0xe9, 0x8f, 0xc4, 0x5d, 0x4e, 0xfe, 0x6d, 0xf3, 0xb3, 0xbc, 0x62, 0xd9, 0xba, 0x94, 0x6a, 0x82, 0x9b, 0x7a, 0x2d, 0x00, 0x25, 0xed};
-static const uint8_t hash_update_vp[] = {0x8d, 0x00, 0xc0, 0xf6, 0xb7, 0x15, 0x11, 0xfd, 0x48, 0xda, 0x76, 0x67, 0x9f, 0x3f, 0x9a, 0x5b, 0x41, 0x10, 0x3b, 0x93, 0x16, 0x1a, 0x71, 0xb0, 0xc9, 0x7b, 0x21, 0x29, 0x06, 0xa7, 0x1d, 0xbb};
-static const uint8_t hash_withdraw[] = {0xf7, 0xa3, 0xac, 0xf0, 0x46, 0xf3, 0xc2, 0x16, 0xea, 0xf4, 0xc6, 0x82, 0x7a, 0x3f, 0x91, 0x43, 0x3d, 0xac, 0x58, 0x05, 0xd8, 0x2f, 0x2d, 0x6a, 0xd7, 0xbd, 0xf1, 0x57, 0x4d, 0x50, 0x41, 0x40};
-static const uint8_t hash_commission_change[] = {0x63, 0x31, 0x87, 0x82, 0x47, 0x80, 0x28, 0xc3, 0xa4, 0x69, 0x51, 0x04, 0xff, 0x4a, 0xab, 0x62, 0x08, 0xf0, 0xfc, 0x07, 0x52, 0x82, 0x8d, 0x4a, 0xb4, 0x86, 0x27, 0x6c, 0x69, 0xcf, 0xd4, 0x6c};
+    {{0x48, 0x78, 0xbf, 0x97, 0x80, 0x63, 0x4d, 0x8e, 0xe4, 0xc8, 0x94, 0x32, 0xd7, 0x12, 0xe5, 0xa7, 0x19, 0x73, 0x73, 0x59, 0x0c, 0xea, 0x65, 0x8f, 0xe2, 0x9c, 0x5e, 0xf1, 0x5c, 0x50, 0x1f, 0xe5},
+    Unbond},
+
+    {{0x39, 0xc4, 0xf8, 0xd4, 0xe9, 0xb1, 0x4a, 0xac, 0x44, 0x91, 0xd1, 0x15, 0xfa, 0x5d, 0x43, 0x82, 0xbe, 0x49, 0x0a, 0xc9, 0xb5, 0xbf, 0x6d, 0x19, 0x1f, 0x8a, 0xa6, 0x6f, 0xa4, 0xe1, 0x2b, 0xf6},
+    InitAccount},
+
+    {{0xd0, 0xa4, 0xd6, 0x81, 0xcd, 0xc8, 0xb8, 0x3e, 0x04, 0xa6, 0x4f, 0xbc, 0x59, 0x2b, 0xcb, 0xe9, 0xd9, 0x3f, 0x28, 0x16, 0x4d, 0x2d, 0x5c, 0xb5, 0xff, 0x9a, 0x4f, 0xbd, 0x43, 0xd2, 0x06, 0xb8},
+    InitProposal},
+
+    {{0xbd, 0x14, 0x0b, 0xc5, 0xda, 0xef, 0xff, 0x5b, 0xc3, 0x97, 0x5e, 0xd6, 0x65, 0x88, 0x60, 0xa2, 0xdf, 0x91, 0x9b, 0xd0, 0xfe, 0x93, 0x6d, 0x66, 0xd8, 0x8d, 0x2b, 0xdc, 0x74, 0x12, 0xe8, 0xb6},
+    VoteProposal},
+
+    {{0xe5, 0x4e, 0xb1, 0x1b, 0xed, 0x86, 0xe5, 0x7e, 0x68, 0x88, 0xa7, 0x0e, 0xf4, 0xd2, 0x70, 0x50, 0x34, 0xb4, 0x2f, 0xcc, 0x7d, 0xd4, 0xc1, 0x31, 0x4a, 0x49, 0xf5, 0x9d, 0xc0, 0x04, 0xe4, 0x97},
+    InitValidator},
+
+    {{0x55, 0xff, 0xd1, 0x17, 0x71, 0x03, 0x4c, 0x91, 0x73, 0x8b, 0xf8, 0xdd, 0x55, 0xca, 0x2f, 0xfa, 0x12, 0x99, 0xbe, 0x50, 0xfd, 0xb0, 0x8c, 0xee, 0xd0, 0x71, 0xd9, 0x50, 0x46, 0x9d, 0xdf, 0xee},
+    RevealPubkey},
+
+    {{0x55, 0xf9, 0x78, 0x0f, 0x74, 0xdf, 0xbc, 0xfe, 0xfe, 0x09, 0xfb, 0x66, 0x73, 0x31, 0x89, 0x3a, 0xbd, 0x63, 0xed, 0xdf, 0xcf, 0x07, 0xf7, 0x8e, 0x5f, 0x19, 0x71, 0x1c, 0xb9, 0xf0, 0xa8, 0xaa},
+    Transfer},
+
+    {{0x08, 0x7d, 0xe3, 0x03, 0x84, 0x82, 0xe3, 0xcc, 0x0f, 0xd5, 0x3c, 0x2b, 0xf5, 0xdd, 0x98, 0x8b, 0x6a, 0x55, 0xa5, 0x50, 0x7c, 0x27, 0x14, 0x03, 0xa4, 0x8b, 0x94, 0x56, 0x16, 0x2b, 0x7c, 0xc7},
+    UpdateVP},
+
+    {{0x9d, 0x36, 0x6f, 0xb3, 0x83, 0x54, 0xc7, 0x4e, 0x9d, 0xdb, 0xdd, 0x74, 0x20, 0xe4, 0x6f, 0x22, 0x01, 0xf3, 0x47, 0x44, 0x68, 0xb8, 0x49, 0x47, 0xba, 0x62, 0x63, 0x16, 0x31, 0xfa, 0x8d, 0xb1},
+    Withdraw},
+
+    {{0x00, 0xe4, 0x1e, 0x22, 0x72, 0xcb, 0x17, 0xda, 0xb3, 0x19, 0xea, 0x05, 0x98, 0x85, 0x4d, 0xb7, 0x38, 0xee, 0x90, 0x1d, 0x75, 0x89, 0x3b, 0x61, 0xb8, 0xb7, 0x54, 0x46, 0x0f, 0x23, 0xdf, 0x78},
+    CommissionChange},
+};
+static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
 // Update VP types
 static const vp_types_t vp_user = {
-        {0xa4, 0x64, 0xa5, 0xb9, 0x3a, 0x58, 0x27, 0xe2, 0xc0, 0xee, 0xa0, 0xed, 0xb3, 0x7b, 0x16, 0xc8, 0x29, 0x67, 0x6f, 0xe7, 0x87, 0x9f, 0xcc, 0x36, 0xe8, 0x72, 0xc4, 0xa4, 0x0b, 0xad, 0xf1, 0x0d},
+        {0x24, 0x51, 0x51, 0x5c, 0x3a, 0x6f, 0xa0, 0x63, 0xeb, 0x25, 0xd9, 0x0e, 0xf1, 0x52, 0x68, 0xdf, 0xbd, 0xd3, 0x71, 0x33, 0x52, 0x1c, 0x34, 0xfb, 0x58, 0xb6, 0x8b, 0x1c, 0x4b, 0x61, 0x91, 0x80},
         "User"
 };
-
-// Add blindsigning code hash
+static const char *unknown_vp = "Unknown VP hash";
 
 #define NAM_TOKEN(_address, _symbol) { \
         .address  = _address, \
@@ -95,15 +118,10 @@ parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text
         return parser_unexpected_value;
     }
 
-    // Type is User
-    if (!memcmp(vp_type_hash->ptr, vp_user.hash, SHA256_SIZE))
-    {
+    *vp_type_text = (char*) PIC(unknown_vp);
+    if (!memcmp(vp_type_hash->ptr, vp_user.hash, HASH_LEN)) {
         *vp_type_text = (char*) PIC(vp_user.text);
     }
-    else {
-        *vp_type_text = (char*) PIC("Unknown VP hash");
-    }
-
     return parser_ok;
 }
 
@@ -126,22 +144,17 @@ parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLe
             return parser_value_out_of_range;
     }
 
-    uint32_t hashLen = 0;
-    MEMCPY(&hashLen, pubkeyHash.ptr, sizeof(uint32_t));
-    pubkeyHash.ptr += sizeof(uint32_t);
-    if (hashLen != PK_HASH_LEN) {
-        return parser_unexpected_value;
-    }
+    char tmpBuffer[FIXED_LEN_STRING_BYTES+1] = {0};
+    snprintf(tmpBuffer, sizeof(tmpBuffer), "%s", prefix);
+    const uint8_t prefixLen = strlen(prefix);
+    array_to_hexstr_uppercase(tmpBuffer + prefixLen, sizeof(tmpBuffer) - prefixLen, pubkeyHash.ptr, PK_HASH_LEN);
 
-    uint8_t tmpBuffer[FIXED_LEN_STRING_BYTES] = {0};
-    snprintf((char*) tmpBuffer, sizeof(tmpBuffer), "%s", prefix);
-    MEMCPY(tmpBuffer + strnlen(prefix, 5), pubkeyHash.ptr, PK_HASH_LEN);
-
+    // Check HRP for mainnet/testnet
     const char *hrp = "atest";
     const zxerr_t err = bech32EncodeFromBytes(address,
                                 addressLen,
                                 hrp,
-                                tmpBuffer,
+                                (uint8_t*) tmpBuffer,
                                 FIXED_LEN_STRING_BYTES,
                                 0,
                                 BECH32_ENCODING_BECH32M);
@@ -157,150 +170,139 @@ static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *
          return parser_unexpected_error;
     }
 
-    // Bond
-    if (!memcmp(codeHash.ptr, hash_bond, SHA256_SIZE)) {
-        *type = Bond;
-        return parser_ok;
+    // Custom txn as default value
+    *type = Custom;
+    for (uint32_t i = 0; i < allowed_txn_len; i++) {
+        if (memcmp(codeHash.ptr, allowed_txn[i].hash, HASH_LEN) == 0) {
+            *type = allowed_txn[i].type;
+            break;
+        }
     }
-    // Unbond
-    if (!memcmp(codeHash.ptr, hash_unbond, SHA256_SIZE)) {
-        *type = Unbond;
-        return parser_ok;
-    }
-    // Custom
-    if (!memcmp(codeHash.ptr, hash_custom, SHA256_SIZE)) {
-        *type = Custom;
-        return parser_ok;
-    }
-
-    // Transfer
-    if (!memcmp(codeHash.ptr, hash_transfer, SHA256_SIZE)) {
-        *type = Transfer;
-        return parser_ok;
-    }
-
-    // Init account
-    if (!memcmp(codeHash.ptr, hash_init_account, SHA256_SIZE)) {
-        *type = InitAccount;
-        return parser_ok;
-    }
-
-
-    // Init proposal
-    if(!memcmp(codeHash.ptr, hash_init_proposal, SHA256_SIZE)){
-        *type = InitProposal;
-        return parser_ok;
-    }
-
-    // Vote proposal
-    if(!memcmp(codeHash.ptr, hash_vote_proposal, SHA256_SIZE)){
-        *type = VoteProposal;
-        return parser_ok;
-    }
-
-    // Init validator
-    if (!memcmp(codeHash.ptr, hash_init_validator, SHA256_SIZE)) {
-        *type = InitValidator;
-        return parser_ok;
-    }
-
-    // Reveal pubkey
-    if(!memcmp(codeHash.ptr, hash_reveal_pubkey, SHA256_SIZE)){
-        *type = RevealPubkey;
-        return parser_ok;
-    }
-
-    // Withdraw
-    if (!memcmp(codeHash.ptr, hash_withdraw, SHA256_SIZE)) {
-        *type = Withdraw;
-        return parser_ok;
-    }
-
-    // Change Commission
-    if (!memcmp(codeHash.ptr, hash_commission_change, SHA256_SIZE)) {
-        *type = CommissionChange;
-        return parser_ok;
-    }
-
-    // Update VP
-    if (!memcmp(codeHash.ptr,hash_update_vp,SHA256_SIZE))
-    {
-        *type = UpdateVP;
-        return parser_ok;
-    }
-
-    *type = Unknown;
-    return parser_unexpected_method;
+    return parser_ok;
 }
 
-static parser_error_t readInitValidatorTxn(bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
+    if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
+        return parser_unexpected_value;
+    }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
-            .bufferLen = extra_data->len,
-            .offset = 0,
-            .tx_obj = NULL};
-
-    v->initValidator.account_key.len = 33;
+    v->initValidator.account_key.len = PK_LEN_25519_PLUS_TAG;
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.account_key.ptr, v->initValidator.account_key.len))
 
-    v->initValidator.consensus_key.len = 33;
+    v->initValidator.consensus_key.len = PK_LEN_25519_PLUS_TAG;
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.consensus_key.ptr, v->initValidator.consensus_key.len))
 
-    v->initValidator.protocol_key.len = 33;
+    v->initValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.protocol_key.ptr, v->initValidator.protocol_key.len))
 
     v->initValidator.dkg_key.len = 100; //Check this size. Is fixed?
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.dkg_key.ptr, v->initValidator.dkg_key.len))
 
     // Commission rate
-    CHECK_ERROR(readDecimal(&ctx, &v->initValidator.commission_rate));
+    CHECK_ERROR(readUint256(&ctx, &v->initValidator.commission_rate));
 
     // Max commission rate change
-    CHECK_ERROR(readDecimal(&ctx, &v->initValidator.max_commission_rate_change));
+    CHECK_ERROR(readUint256(&ctx, &v->initValidator.max_commission_rate_change));
 
     // VP code hash
-    v->initValidator.vp_type_hash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&extra_data_ctx, &v->initValidator.vp_type_hash.ptr, v->initValidator.vp_type_hash.len))
-    // Get text from hash
-    CHECK_ERROR(readVPType(&v->initValidator.vp_type_hash, &v->initValidator.vp_type_text))
+    v->initValidator.vp_type_sechash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&ctx, &v->initValidator.vp_type_sechash.ptr, v->initValidator.vp_type_sechash.len))
 
-    // Skip the rest of the fields
-    ctx.offset = ctx.bufferLen;
-
-    if (ctx.offset != ctx.bufferLen) {
-        return parser_unexpected_characters;
-    }
-    return parser_ok;
-}
-
-static parser_error_t readInitAccountTxn(const bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
-    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
-    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
-            .bufferLen = extra_data->len,
+    bool found_vp_code = false;
+    // Load the linked to data from the extra data sections
+    for (uint32_t i = 0; i < extraDataLen; i++) {
+        parser_context_t extra_data_ctx = {
+            .buffer = extra_data[i].bytes.ptr,
+            .bufferLen = extra_data[i].bytes.len,
             .offset = 0,
             .tx_obj = NULL};
-    // Pubkey
-    v->initAccount.pubkey.len = 33;
-    CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkey.ptr, v->initAccount.pubkey.len))
 
-    // Skip leftover bytes
-    ctx.offset = ctx.bufferLen;
+        // Read the hash inside the extra data section
+        bytes_t commitment = { .ptr = NULL, .len = HASH_LEN };
+        CHECK_ERROR(readBytes(&extra_data_ctx, &commitment.ptr, commitment.len))
 
-    // VP code hash
-    v->initAccount.vp_type_hash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&extra_data_ctx, &v->initAccount.vp_type_hash.ptr, v->initAccount.vp_type_hash.len))
-    // Get text from hash
-    CHECK_ERROR(readVPType(&v->initAccount.vp_type_hash, &v->initAccount.vp_type_text))
+        uint8_t extraDataHash[HASH_LEN] = {0};
+        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
+            return parser_unexpected_error;
+        }
 
+        if (!memcmp(extraDataHash, v->initValidator.vp_type_sechash.ptr, HASH_LEN)) {
+            // If this section contains the VP code hash
+            v->initValidator.vp_type_secidx = extra_data[i].idx;
+            v->initValidator.vp_type_hash = commitment;
+            CHECK_ERROR(readVPType(&v->initValidator.vp_type_hash, &v->initValidator.vp_type_text))
+            found_vp_code = true;
+        }
+        if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
+            return parser_unexpected_characters;
+        }
+    }
 
-    if ((ctx.offset != ctx.bufferLen)|| (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
+    if (!found_vp_code) {
+        return parser_missing_field;
+    } else if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
     return parser_ok;
 }
 
-static parser_error_t readInitProposalTxn(const bytes_t *data, parser_tx_t *v) {
+static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *extra_data,const uint32_t extraDataLen, parser_tx_t *v) {
+    if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
+        return parser_unexpected_value;
+    }
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    // Pubkey
+    v->initAccount.pubkey.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkey.ptr, v->initAccount.pubkey.len))
+
+    // VP code hash
+    v->initAccount.vp_type_sechash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&ctx, &v->initAccount.vp_type_sechash.ptr, v->initAccount.vp_type_sechash.len))
+
+    bool found_vp_code = false;
+    // Load the linked to data from the extra data sections
+    for (uint32_t i = 0; i < extraDataLen; i++) {
+        parser_context_t extra_data_ctx = {
+            .buffer = extra_data[i].bytes.ptr,
+            .bufferLen = extra_data[i].bytes.len,
+            .offset = 0,
+            .tx_obj = NULL};
+
+        // Read the hash inside the extra data section
+        bytes_t commitment = { .ptr = NULL, .len = HASH_LEN };
+        CHECK_ERROR(readBytes(&extra_data_ctx, &commitment.ptr, commitment.len))
+
+        uint8_t extraDataHash[HASH_LEN] = {0};
+        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
+            return parser_unexpected_error;
+        }
+
+        if (!memcmp(extraDataHash, v->initAccount.vp_type_sechash.ptr, HASH_LEN)) {
+            // If this section contains the VP code hash
+            v->initAccount.vp_type_secidx = extra_data[i].idx;
+            v->initAccount.vp_type_hash = commitment;
+            CHECK_ERROR(readVPType(&v->initAccount.vp_type_hash, &v->initAccount.vp_type_text))
+            found_vp_code = true;
+        }
+        if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
+            return parser_unexpected_characters;
+        }
+    }
+
+    if (!found_vp_code) {
+        return parser_missing_field;
+    } else if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+
+    return parser_ok;
+}
+
+static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
+    if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
+        return parser_unexpected_value;
+    }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Check if the proposal has an ID
@@ -310,9 +312,9 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, parser_tx_t *v) {
         CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_id.ptr, v->initProposal.proposal_id.len))
     }
 
-    // Read content hash
-    v->initProposal.content.len = SHA256_SIZE;
-    CHECK_ERROR(readBytes(&ctx, &v->initProposal.content.ptr, v->initProposal.content.len))
+    // Read content section hash
+    v->initProposal.content_sechash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&ctx, &v->initProposal.content_sechash.ptr, v->initProposal.content_sechash.len))
 
     // Author, should be of length ADDRESS_LEN_BYTES
     v->initProposal.author.len = ADDRESS_LEN_BYTES;
@@ -320,16 +322,15 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, parser_tx_t *v) {
 
     // Proposal type
     v->initProposal.has_proposal_code = 0;
-    uint8_t proposal_type;
-    CHECK_ERROR(readByte(&ctx, &proposal_type))
+    CHECK_ERROR(readByte(&ctx, &v->initProposal.proposal_type))
     // Proposal type 0 is Default(Option<Vec<u8>>),
     // where Vec<u8> is the proposal code (of 32 bytes)
     // Other proposal types have no data associated to the enum
-    if (proposal_type==0){
+    if (v->initProposal.proposal_type == 0) {
         CHECK_ERROR(readByte(&ctx, &v->initProposal.has_proposal_code))
         if (v->initProposal.has_proposal_code){
-            v->initProposal.proposal_code.len = SHA256_SIZE;
-            CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_code.ptr, v->initProposal.proposal_code.len))
+            v->initProposal.proposal_code_sechash.len = HASH_LEN;
+            CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
         }
     }
 
@@ -342,7 +343,46 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, parser_tx_t *v) {
     // Grace epoch
     CHECK_ERROR(readUint64(&ctx, &v->initProposal.grace_epoch))
 
-    if (ctx.offset != ctx.bufferLen) {
+    bool found_content = false, found_code = false;
+    // Load the linked to data from the extra data sections
+    for (uint32_t i = 0; i < extraDataLen; i++) {
+        parser_context_t extra_data_ctx = {
+            .buffer = extra_data[i].bytes.ptr,
+            .bufferLen = extra_data[i].bytes.len,
+            .offset = 0,
+            .tx_obj = NULL};
+
+        // Read the hash inside the extra data section
+        bytes_t commitment = { .ptr = NULL, .len = HASH_LEN };
+        CHECK_ERROR(readBytes(&extra_data_ctx, &commitment.ptr, commitment.len))
+
+        uint8_t extraDataHash[HASH_LEN] = {0};
+        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
+            return parser_unexpected_error;
+        }
+
+        if (!memcmp(extraDataHash, v->initProposal.content_sechash.ptr, HASH_LEN)) {
+            // If this section contains the init proposal content
+            v->initProposal.content_secidx = extra_data[i].idx;
+            v->initProposal.content_hash = commitment;
+            found_content = true;
+        }
+        if (v->initProposal.has_proposal_code &&
+            !memcmp(extraDataHash, v->initProposal.proposal_code_sechash.ptr, HASH_LEN))
+        {
+            // If this section contains the proposal code
+            v->initProposal.proposal_code_secidx = extra_data[i].idx;
+            v->initProposal.proposal_code_hash = commitment;
+            found_code = true;
+        }
+        if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
+            return parser_unexpected_characters;
+        }
+    }
+
+    if (!found_content || (v->initProposal.has_proposal_code && !found_code)) {
+        return parser_missing_field;
+    } else if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
     return parser_ok;
@@ -357,7 +397,7 @@ parser_error_t readCouncils(parser_context_t *ctx, uint32_t numberOfCouncils, co
         CHECK_ERROR(readBytes(ctx,
                               &tmpCouncil.council_address.ptr,
                               ADDRESS_LEN_BYTES))
-        CHECK_ERROR(readUint64(ctx, &tmpCouncil.amount))
+        CHECK_ERROR(readUint256(ctx, &tmpCouncil.amount))
     }
 
     if (council != NULL) {
@@ -388,7 +428,7 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
             case Council: {
                 CHECK_ERROR(readUint32(&ctx, &v->voteProposal.number_of_councils))
                 v->voteProposal.councils.ptr = ctx.buffer + ctx.offset;
-                v->voteProposal.councils.len = v->voteProposal.number_of_councils * (ADDRESS_LEN_BYTES + sizeof(uint64_t));
+                v->voteProposal.councils.len = v->voteProposal.number_of_councils * (ADDRESS_LEN_BYTES + sizeof(uint256_t));
                 CHECK_ERROR(readCouncils(&ctx, v->voteProposal.number_of_councils, NULL))
                 break;
             }
@@ -486,7 +526,7 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->commissionChange.validator.ptr, v->commissionChange.validator.len))
 
     // Read new commission rate
-    CHECK_ERROR(readDecimal(&ctx, &v->commissionChange.new_rate));
+    CHECK_ERROR(readUint256(&ctx, &v->commissionChange.new_rate));
 
 
     if (ctx.offset != ctx.bufferLen) {
@@ -496,27 +536,53 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
 }
 
 
-static parser_error_t readUpdateVPTxn(const bytes_t *data,const bytes_t *extra_data, parser_tx_t *v) {
+static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
+    if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
+        return parser_unexpected_value;
+    }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
-
-    parser_context_t extra_data_ctx = {.buffer = extra_data->ptr,
-                                       .bufferLen = extra_data->len,
-                                       .offset = 0,
-                                       .tx_obj = NULL};
 
     // Address
     v->updateVp.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->updateVp.address.ptr, v->updateVp.address.len))
 
     // VP code hash
-    v->updateVp.vp_type_hash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&extra_data_ctx, &v->updateVp.vp_type_hash.ptr, v->updateVp.vp_type_hash.len))
-    // Get text from hash
-    CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
+    v->updateVp.vp_type_sechash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(&ctx, &v->updateVp.vp_type_sechash.ptr, v->updateVp.vp_type_sechash.len))
 
-    ctx.offset += 32; // Skip tx_code_path (?)
+    bool found_vp_code = false;
+    // Load the linked to data from the extra data sections
+    for (uint32_t i = 0; i < extraDataLen; i++) {
+        parser_context_t extra_data_ctx = {
+            .buffer = extra_data[i].bytes.ptr,
+            .bufferLen = extra_data[i].bytes.len,
+            .offset = 0,
+            .tx_obj = NULL};
 
-    if ((ctx.offset != ctx.bufferLen) || (extra_data_ctx.offset != extra_data_ctx.bufferLen)) {
+        // Read the hash inside the extra data section
+        bytes_t commitment = { .ptr = NULL, .len = HASH_LEN };
+        CHECK_ERROR(readBytes(&extra_data_ctx, &commitment.ptr, commitment.len))
+
+        uint8_t extraDataHash[HASH_LEN] = {0};
+        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
+            return parser_unexpected_error;
+        }
+
+        if (!memcmp(extraDataHash, v->updateVp.vp_type_sechash.ptr, HASH_LEN)) {
+            // If this section contains the VP code hash
+            v->updateVp.vp_type_secidx = extra_data[i].idx;
+            v->updateVp.vp_type_hash = commitment;
+            CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
+            found_vp_code = true;
+        }
+        if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
+            return parser_unexpected_characters;
+        }
+    }
+
+    if (!found_vp_code) {
+        return parser_missing_field;
+    } else if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
     return parser_ok;
@@ -548,7 +614,10 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     }
 
     // Amount
-    CHECK_ERROR(readUint64(&ctx, &v->transfer.amount))
+    CHECK_ERROR(readUint256(&ctx, &v->transfer.amount))
+
+    // Amount denomination
+    CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
 
     // Key, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_key))
@@ -560,7 +629,7 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // shielded hash, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
     if (v->transfer.has_shielded_hash){
-        v->transfer.shielded_hash.len = SHA256_SIZE;
+        v->transfer.shielded_hash.len = HASH_LEN;
         // we are not displaying these bytes
         ctx.offset += v->transfer.shielded_hash.len;
     }
@@ -581,8 +650,8 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->bond.validator.ptr, v->bond.validator.len))
 
     // Amount
-    MEMCPY(&v->bond.amount, ctx.buffer + ctx.offset, sizeof(uint64_t));
-    ctx.offset += sizeof(uint64_t);
+    MEMCPY(&v->bond.amount, ctx.buffer + ctx.offset, sizeof(uint256_t));
+    ctx.offset += sizeof(uint256_t);
     ctx.offset++;   // Skip last byte --> Check this
 
     // Source
@@ -603,6 +672,7 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
     }
+    v->transaction.header.bytes.ptr = ctx->buffer + ctx->offset;
     const uint16_t tmpOffset = ctx->offset;
 
     // Read length of chain_id
@@ -625,28 +695,29 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     CHECK_ERROR(readBytes(ctx, &v->transaction.timestamp.ptr, v->transaction.timestamp.len))
 
     // Code hash
-    v->transaction.header.codeHash.len = SHA256_SIZE;
+    v->transaction.header.codeHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.codeHash.ptr, v->transaction.header.codeHash.len))
 
     // Data hash
-    v->transaction.header.dataHash.len = SHA256_SIZE;
+    v->transaction.header.dataHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
-
-    v->transaction.header.bytes.ptr = ctx->buffer + ctx->offset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
-    CHECK_ERROR(readUint64(ctx, &v->transaction.header.fees.amount))
+    CHECK_ERROR(readUint256(ctx, &v->transaction.header.fees.amount))
+
     // Fee.address
-    v->transaction.header.fees.address.len = 45;
+    v->transaction.header.fees.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.address.ptr, v->transaction.header.fees.address.len))
+    // Get symbol from token
+    CHECK_ERROR(readToken(&v->transaction.header.fees.address, &v->transaction.header.fees.symbol))
     // Pubkey
-    v->transaction.header.pubkey.len = 33;   // Check first byte (0x00 | 0x01)
+    v->transaction.header.pubkey.len = PK_LEN_25519_PLUS_TAG;   // Check tag (first byte: 0x00 | 0x01)
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
     // Epoch
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
-    CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
+    CHECK_ERROR(readUint256(ctx, &v->transaction.header.gasLimit))
 
     // Check if a PoW solution is present (should only exist in mainnet)
     uint8_t num_pow_solution = 0;
@@ -706,6 +777,15 @@ static parser_error_t readDataSection(parser_context_t *ctx, section_t *data) {
     CHECK_ERROR(readUint32(ctx, &data->bytes.len))
     CHECK_ERROR(readBytes(ctx, &data->bytes.ptr, data->bytes.len))
 
+    // Must make sure that header dataHash refers to this section's hash
+    uint8_t dataHash[HASH_LEN] = {0};
+    if (crypto_hashDataSection(data, dataHash, sizeof(dataHash)) != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    header_t *header = &ctx->tx_obj->transaction.header;
+    if (memcmp(dataHash, header->dataHash.ptr, header->dataHash.len) != 0) {
+        return parser_unexpected_value;
+    }
     return parser_ok;
 }
 
@@ -725,45 +805,18 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     code->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &code->bytes.ptr, code->bytes.len))
 
-    return parser_ok;
-}
-
-static parser_error_t readSignature(parser_context_t *ctx, signature_section_t *signature) {
-    (void) ctx;
-    (void) signature;
-#if 0
-    if (ctx == NULL || signature == NULL) {
+    // Must make sure that header codeHash refers to this section's hash
+    uint8_t codeHash[HASH_LEN] = {0};
+    if (crypto_hashCodeSection(code, codeHash, sizeof(codeHash)) != zxerr_ok) {
         return parser_unexpected_error;
     }
-    // CHECK_ERROR(checkTag(ctx, 0x03))
-    // CHECK_ERROR(readSalt(ctx))
-    // Read hash 32 bytes
-    // Read tag 0x00 -> ED25519
-    // Read R 32 bytes
-    // Read S 32 bytes
-    // Read tag 0x00 -> ED25519
-    // Read VerificationKey 32 bytes
-
-    const uint8_t SIGNATURE_TAG = 0x03;
-    const uint8_t ED25519_TAG = 0x00;
-
-    CHECK_ERROR(checkTag(ctx, SIGNATURE_TAG))
-    CHECK_ERROR(readSalt(ctx))
-    signature->hash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(ctx, &signature->hash.ptr, signature->hash.len))
-
-    CHECK_ERROR(checkTag(ctx, ED25519_TAG))
-    signature->r.len = SIG_R_LEN;
-    CHECK_ERROR(readBytes(ctx, &signature->r.ptr, signature->r.len))
-    signature->s.len = SIG_S_LEN;
-    CHECK_ERROR(readBytes(ctx, &signature->s.ptr, signature->s.len))
-
-    CHECK_ERROR(checkTag(ctx, ED25519_TAG))
-    signature->pubKey.len = PK_LEN_25519;
-    CHECK_ERROR(readBytes(ctx, &signature->pubKey.ptr, signature->pubKey.len))
-#endif
+    header_t *header = &ctx->tx_obj->transaction.header;
+    if (memcmp(codeHash, header->codeHash.ptr, header->codeHash.len) != 0) {
+        return parser_unexpected_value;
+    }
     return parser_ok;
 }
+
 #if(0)
 static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
     (void) ctx;
@@ -791,26 +844,34 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     CHECK_ERROR(readUint32(ctx, &v->transaction.sections.sectionLen))
 
     if (v->transaction.sections.sectionLen > 7) {
-        return parser_unexpected_value;
+        return parser_invalid_output_buffer;
     }
+
+    v->transaction.sections.extraDataLen = 0;
 
     for (uint32_t i = 0; i < v->transaction.sections.sectionLen; i++) {
         const uint8_t discriminant = *(ctx->buffer + ctx->offset);
         switch (discriminant) {
-            case DISCRIMINANT_DATA:
+            case DISCRIMINANT_DATA: {
                 CHECK_ERROR(readDataSection(ctx, &v->transaction.sections.data))
+                v->transaction.sections.data.idx = i+1;
                 break;
-
-            case DISCRIMINANT_EXTRA_DATA:
-                CHECK_ERROR(readExtraDataSection(ctx, &v->transaction.sections.extraData))
+            }
+            case DISCRIMINANT_EXTRA_DATA: {
+                if (v->transaction.sections.extraDataLen >= MAX_EXTRA_DATA_SECS) {
+                    return parser_unexpected_field;
+                }
+                section_t *extraData = &v->transaction.sections.extraData[v->transaction.sections.extraDataLen++];
+                CHECK_ERROR(readExtraDataSection(ctx, extraData))
+                extraData->idx = i+1;
                 break;
-
-            case DISCRIMINANT_CODE:
+            }
+            case DISCRIMINANT_CODE: {
                 CHECK_ERROR(readCodeSection(ctx, &v->transaction.sections.code))
+                v->transaction.sections.code.idx = i+1;
                 break;
-
+            }
             case DISCRIMINANT_SIGNATURE:
-                CHECK_ERROR(readSignature(ctx, &v->transaction.sections.signatures[0]))
                 break;
 #if(0)
             case DISCRIMINANT_CIPHERTEXT:
@@ -850,13 +911,11 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case InitAccount:
-             CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes,&txObj->transaction.sections.extraData.bytes, txObj))
-             break;
-
-        case InitProposal:
-            CHECK_ERROR(readInitProposalTxn(&txObj->transaction.sections.data.bytes, txObj))
+            CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes,txObj->transaction.sections.extraData,txObj->transaction.sections.extraDataLen,txObj))
             break;
-
+        case InitProposal:
+            CHECK_ERROR(readInitProposalTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            break;
         case VoteProposal:
             CHECK_ERROR(readVoteProposalTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
@@ -864,16 +923,16 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             CHECK_ERROR(readRevealPubkeyTxn(&txObj->transaction.sections.data.bytes,  txObj))
             break;
         case Withdraw:
-             CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
-             break;
+            CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
         case CommissionChange:
             CHECK_ERROR(readCommissionChangeTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case InitValidator:
-             CHECK_ERROR(readInitValidatorTxn(&txObj->transaction.sections.data.bytes, &txObj->transaction.sections.extraData.bytes,txObj))
-             break;
+            CHECK_ERROR(readInitValidatorTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            break;
         case UpdateVP:
-            CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, &txObj->transaction.sections.extraData.bytes, txObj))
+            CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
             break;
         default:
             return parser_unexpected_method;

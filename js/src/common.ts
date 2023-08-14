@@ -39,12 +39,6 @@ export const ERROR_CODE = {
   NoError: 0x9000,
 }
 
-export const enum SignatureType {
-  HeaderSignature = 0,
-  DataSignature = 1,
-  CodeSignature = 2,
-}
-
 export enum LedgerError {
   U2FUnknown = 1,
   U2FBadRequest = 2,

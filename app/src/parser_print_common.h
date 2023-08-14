@@ -49,17 +49,15 @@ parser_error_t printCouncilVote(const council_t *councils,
                                 char *outVal, uint16_t outValLen,
                                 uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printAmount( uint64_t amount, const char* symbol,
+parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
-
-parser_error_t printDecimal( const serialized_decimal decimal,
-                             char *outVal, uint16_t outValLen,
-                             uint8_t pageIdx, uint8_t *pageCount);
 
 parser_error_t printVPTypeHash(bytes_t *codeHash,
                                char *outVal, uint16_t outValLen,
                                uint8_t pageIdx, uint8_t *pageCount);
+
+parser_error_t uint256_to_str(char *output, uint16_t outputLen, const uint256_t *value);
 
 #ifdef __cplusplus
 }

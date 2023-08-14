@@ -29,9 +29,6 @@ extern "C" {
 #define TAG_N       0x10
 #define TAG_INNER_TX_HASH    0x22
 
-#define SHA256_SIZE 32
-#define MAX_COUNCILS 5
-
 typedef enum {
     Bond = 0,
     Unbond,
@@ -45,7 +42,6 @@ typedef enum {
     Custom,
     Withdraw,
     CommissionChange,
-    Unknown,
 } transaction_type_e;
 
 typedef enum {
@@ -78,18 +74,27 @@ typedef struct {
 typedef struct {
     uint8_t has_id;
     bytes_t proposal_id;
-    bytes_t content;
+    bytes_t content_hash;
+    bytes_t content_sechash;
     bytes_t author;
     uint64_t voting_start_epoch;
     uint64_t voting_end_epoch;
     uint64_t grace_epoch;
     uint8_t has_proposal_code;
-    bytes_t proposal_code;
+    bytes_t proposal_code_sechash;
+    bytes_t proposal_code_hash;
+    uint8_t proposal_type;
+    uint8_t content_secidx;
+    uint8_t proposal_code_secidx;
 } tx_init_proposal_t;
 
 typedef struct {
+  uint64_t b[4];
+} uint256_t;
+
+typedef struct {
     bytes_t council_address;
-    uint64_t amount;
+    uint256_t amount;
 } council_t;
 
 typedef struct {
@@ -108,13 +113,15 @@ typedef struct {
 
 typedef struct {
     bytes_t pubkey;
+    bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
+    uint8_t vp_type_secidx;
     const char* vp_type_text;
 } tx_init_account_t;
 
 typedef struct {
     bytes_t validator;
-    uint64_t amount;
+    uint256_t amount;
     uint8_t has_source;
     bytes_t source;
 } tx_bond_t;
@@ -133,7 +140,7 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
-    serialized_decimal new_rate;
+    uint256_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
@@ -141,15 +148,19 @@ typedef struct {
     bytes_t consensus_key;
     bytes_t protocol_key;
     bytes_t dkg_key;
-    serialized_decimal commission_rate;
-    serialized_decimal max_commission_rate_change;
+    uint256_t commission_rate;
+    uint256_t max_commission_rate_change;
+    uint8_t vp_type_secidx;
+    bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
     const char* vp_type_text;
 } tx_init_validator_t;
 
 typedef struct {
     bytes_t address;
+    bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
+    uint8_t vp_type_secidx;
     const char* vp_type_text;
 } tx_update_vp_t;
 
@@ -160,7 +171,8 @@ typedef struct {
     bytes_t token;
     uint8_t has_sub_prefix;
     bytes_t sub_prefix;
-    uint64_t amount;
+    uint256_t amount;
+    uint8_t amount_denom;
     const char* symbol;
     uint8_t has_key;
     bytes_t key;
@@ -170,9 +182,9 @@ typedef struct {
 
 typedef struct {
     bytes_t address;
-    uint64_t amount;
+    uint256_t amount;
+    const char *symbol;
 } fees_t;
-
 
 #ifdef __cplusplus
 }

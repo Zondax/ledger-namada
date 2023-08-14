@@ -40,7 +40,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Address");
-            pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + PK_LEN_25519), pageIdx, pageCount);
+            pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + PK_LEN_25519_PLUS_TAG), pageIdx, pageCount);
             return zxerr_ok;
         case 1: {
             if (!app_mode_expert()) {

@@ -54,16 +54,12 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
             break;
-        case 3:
+        case 3: {
             snprintf(outKey, outKeyLen, "Amount");
-            if (uint64_to_str(outVal, outValLen, ctx->tx_obj->bond.amount) != NULL ||
-                intstr_to_fpstr_inplace(outVal, outValLen, COIN_AMOUNT_DECIMAL_PLACES) == 0) {
-                return parser_unexpected_error;
-            }
-            z_str3join(outVal, outValLen, COIN_TICKER, "");
-            number_inplace_trimming(outVal, 1);
+            CHECK_ERROR(printAmount(&ctx->tx_obj->bond.amount, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
+                                    outVal, outValLen, pageIdx, pageCount))
             break;
-        default:
+        } default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
@@ -89,9 +85,6 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             }
             break;
         case 1:
-            if (ctx->tx_obj->bond.has_source == 0) {
-                return parser_unexpected_value;
-            }
             snprintf(outKey, outKeyLen, "Sender");
             CHECK_ERROR(printAddress(ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
             break;
@@ -101,7 +94,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Amount");
-            CHECK_ERROR(printAmount(ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.symbol,
+            CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
+                                    ctx->tx_obj->transfer.symbol,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         default:
@@ -123,12 +117,12 @@ static parser_error_t printCustomTxn( const parser_context_t *ctx,
 
     switch (displayIdx) {
         case 0:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             snprintf(outKey, outKeyLen, "Type");
-            CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+            snprintf(outVal, outValLen, "Custom");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
+            }
             break;
         default:
             if (!app_mode_expert()) {
@@ -165,9 +159,9 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "VP type");
-            pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
+            pageString(outVal, outValLen,ctx->tx_obj->initAccount.vp_type_text, pageIdx, pageCount);
             if (app_mode_expert()) {
-                CHECK_ERROR(printVPTypeHash(&ctx->tx_obj->updateVp.vp_type_hash,
+                CHECK_ERROR(printVPTypeHash(&ctx->tx_obj->initAccount.vp_type_hash,
                                             outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -189,9 +183,12 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
     // Bump itemIdx if ID is not present
-    if (ctx->tx_obj->initProposal.has_id == 0 && displayIdx >= 1) {
+    if (ctx->tx_obj->initProposal.has_id == 0 && displayIdx >= 2) {
         displayIdx++;
     }
+
+    // Less than 20 characters are epochs are uint64
+    char strEpoch[20] = {0};
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -202,6 +199,21 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             }
             break;
         case 1:
+            snprintf(outKey, outKeyLen, "Proposal type");
+            if (ctx->tx_obj->initProposal.proposal_type == 0 && ctx->tx_obj->initProposal.has_proposal_code == 0) {
+                snprintf(outVal, outValLen, "Default");
+            } else if (ctx->tx_obj->initProposal.proposal_type == 0 && ctx->tx_obj->initProposal.has_proposal_code == 1) {
+                const bytes_t *codeHash = &ctx->tx_obj->initProposal.proposal_code_hash;
+                pageStringHex(outVal, outValLen, (const char*)codeHash->ptr, codeHash->len, pageIdx, pageCount);
+            } else if (ctx->tx_obj->initProposal.proposal_type == 1) {
+                snprintf(outVal, outValLen, "PGF Council");
+            } else if (ctx->tx_obj->initProposal.proposal_type == 2) {
+                snprintf(outVal, outValLen, "ETH Bridge");
+            } else {
+                return parser_unexpected_error;
+            }
+            break;
+        case 2:
             if (ctx->tx_obj->initProposal.has_id == 0) {
                 return parser_unexpected_value;
             }
@@ -211,41 +223,35 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             memcpy(id, ctx->tx_obj->initProposal.proposal_id.ptr, ctx->tx_obj->initProposal.proposal_id.len);
             pageString(outVal, outValLen, id, pageIdx, pageCount);
             break;
-        case 2:
+        case 3:
             snprintf(outKey, outKeyLen, "Author");
             CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
             break;
-        case 3:
-            snprintf(outKey, outKeyLen, "Voting start epoch");
-            // Less than 20 characters are epochs are uint64
-            char strVotingStartEpoch[20] = {0};
-            if (uint64_to_str(strVotingStartEpoch, sizeof(strVotingStartEpoch), ctx->tx_obj->initProposal.voting_start_epoch) != NULL) {
-                return parser_unexpected_error;
-            }
-            pageString(outVal, outValLen, strVotingStartEpoch, pageIdx, pageCount);
-            break;
         case 4:
-            snprintf(outKey, outKeyLen, "Voting end epoch");
-            // Less than 20 characters are epochs are uint64
-            char strVotingEndEpoch[20] = {0};
-            if (uint64_to_str(strVotingEndEpoch, sizeof(strVotingEndEpoch), ctx->tx_obj->initProposal.voting_end_epoch) != NULL) {
+            snprintf(outKey, outKeyLen, "Voting start epoch");
+            if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.voting_start_epoch) != NULL) {
                 return parser_unexpected_error;
             }
-            pageString(outVal, outValLen, strVotingEndEpoch, pageIdx, pageCount);
+            pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
             break;
         case 5:
-            snprintf(outKey, outKeyLen, "Grace epoch");
-            // Less than 20 characters are epochs are uint64
-            char strGraceEpoch[20] = {0};
-            if (uint64_to_str(strGraceEpoch, sizeof(strGraceEpoch), ctx->tx_obj->initProposal.grace_epoch) != NULL) {
+            snprintf(outKey, outKeyLen, "Voting end epoch");
+            if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.voting_end_epoch) != NULL) {
                 return parser_unexpected_error;
             }
-            pageString(outVal, outValLen, strGraceEpoch, pageIdx, pageCount);
+            pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
             break;
         case 6:
+            snprintf(outKey, outKeyLen, "Grace epoch");
+            if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.grace_epoch) != NULL) {
+                return parser_unexpected_error;
+            }
+            pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
+            break;
+        case 7:
             snprintf(outKey, outKeyLen, "Content");
             char strContent[65] = {0};
-            const bytes_t *content = &ctx->tx_obj->initProposal.content;
+            const bytes_t *content = &ctx->tx_obj->initProposal.content_hash;
             array_to_hexstr((char*) strContent, sizeof(strContent), content->ptr, content->len);
             pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
@@ -253,7 +259,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 7;
+            displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -468,11 +474,11 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             break;
         case 5:
             snprintf(outKey, outKeyLen, "Commission rate");
-            CHECK_ERROR(printDecimal(ctx->tx_obj->initValidator.commission_rate, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         case 6:
             snprintf(outKey, outKeyLen, "Maximum commission rate change");
-            CHECK_ERROR(printDecimal(ctx->tx_obj->initValidator.max_commission_rate_change, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         case 7:
             snprintf(outKey, outKeyLen, "Validator VP type");
@@ -553,7 +559,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "New rate");
-            CHECK_ERROR(printDecimal(ctx->tx_obj->commissionChange.new_rate, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAmount(&ctx->tx_obj->commissionChange.new_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");

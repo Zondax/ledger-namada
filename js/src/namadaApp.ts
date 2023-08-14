@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import Transport from '@ledgerhq/hw-transport'
-import { ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion, Signature } from './types'
+import { ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion } from './types'
 
 import {
   CHUNK_SIZE,
@@ -24,11 +24,10 @@ import {
   PAYLOAD_TYPE,
   processErrorResponse,
   serializePath,
-  SignatureType,
 } from './common'
 
 import { CLA, INS } from './config'
-import { processGetAddrResponse, processGetSignatureResponse } from './processResponses'
+import { getSignatureResponse, processGetAddrResponse } from './processResponses'
 
 export { LedgerError }
 export * from './types'
@@ -178,6 +177,14 @@ export class NamadaApp {
           errorMessage = `${errorMessage} : ${response.subarray(0, response.length - 2).toString('ascii')}`
         }
 
+        if (returnCode === LedgerError.NoErrors && response.length > 2) {
+          return {
+            signature: getSignatureResponse(response),
+            returnCode,
+            errorMessage,
+          };
+        }
+
         return {
           returnCode: returnCode,
           errorMessage: errorMessage,
@@ -185,18 +192,12 @@ export class NamadaApp {
       }, processErrorResponse)
   }
 
-  async getSignature(signatureType: SignatureType) {
-    return this.transport
-      .send(CLA, INS.GET_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, signatureType, Buffer.from([]), [LedgerError.NoErrors])
-      .then(processGetSignatureResponse, processErrorResponse)
-  }
-
-  async _sign(path: string, message: Buffer) {
+  async sign(path: string, message: Buffer): Promise<ResponseSign> {
     const serializedPath = serializePath(path)
 
     return this.prepareChunks(serializedPath, message).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], INS.SIGN).then(async response => {
-        let result = {
+        let result: ResponseSign = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
         }
@@ -210,28 +211,6 @@ export class NamadaApp {
         return result
       }, processErrorResponse)
     }, processErrorResponse)
-  }
-
-  async sign(path: string, message: Buffer) {
-    const signCommand = await this._sign(path, message)
-
-    const result: ResponseSign = {
-      returnCode: signCommand.returnCode,
-      errorMessage: signCommand.errorMessage,
-      headerSignature: new Signature(),
-      dataSignature: new Signature(),
-      codeSignature: new Signature(),
-    }
-
-    if (signCommand.returnCode !== LedgerError.NoErrors) {
-      return result
-    }
-
-    result.headerSignature = new Signature(await this.getSignature(SignatureType.HeaderSignature))
-    result.dataSignature = new Signature(await this.getSignature(SignatureType.DataSignature))
-    result.codeSignature = new Signature(await this.getSignature(SignatureType.CodeSignature))
-
-    return result
   }
 
   /* Not implemented yet

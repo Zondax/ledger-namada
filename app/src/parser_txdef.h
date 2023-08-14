@@ -21,8 +21,11 @@ extern "C" {
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "parser_types.h"
 #include "coin.h"
+
+#define MAX_EXTRA_DATA_SECS 3
 
 typedef struct {
     uint8_t address[ADDRESS_LEN_TESTNET];
@@ -30,15 +33,26 @@ typedef struct {
 } tokens_t;
 
 typedef struct {
-    uint8_t hash[SHA256_SIZE];
+    uint8_t hash[HASH_LEN];
     const char *text;
 } vp_types_t;
+
+typedef struct {
+    uint8_t hash[HASH_LEN];
+    transaction_type_e type;
+} txn_types_t;
+
+typedef struct {
+    uint32_t hashesLen;
+    mut_bytes_t hashes;
+} concatenated_hashes_t;
 // -----------------------------------------------------------------
 typedef struct {
-    bytes_t hash;
-    bytes_t r;
-    bytes_t s;
+    bytes_t salt;
+    concatenated_hashes_t hashes;
     bytes_t pubKey;
+    bool has_signature;
+    bytes_t signature;
 } signature_section_t;
 #if(0)
 typedef struct {
@@ -108,7 +122,7 @@ typedef struct {
     fees_t fees;
     bytes_t pubkey;
     uint64_t epoch;
-    uint64_t gasLimit;
+    uint256_t gasLimit;
     bytes_t dataHash;
     bytes_t codeHash;
 } header_t;
@@ -117,14 +131,15 @@ typedef struct {
     uint8_t discriminant;
     bytes_t salt;
     bytes_t bytes;
+    uint8_t idx;
 } section_t;
 
 typedef struct {
     uint32_t sectionLen;
-    section_t data;
-    section_t extraData;
+    uint32_t extraDataLen;
     section_t code;
-    signature_section_t signatures[3];
+    section_t data;
+    section_t extraData[MAX_EXTRA_DATA_SECS];
 #if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
     masp_tx_section_t maspTx;

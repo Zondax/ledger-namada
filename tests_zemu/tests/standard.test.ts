@@ -18,9 +18,9 @@ import Zemu from '@zondax/zemu'
 import { NamadaApp } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions } from './common'
 
-jest.setTimeout(60000)
+jest.setTimeout(90000)
 
-const expected_pubkey = 'f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf'
+const expected_pubkey = '00f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf'
 const expected_address = "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"
 
 describe('Standard', function () {

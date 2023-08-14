@@ -16,6 +16,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "crypto_helper.h"
 #include "crypto.h"
 #include "tx.h"
 #include "apdu_codes.h"
@@ -57,24 +58,16 @@ __Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
 
 __Z_INLINE void app_sign() {
     const parser_tx_t *txObj = tx_get_txObject();
-
-    uint8_t pubkey[PK_LEN_25519] = {0};
-    const bytes_t pubkey_bytes = {.ptr = pubkey, .len = PK_LEN_25519};
-    zxerr_t err = crypto_extractPublicKey_ed25519(pubkey, sizeof(pubkey));
-    if (err == zxerr_ok) {
-        const zxerr_t headerSigErr = crypto_signHeader(&txObj->transaction.header, &pubkey_bytes);
-        const zxerr_t dataSigErr = crypto_signDataSection(&txObj->transaction.sections.data, &pubkey_bytes);
-        const zxerr_t codeSigErr = crypto_signCodeSection(&txObj->transaction.sections.code, &pubkey_bytes);
-        err = (headerSigErr == zxerr_ok && dataSigErr == zxerr_ok && codeSigErr == zxerr_ok) ? zxerr_ok : zxerr_unknown;
-    }
+    const zxerr_t err = crypto_sign(txObj, G_io_apdu_buffer, sizeof(G_io_apdu_buffer) - 2);
 
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
         set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
     } else {
-        set_code(G_io_apdu_buffer, 0, APDU_CODE_OK);
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+        const uint16_t responseLen = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG;
+        set_code(G_io_apdu_buffer, responseLen, APDU_CODE_OK);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, responseLen + 2);
     }
 }
 

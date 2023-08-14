@@ -34,6 +34,55 @@
         return parser_decimal_too_big;     \
     }
 
+__Z_INLINE bool isAllZeroes(const void *buf, size_t n) {
+    uint8_t *p = (uint8_t *) buf;
+    for (size_t i = 0; i < n; ++i) {
+        if (p[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+parser_error_t uint256_to_str(char *output, uint16_t outputLen, const uint256_t *value) {
+    if (output == NULL || value == NULL) {
+        return parser_unexpected_error;
+    }
+    MEMZERO(output, outputLen);
+
+    uint16_t n[16] = {0};
+    // Copy and right-align the number
+    memcpy((uint8_t *) n, value, sizeof(*value));
+
+    // Special case when value is 0
+    if (isAllZeroes(n, sizeof(n))) {
+        if (outputLen < 2) {
+            // Not enough space to hold "0" and \0.
+            return parser_decimal_too_big;
+        }
+        strncpy(output, "0", outputLen);
+        return parser_ok;
+    }
+
+    int pos = outputLen;
+    while (!isAllZeroes(n, sizeof(n))) {
+        if (pos == 0) {
+          return parser_decimal_too_big;
+        }
+        pos--;
+        unsigned int carry = 0;
+        for (int i = 15; i >= 0; i--) {
+            int rem = ((carry << 16) | n[i]) % 10;
+            n[i] = ((carry << 16) | n[i]) / 10;
+            carry = rem;
+        }
+        output[pos] = '0' + carry;
+    }
+    memmove(output, output + pos, outputLen - pos);
+    output[outputLen - pos] = 0;
+    return parser_ok;
+}
+
 parser_error_t printAddress( bytes_t pubkeyHash,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
@@ -49,7 +98,7 @@ parser_error_t printCouncilVote(const council_t *council,
                                 char *outVal, uint16_t outValLen,
                                 uint8_t pageIdx, uint8_t *pageCount) {
     uint8_t offset = 0;
-    char strVote[200] = {0};
+    char strVote[230] = {0};
 
     // Print prefix
     snprintf(strVote, sizeof(strVote) - offset, PREFIX);
@@ -65,9 +114,9 @@ parser_error_t printCouncilVote(const council_t *council,
     offset = strlen(strVote);
 
     // Print spending cap
-    char spendingCap[50] = {0};
-    if (uint64_to_str(spendingCap, sizeof(spendingCap), council->amount) != NULL ||
-        intstr_to_fpstr_inplace(spendingCap, sizeof(spendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
+    char spendingCap[80] = {0};
+    CHECK_ERROR(uint256_to_str(spendingCap, sizeof(spendingCap), &council->amount))
+    if (intstr_to_fpstr_inplace(spendingCap, sizeof(spendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
         return parser_unexpected_error;
     }
     number_inplace_trimming(spendingCap, 1);
@@ -75,14 +124,6 @@ parser_error_t printCouncilVote(const council_t *council,
         return parser_unexpected_buffer_end;
     }
     snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_SPENDING "%s", spendingCap);
-
-#if 0
-    if (number_printed < number_of_councils){
-        const char* dots = NULL;
-        dots = PIC("...");
-        snprintf((char*) strVote + offset, strlen(dots) + 1, "%s", dots);
-    }
-#endif
 
     pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
     return parser_ok;
@@ -122,13 +163,13 @@ static parser_error_t printTimestamp(const bytes_t timestamp,
     return parser_ok;
 }
 
-parser_error_t printAmount( uint64_t amount, const char* symbol,
+parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount) {
 
-    char strAmount[50] = {0};
-    if (uint64_to_str(strAmount, sizeof(strAmount), amount) != NULL ||
-        intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
+    char strAmount[90] = {0};
+    CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), amount))
+    if (intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom) == 0) {
         return parser_unexpected_error;
     }
 
@@ -211,22 +252,6 @@ parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size
     return parser_ok;
 }
 
-
-// Print a decimal, which is characterised by an uint32_t scale and int64_t num
-// for example scale = 2 and num = 1 prints 0.01
-parser_error_t printDecimal( const serialized_decimal decimal,
-                             char *outVal, uint16_t outValLen,
-                             uint8_t pageIdx, uint8_t *pageCount) {
-    char strDec[100] = {0};
-    CHECK_ERROR(decimal_to_string(decimal.num, decimal.scale, (char*) strDec, 100))
-    number_inplace_trimming(strDec, 1);
-    pageString(outVal, outValLen, strDec, pageIdx, pageCount);
-
-    return parser_ok;
-}
-
-
-
 parser_error_t printExpert( const parser_context_t *ctx,
                                    uint8_t displayIdx,
                                    char *outKey, uint16_t outKeyLen,
@@ -253,23 +278,20 @@ parser_error_t printExpert( const parser_context_t *ctx,
                 return parser_unexpected_error;
             }
             break;
-        case 3:
+        case 3: {
             snprintf(outKey, outKeyLen, "Gas limit");
-            if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.gasLimit) != NULL) {
-                return parser_unexpected_error;
-            }
+            char strAmount[80] = {0};
+            CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), &ctx->tx_obj->transaction.header.gasLimit))
+            pageString(outVal, outValLen, (char *) &strAmount, pageIdx, pageCount);
             break;
-        case 4:
+        }
+        case 4: {
             snprintf(outKey, outKeyLen, "Fees");
-            if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.fees.amount) != NULL ||
-                intstr_to_fpstr_inplace(outVal, outValLen, COIN_AMOUNT_DECIMAL_PLACES) == 0) {
-                return parser_unexpected_error;
-            }
-            z_str3join(outVal, outValLen, COIN_TICKER, "");
-            number_inplace_trimming(outVal, 1);
+            CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
+                                    ctx->tx_obj->transaction.header.fees.symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
             break;
-
-
+        }
         default:
             return parser_display_idx_out_of_range;
     }
