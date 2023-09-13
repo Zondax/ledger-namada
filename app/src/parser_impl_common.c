@@ -19,6 +19,14 @@
 #define SIGN_MASK 0x80000000
 #define SCALE_SHIFT 16
 
+parser_error_t peekByte(const parser_context_t *ctx, uint8_t *byte) {
+    if (byte == NULL || ctx->offset >= ctx->bufferLen) {
+        return parser_unexpected_error;
+    }
+    *byte = *(ctx->buffer + ctx->offset);
+    return parser_ok;
+}
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte) {
     if (byte == NULL || ctx->offset >= ctx->bufferLen) {
         return parser_unexpected_error;
@@ -113,7 +121,6 @@ parser_error_t readDecimal(parser_context_t *ctx, serialized_decimal *value) {
     return parser_ok;
 }
 
-
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen) {
     if (ctx->offset + outputLen > ctx->bufferLen) {
         return parser_unexpected_buffer_end;
@@ -121,6 +128,26 @@ parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t
 
     *output = ctx->buffer + ctx->offset;
     ctx->offset += outputLen;
+    return parser_ok;
+}
+
+parser_error_t readBytesBuf(parser_context_t *ctx, bytes_t *buf, uint16_t num_bytes) {
+    if (ctx->offset + num_bytes > ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+
+    buf->ptr = ctx->buffer + ctx->offset;
+    buf->len = num_bytes;
+    ctx->offset += num_bytes;
+    return parser_ok;
+}
+
+parser_error_t appendBytesBuf(parser_context_t *ctx, bytes_t *buf, uint16_t num_bytes) {
+    if (ctx->offset + num_bytes > ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+    buf->len += num_bytes;
+    ctx->offset += num_bytes;
     return parser_ok;
 }
 

@@ -45,6 +45,7 @@ typedef struct {
 typedef struct {
     uint32_t hashesLen;
     mut_bytes_t hashes;
+    mut_bytes_t indices;
 } concatenated_hashes_t;
 // -----------------------------------------------------------------
 typedef struct {
@@ -54,6 +55,7 @@ typedef struct {
     bool has_signature;
     bytes_t signature;
 } signature_section_t;
+
 #if(0)
 typedef struct {
     bytes_t cv; // 160 bytes: Extended Point, i.e. 5 elements in Fq, each of which are represented by 32 bytes
@@ -122,7 +124,8 @@ typedef struct {
     fees_t fees;
     bytes_t pubkey;
     uint64_t epoch;
-    uint256_t gasLimit;
+    uint64_t gasLimit;
+    bytes_t unshieldSectionHash;
     bytes_t dataHash;
     bytes_t codeHash;
 } header_t;
@@ -164,6 +167,7 @@ typedef struct{
         tx_init_proposal_t initProposal;
         tx_vote_proposal_t voteProposal;
         tx_reveal_pubkey_t revealPubkey;
+        tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
         tx_commission_change_t commissionChange;
         tx_init_validator_t initValidator;

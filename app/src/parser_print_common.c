@@ -83,6 +83,18 @@ parser_error_t uint256_to_str(char *output, uint16_t outputLen, const uint256_t 
     return parser_ok;
 }
 
+parser_error_t printPubkey(const bytes_t pubkey,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount) {
+    char hexString[PUBKEY_BYTES_LEN * 2 + 1] = {0};
+    if (array_to_hexstr((char *)hexString, sizeof(hexString), pubkey.ptr, PUBKEY_BYTES_LEN) == 0)
+    {
+        return parser_invalid_output_buffer;
+    } 
+    pageString(outVal, outValLen, (const char *)&hexString, pageIdx, pageCount);
+    return parser_ok;
+}
+
 parser_error_t printAddress( bytes_t pubkeyHash,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
@@ -169,6 +181,25 @@ parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const 
 
     char strAmount[90] = {0};
     CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), amount))
+    if (intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom) == 0) {
+        return parser_unexpected_error;
+    }
+
+    z_str3join(strAmount, sizeof(strAmount), symbol, "");
+    number_inplace_trimming(strAmount, 1);
+    pageString(outVal, outValLen, strAmount, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
+parser_error_t printAmount64( uint64_t amount, uint8_t amountDenom, const char* symbol,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount) {
+
+    char strAmount[33] = {0};
+    if (uint64_to_str(strAmount, sizeof(strAmount), amount) != NULL) {
+        return parser_unexpected_error;
+    }
     if (intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom) == 0) {
         return parser_unexpected_error;
     }
@@ -280,13 +311,12 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         case 3: {
             snprintf(outKey, outKeyLen, "Gas limit");
-            char strAmount[80] = {0};
-            CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), &ctx->tx_obj->transaction.header.gasLimit))
-            pageString(outVal, outValLen, (char *) &strAmount, pageIdx, pageCount);
+            CHECK_ERROR(printAmount64(ctx->tx_obj->transaction.header.gasLimit, COIN_AMOUNT_DECIMAL_PLACES, "",
+                                    outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 4: {
-            snprintf(outKey, outKeyLen, "Fees");
+            snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
                                     ctx->tx_obj->transaction.header.fees.symbol,
                                     outVal, outValLen, pageIdx, pageCount))

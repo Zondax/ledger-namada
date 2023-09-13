@@ -160,12 +160,13 @@ static zxerr_t crypto_hashHeader(const header_t *header, uint8_t *output, uint32
     }
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    const uint8_t discriminant = 0x07;
+    const uint8_t discriminant = 0x08;
     cx_sha256_update(&sha256, &discriminant, sizeof(discriminant));
     cx_sha256_update(&sha256, header->bytes.ptr, header->bytes.len);
     cx_sha256_final(&sha256, output);
     return zxerr_ok;
 }
+
 
 zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, const uint8_t *prefix, uint32_t prefixLen, uint8_t *output, uint32_t outputLen) {
     if (signature_section == NULL || output == NULL || outputLen < CX_SHA256_SIZE) {
@@ -198,24 +199,29 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
     switch (txObj->typeTx) {
         case InitAccount:
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initAccount.vp_type_sechash.ptr, HASH_LEN);
+            hashes->indices.ptr[hashes->hashesLen] = txObj->initAccount.vp_type_secidx;
             hashes->hashesLen++;
             break;
 
         case InitValidator:
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initValidator.vp_type_sechash.ptr, HASH_LEN);
+            hashes->indices.ptr[hashes->hashesLen] = txObj->initValidator.vp_type_secidx;
             hashes->hashesLen++;
             break;
 
         case UpdateVP:
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->updateVp.vp_type_sechash.ptr, HASH_LEN);
+            hashes->indices.ptr[hashes->hashesLen] = txObj->updateVp.vp_type_secidx;
             hashes->hashesLen++;
             break;
 
         case InitProposal:
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initProposal.content_sechash.ptr, HASH_LEN);
+            hashes->indices.ptr[hashes->hashesLen] = txObj->initProposal.content_secidx;
             hashes->hashesLen++;
             if (txObj->initProposal.has_proposal_code) {
                 MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initProposal.proposal_code_sechash.ptr, HASH_LEN);
+                hashes->indices.ptr[hashes->hashesLen] = txObj->initProposal.proposal_code_secidx;
                 hashes->hashesLen++;
             }
             break;
@@ -230,7 +236,7 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
 
 
 zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen) {
-    const uint16_t minimumBufferSize = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG;
+    const uint16_t minimumBufferSize = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG + 2 + 6;
     if (txObj ==NULL || output == NULL || outputLen < minimumBufferSize) {
         return zxerr_unknown;
     }
@@ -240,9 +246,12 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
 
     // Hashes: code, data, (initAcc | initVali | updateVP = 1  /  initProp = 2), raw_signature, header ---> MaxHashes = 6
     uint8_t hashes_buffer[MAX_SIGNATURE_HASHES * HASH_LEN] = {0};
+    uint8_t indices_buffer[MAX_SIGNATURE_HASHES] = {0};
     concatenated_hashes_t section_hashes = {
         .hashes.ptr = hashes_buffer,
         .hashes.len = sizeof(hashes_buffer),
+        .indices.ptr = indices_buffer,
+        .indices.len = sizeof(indices_buffer),
         .hashesLen = 0
     };
 
@@ -250,6 +259,8 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     const section_t *code = &txObj->transaction.sections.code;
     uint8_t *codeHash = section_hashes.hashes.ptr;
     uint8_t *dataHash = section_hashes.hashes.ptr + HASH_LEN;
+    section_hashes.indices.ptr[0] = code->idx;
+    section_hashes.indices.ptr[1] = data->idx;
     // Concatenate the code and data section hashes
     CHECK_ZXERR(crypto_hashCodeSection(code, codeHash, HASH_LEN))
     CHECK_ZXERR(crypto_hashDataSection(data, dataHash, HASH_LEN))
@@ -277,7 +288,8 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     // Sign over the hash of the unsigned signature section
     uint8_t *raw = salt_buffer + SALT_LEN;
     CHECK_ZXERR(crypto_sign_ed25519(raw + 1, ED25519_SIGNATURE_SIZE, raw_signature_hash, HASH_LEN))
-
+    uint8_t raw_indices_len = section_hashes.hashesLen;
+    
     // ----------------------------------------------------------------------
     // Start generating wrapper signature
     // Affix the signature to make the signature section signed
@@ -288,12 +300,14 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     // Compute the hash of the signed signature section and concatenate it
     const uint8_t sig_sec_prefix = 0x03;
     CHECK_ZXERR(crypto_hashSigSection(&signature_section, &sig_sec_prefix, 1, raw_signature_hash, HASH_LEN))
+    section_hashes.indices.ptr[section_hashes.hashesLen] = txObj->transaction.sections.sectionLen+1+0 /*signature_raw*/;
     section_hashes.hashesLen++;
     signature_section.hashes.hashesLen++;
 
     /// Hash the header section
     uint8_t *header_hash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
     CHECK_ZXERR(crypto_hashHeader(&txObj->transaction.header, header_hash, HASH_LEN))
+    section_hashes.indices.ptr[section_hashes.hashesLen] = 0;
     section_hashes.hashesLen++;
     signature_section.hashes.hashesLen++;
 
@@ -306,5 +320,9 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     uint8_t *wrapper = raw + SALT_LEN + SIG_LEN_25519_PLUS_TAG;
     CHECK_ZXERR(crypto_sign_ed25519(wrapper + 1, ED25519_SIGNATURE_SIZE, wrapper_sig_hash, sizeof(wrapper_sig_hash)))
 
+    uint8_t *indices = wrapper + SIG_LEN_25519_PLUS_TAG;
+    indices[0] = raw_indices_len;
+    indices[1] = section_hashes.hashesLen;
+    MEMCPY(indices + 2, section_hashes.indices.ptr, section_hashes.hashesLen);
     return zxerr_ok;
 }

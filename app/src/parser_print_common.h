@@ -41,6 +41,10 @@ parser_error_t printCodeHash(bytes_t *codeHash,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t printPubkey(bytes_t pubkey,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount);
+
 parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);

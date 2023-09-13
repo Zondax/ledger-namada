@@ -54,19 +54,27 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
 
         case InitAccount:
-            *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
+        {
+            const uint32_t pubkeys_num = ctx->tx_obj->initAccount.number_of_pubkeys;
+            const uint8_t expert_params_num = (uint8_t)(INIT_ACCOUNT_EXPERT_PARAMS + pubkeys_num);
+            const uint8_t normal_params_num = (uint8_t)(INIT_ACCOUNT_NORMAL_PARAMS + pubkeys_num);
+            *numItems = (app_mode_expert() ? expert_params_num : normal_params_num);
             break;
+        }
+
         case InitProposal:
             *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
             break;
+
         case VoteProposal:
         {
-            const uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
-            const uint8_t num_councils = (ctx->tx_obj->voteProposal.number_of_councils > 0) ? (ctx->tx_obj->voteProposal.number_of_councils  - 1) : 0;
-            //uint8_t has_yay_vote_details = ((ctx->tx_obj->voteProposal.vote_type_is_council) || (ctx->tx_obj->voteProposal.vote_type_is_eth_bridge)) ? 1 : 0;
-            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators +  num_councils;
+            const uint32_t delegations_num = ctx->tx_obj->voteProposal.number_of_delegations;
+            const uint8_t normal_params_num = (uint8_t)(VOTE_PROPOSAL_NORMAL_PARAMS + delegations_num);
+            const uint8_t expert_params_num = (uint8_t)(VOTE_PROPOSAL_EXPERT_PARAMS + delegations_num);
+            *numItems = (app_mode_expert() ? expert_params_num : normal_params_num);
             break;
         }
+
         case RevealPubkey:
             *numItems = (app_mode_expert() ? REVEAL_PUBKEY_EXPERT_PARAMS : REVEAL_PUBKEY_NORMAL_PARAMS);
             break;
@@ -80,11 +88,28 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
 
         case InitValidator:
-            *numItems = (app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS);
+        {
+            const uint32_t account_keys_num = ctx->tx_obj->initValidator.number_of_account_keys;
+            const uint8_t normal_params_num = (uint8_t)(INIT_VALIDATOR_NORMAL_PARAMS + account_keys_num);
+            const uint8_t expert_params_num = (uint8_t)(INIT_VALIDATOR_EXPERT_PARAMS + account_keys_num);
+            *numItems = (app_mode_expert() ? expert_params_num : normal_params_num);
             break;
+        }
 
         case UpdateVP:
-            *numItems = (app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS);
+        {
+            const uint32_t pubkeys_num = ctx->tx_obj->updateVp.number_of_pubkeys;
+            const uint8_t has_threshold = ctx->tx_obj->updateVp.has_threshold;
+            const uint8_t normal_params_num =
+                (uint8_t)(UPDATE_VP_NORMAL_PARAMS + pubkeys_num + has_threshold);
+            const uint8_t expert_params_num =
+                (uint8_t)(UPDATE_VP_EXPERT_PARAMS + pubkeys_num + has_threshold);
+            *numItems = (app_mode_expert() ? expert_params_num : normal_params_num);
+            break;
+        }
+
+        case UnjailValidator:
+            *numItems = (app_mode_expert() ? UNJAIL_VALIDATOR_EXPERT_PARAMS : UNJAIL_VALIDATOR_NORMAL_PARAMS);
             break;
 
         default:

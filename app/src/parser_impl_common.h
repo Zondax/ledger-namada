@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+#define ADDRESS_LEN_BYTES  21
+#define PUBKEY_BYTES_LEN  33
+
 #define BOND_NORMAL_PARAMS  3
 #define BOND_EXPERT_PARAMS  8
 
@@ -36,11 +39,11 @@ extern "C" {
 #define INIT_PROPOSAL_NORMAL_PARAMS  7
 #define INIT_PROPOSAL_EXPERT_PARAMS  12
 
-#define VOTE_PROPOSAL_NORMAL_PARAMS 4
-#define VOTE_PROPOSAL_EXPERT_PARAMS 9
+#define VOTE_PROPOSAL_NORMAL_PARAMS  4
+#define VOTE_PROPOSAL_EXPERT_PARAMS  9
 
-#define INIT_VALIDATOR_NORMAL_PARAMS  8
-#define INIT_VALIDATOR_EXPERT_PARAMS  13
+#define INIT_VALIDATOR_NORMAL_PARAMS  10
+#define INIT_VALIDATOR_EXPERT_PARAMS  15
 
 #define REVEAL_PUBKEY_NORMAL_PARAMS  2
 #define REVEAL_PUBKEY_EXPERT_PARAMS  7
@@ -57,6 +60,12 @@ extern "C" {
 #define COMMISSION_CHANGE_NORMAL_PARAMS  3
 #define COMMISSION_CHANGE_EXPERT_PARAMS  8
 
+#define UNJAIL_VALIDATOR_NORMAL_PARAMS  2
+#define UNJAIL_VALIDATOR_EXPERT_PARAMS  7
+
+#define INIT_BUF(__BUF) { (*__BUF).len = 0; }
+
+parser_error_t peekByte(const parser_context_t *ctx, uint8_t *byte);
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
@@ -67,6 +76,9 @@ parser_error_t readDecimal(parser_context_t *ctx, serialized_decimal *value);
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
 parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
 
+parser_error_t readBytesBuf(parser_context_t *ctx, bytes_t *buf, uint16_t num_bytes);
+parser_error_t appendBytesBuf(parser_context_t *ctx, bytes_t *buf, uint16_t num_bytes);
+
 parser_error_t readToken(const bytes_t *token, const char **symbol);
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
 parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint16_t strVoteLen);
@@ -75,7 +87,9 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
 
+#if 0
 parser_error_t readCouncils(parser_context_t *ctx, uint32_t numberOfCouncils, council_t *council);
+#endif
 
 #ifdef __cplusplus
 }
