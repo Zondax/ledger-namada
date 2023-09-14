@@ -162,13 +162,14 @@ static parser_error_t printTimestamp(const bytes_t timestamp,
 
     // Received         "2023-04-19T14:19:38.114481351+00:00"
     // Expected         "2023-04-19 14:19:38.114481351 UTC"
-    if (timestamp.len != 35) {
-        return parser_unexpected_value;
+    if (timestamp.len > 35 || timestamp.len < 25) {
+      return parser_unexpected_value;
     }
 
+    uint32_t offset = timestamp.len - 6;
     char date[50] = {0};
     memcpy(date, timestamp.ptr, timestamp.len - 6);
-    snprintf(date + 29, sizeof(date) - 29, " UTC");
+    snprintf(date + offset, sizeof(date) - offset, " UTC");
     if (date[10] == 'T') date[10] = ' ';
 
     pageString(outVal, outValLen, date, pageIdx, pageCount);

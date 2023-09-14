@@ -26,6 +26,7 @@ extern "C" {
 #include "coin.h"
 
 #define MAX_EXTRA_DATA_SECS 3
+#define MAX_SIGNATURE_SECS 3
 
 typedef struct {
     uint8_t address[ADDRESS_LEN_TESTNET];
@@ -47,13 +48,22 @@ typedef struct {
     mut_bytes_t hashes;
     mut_bytes_t indices;
 } concatenated_hashes_t;
+
+typedef enum {
+    Address = 0,
+    PubKeys = 1
+} signer_e;
 // -----------------------------------------------------------------
 typedef struct {
     bytes_t salt;
+    uint8_t idx;
     concatenated_hashes_t hashes;
-    bytes_t pubKey;
-    bool has_signature;
-    bytes_t signature;
+    signer_e signerDiscriminant;
+    bytes_t address;
+    uint32_t pubKeysLen;
+    bytes_t pubKeys;
+    uint32_t signaturesLen;
+    bytes_t indexedSignatures;
 } signature_section_t;
 
 #if(0)
@@ -140,9 +150,11 @@ typedef struct {
 typedef struct {
     uint32_t sectionLen;
     uint32_t extraDataLen;
+    uint32_t signaturesLen;
     section_t code;
     section_t data;
     section_t extraData[MAX_EXTRA_DATA_SECS];
+    signature_section_t signatures[MAX_SIGNATURE_SECS];
 #if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
     masp_tx_section_t maspTx;
