@@ -19,6 +19,7 @@
 #include <zxmacros.h>
 #include <zxformat.h>
 #include "coin.h"
+#include "timeutils.h"
 
 static parser_error_t printBondTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
@@ -711,6 +712,83 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printIBCTxn( const parser_context_t *ctx,
+                                    uint8_t displayIdx,
+                                    char *outKey, uint16_t outKeyLen,
+                                    char *outVal, uint16_t outValLen,
+                                    uint8_t pageIdx, uint8_t *pageCount) {
+
+    const tx_ibc_t *ibc = &ctx->tx_obj->ibc;
+    char buffer[100] = {0};
+
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "IBC");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Source port");
+            pageStringExt(outVal, outValLen, (const char*)ibc->port_id.ptr, ibc->port_id.len, pageIdx, pageCount);
+            break;
+        case 2:
+            snprintf(outKey, outKeyLen, "Source channel");
+            pageStringExt(outVal, outValLen, (const char*)ibc->channel_id.ptr, ibc->channel_id.len, pageIdx, pageCount);
+            break;
+        case 3:
+            if( ibc->token_address.len + ibc->token_amount.len > sizeof(buffer)) {
+                return parser_unexpected_buffer_end;
+            }
+            snprintf(outKey, outKeyLen, "Token");
+            snprintf(buffer, sizeof(buffer), "%.*s %.*s", ibc->token_amount.len, ibc->token_amount.ptr, ibc->token_address.len, ibc->token_address.ptr);
+            pageStringExt(outVal, outValLen, buffer, sizeof(buffer), pageIdx, pageCount);
+            break;
+
+        case 4:
+            snprintf(outKey, outKeyLen, "Sender");
+            pageStringExt(outVal, outValLen, (const char*)ibc->sender_address.ptr, ibc->sender_address.len, pageIdx, pageCount);
+            break;
+
+        case 5:
+            snprintf(outKey, outKeyLen, "Receiver");
+            pageStringExt(outVal, outValLen, (const char*)ibc->receiver.ptr, ibc->receiver.len, pageIdx, pageCount);
+            break;
+
+        case 6:
+            snprintf(outKey, outKeyLen, "Timeout height");
+            if (ibc->timeout_height != 0) {
+                return parser_unexpected_value;
+            }
+            snprintf(outVal, outValLen, "no timeout");
+            break;
+
+        case 7: {
+            snprintf(outKey, outKeyLen, "Timeout timestamp");
+            timedata_t date;
+            if (extractTime(ibc->timeout_timestamp.millis, &date) != zxerr_ok) {
+                return parser_unexpected_error;
+            }
+            snprintf(outVal, outValLen, "%04d-%02d-%02dT%02d:%02d:%02d.%09dZ",
+            date.tm_year, date.tm_mon, date.tm_day, date.tm_hour, date.tm_min, date.tm_sec, ibc->timeout_timestamp.nanos);
+            // printTime(outVal, outValLen, ibc->timeout_timestamp.millis);
+            break;
+        }
+
+
+        default:
+            if (!app_mode_expert()) {
+               return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 8;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
 parser_error_t printTxnFields(const parser_context_t *ctx,
                               uint8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
@@ -755,6 +833,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
         case UnjailValidator:
             return printUnjailValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
+        case IBC:
+            return printIBCTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            
         default:
             break;
     }

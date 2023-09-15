@@ -184,6 +184,7 @@ typedef struct{
         tx_commission_change_t commissionChange;
         tx_init_validator_t initValidator;
         tx_update_vp_t updateVp;
+        tx_ibc_t ibc;
     };
 
     transaction_t transaction;

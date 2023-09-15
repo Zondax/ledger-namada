@@ -43,6 +43,7 @@ typedef enum {
     Withdraw,
     CommissionChange,
     UnjailValidator,
+    IBC,
 } transaction_type_e;
 
 typedef enum {
@@ -96,6 +97,11 @@ typedef struct {
 typedef struct {
     uint64_t b[4];
 } uint256_t;
+
+typedef struct {
+    uint64_t millis;
+    uint32_t nanos;
+} timestamp_t;
 
 typedef struct {
     bytes_t council_address;
@@ -194,6 +200,17 @@ typedef struct {
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;
+
+typedef struct {
+    bytes_t port_id;
+    bytes_t channel_id;
+    bytes_t token_address;
+    bytes_t token_amount;
+    bytes_t sender_address;
+    bytes_t receiver;
+    uint8_t timeout_height;
+    timestamp_t timeout_timestamp;
+} tx_ibc_t;
 
 typedef struct {
     bytes_t address;

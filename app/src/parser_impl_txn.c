@@ -66,7 +66,10 @@ static const txn_types_t allowed_txn[] = {
     CommissionChange},
 
     {{0xac, 0x21, 0x49, 0xf6, 0x40, 0xf0, 0x66, 0x00, 0xc4, 0x53, 0x7e, 0xba, 0xd7, 0xfa, 0x5c, 0x94, 0xeb, 0x4f, 0xeb, 0x3a, 0x57, 0xce, 0x6f, 0xa3, 0x9a, 0xc4, 0x3d, 0xc2, 0xd7, 0x7f, 0x20, 0x16},
-     UnjailValidator},
+    UnjailValidator},
+
+    {{0x7d, 0x1d, 0x9c, 0x34, 0xe6, 0x9e, 0xac, 0x90, 0x69, 0xc4, 0x0d, 0x8e, 0x20, 0xa8, 0x98, 0x94, 0x62, 0x3f, 0x40, 0x62, 0x09, 0x74, 0x17, 0x40, 0x7c, 0x4d, 0xdd, 0xe3, 0x03, 0xf4, 0x0b, 0x18},
+    IBC},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -741,6 +744,86 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *timestamp) {
+    // uint64_t timestampSize = 0;
+    uint8_t consumed = 0;
+    uint64_t tmp = 0;
+
+    CHECK_ERROR(checkTag(ctx, 0x38))
+    const uint64_t timestampSize = ctx->bufferLen - ctx->offset;
+    decodeLEB128(ctx->buffer + ctx->offset, timestampSize, &consumed, &tmp);
+    ctx->offset += consumed;
+
+    const uint32_t e9 = 1000000000;
+    timestamp->millis = tmp / e9;
+    timestamp->nanos = (uint32_t)(tmp - timestamp->millis*e9);
+
+    return parser_ok;
+}
+
+static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Read tag
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    // Skip URL: /ibc.applications.transfer.v1.MsgTransfer
+    uint8_t tmp = 0;
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    ctx.offset += tmp;
+
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    // Missing bytes
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+
+    // Read port id
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.port_id.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.port_id.ptr, v->ibc.port_id.len))
+
+    // Read channel id
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.channel_id.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.channel_id.ptr, v->ibc.channel_id.len))
+
+    // Read token address
+    CHECK_ERROR(checkTag(&ctx, 0x1A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(checkTag(&ctx, 0x0A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.token_address.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_address.ptr, v->ibc.token_address.len))
+
+    // Read token amount
+    CHECK_ERROR(checkTag(&ctx, 0x12))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.token_amount.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_amount.ptr, v->ibc.token_amount.len))
+
+    // Read sender
+    CHECK_ERROR(checkTag(&ctx, 0x22))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.sender_address.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+
+    // Read receiver
+    CHECK_ERROR(checkTag(&ctx, 0x2A))
+    CHECK_ERROR(readByte(&ctx, &tmp))
+    v->ibc.receiver.len = tmp;
+    CHECK_ERROR(readBytes(&ctx, &v->ibc.receiver.ptr, v->ibc.receiver.len))
+
+    // Read timeout height
+    CHECK_ERROR(checkTag(&ctx, 0x32))
+    CHECK_ERROR(readByte(&ctx, &v->ibc.timeout_height))
+
+    // Read timeout timestamp
+    CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
+
+    return parser_ok;
+}
+
 // WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
@@ -858,7 +941,7 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     CHECK_ERROR(readUint32(ctx, &signature->hashes.hashesLen))
     signature->hashes.hashes.len = HASH_LEN*signature->hashes.hashesLen;
     CHECK_ERROR(readBytes(ctx, (const uint8_t **) &signature->hashes.hashes.ptr, signature->hashes.hashes.len))
-    CHECK_ERROR(readByte(ctx, &signature->signerDiscriminant))
+    CHECK_ERROR(readByte(ctx, (uint8_t *) &signature->signerDiscriminant))
     switch (signature->signerDiscriminant) {
     case PubKeys:
       CHECK_ERROR(readUint32(ctx, &signature->pubKeysLen))
@@ -1057,6 +1140,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case UpdateVP:
             CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            break;
+        case IBC:
+            CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         default:
             return parser_unexpected_method;
