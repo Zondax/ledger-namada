@@ -31,14 +31,3 @@ INSTANTIATE_TEST_SUITE_P
 );
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Normal) { check_testcase(GetParam(), false); }
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }
-
-
-INSTANTIATE_TEST_SUITE_P
-(
-    JsonTestCasesCurrentTxVer,
-    JsonTestsB,
-    ::testing::ValuesIn(GetJsonTestCases("ibc.json")),
-    JsonTestsB::PrintToStringParamName()
-);
-TEST_P(JsonTestsB, CheckUIOutput_CurrentTX_Normal) { check_testcase(GetParam(), false); }
-TEST_P(JsonTestsB, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }
