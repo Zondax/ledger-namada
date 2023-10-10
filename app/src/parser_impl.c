@@ -53,18 +53,18 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             break;
 
-        case InitAccount:
-            *numItems = (app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS);
+        case InitAccount: {
+            const uint32_t pubkeys_num = ctx->tx_obj->initAccount.number_of_pubkeys;
+            *numItems = (uint8_t)((app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS) + pubkeys_num);
             break;
-        case InitProposal:
+        }
+        case InitProposal: {
             *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
             break;
-        case VoteProposal:
-        {
-            const uint8_t has_delegators = (ctx->tx_obj->voteProposal.number_of_delegations == 0)? 0 : 1;
-            const uint8_t num_councils = (ctx->tx_obj->voteProposal.number_of_councils > 0) ? (ctx->tx_obj->voteProposal.number_of_councils  - 1) : 0;
-            //uint8_t has_yay_vote_details = ((ctx->tx_obj->voteProposal.vote_type_is_council) || (ctx->tx_obj->voteProposal.vote_type_is_eth_bridge)) ? 1 : 0;
-            *numItems = (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + has_delegators +  num_councils;
+        }
+        case VoteProposal: {
+            const uint32_t delegations = ctx->tx_obj->voteProposal.number_of_delegations;
+            *numItems = (uint8_t) ((app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + delegations);
             break;
         }
         case RevealPubkey:
@@ -79,13 +79,17 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? COMMISSION_CHANGE_EXPERT_PARAMS : COMMISSION_CHANGE_NORMAL_PARAMS);
             break;
 
-        case InitValidator:
-            *numItems = (app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS);
+        case InitValidator: {
+            const uint32_t accounts = ctx->tx_obj->initValidator.number_of_account_keys;
+            *numItems = (uint8_t) ((app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS) + accounts);
             break;
-
-        case UpdateVP:
-            *numItems = (app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS);
+        }
+        case UpdateVP: {
+            const uint32_t pubkeys_num = ctx->tx_obj->updateVp.number_of_pubkeys;
+            const uint8_t has_threshold = ctx->tx_obj->updateVp.has_threshold;
+            *numItems = (uint8_t) ((app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS) + pubkeys_num + has_threshold);
             break;
+        }
 
         case IBC:
             *numItems = (app_mode_expert() ? IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);

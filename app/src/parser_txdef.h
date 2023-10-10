@@ -122,7 +122,8 @@ typedef struct {
     fees_t fees;
     bytes_t pubkey;
     uint64_t epoch;
-    uint256_t gasLimit;
+    uint64_t gasLimit;
+    bytes_t unshieldSectionHash;
     bytes_t dataHash;
     bytes_t codeHash;
 } header_t;
