@@ -894,6 +894,46 @@ static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *ext
     return parser_ok;
 }
 
+static parser_error_t readSignatureSection(parser_context_t *ctx, signature_section_t *signature) {
+    if (ctx == NULL || signature == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t sectionDiscriminant = 0;
+    CHECK_ERROR(readByte(ctx, &sectionDiscriminant))
+    if (sectionDiscriminant != DISCRIMINANT_SIGNATURE) {
+        return parser_unexpected_value;
+    }
+
+    CHECK_ERROR(readUint32(ctx, &signature->hashes.hashesLen))
+    signature->hashes.hashes.len = HASH_LEN * signature->hashes.hashesLen;
+    CHECK_ERROR(readBytes(ctx, &signature->hashes.hashes.ptr, signature->hashes.hashes.len))
+
+    
+    CHECK_ERROR(readByte(ctx, (uint8_t *) &signature->signerDiscriminant))
+    switch (signature->signerDiscriminant) {
+        case PubKeys:
+        CHECK_ERROR(readUint32(ctx, &signature->pubKeysLen))
+        signature->pubKeys.len = PK_LEN_25519_PLUS_TAG * signature->pubKeysLen;
+        CHECK_ERROR(readBytes(ctx, &signature->pubKeys.ptr, signature->pubKeys.len))
+        break;
+        
+        case Address:
+        signature->address.len = ADDRESS_LEN_BYTES;
+        CHECK_ERROR(readBytes(ctx, &signature->address.ptr, signature->address.len))
+        break;
+        
+        default:
+            return parser_unexpected_value;
+    }
+
+    CHECK_ERROR(readUint32(ctx, &signature->signaturesLen))
+    signature->indexedSignatures.len = signature->signaturesLen * (1 + SIG_LEN_25519_PLUS_TAG);
+    CHECK_ERROR(readBytes(ctx, &signature->indexedSignatures.ptr, signature->indexedSignatures.len))
+
+    return parser_ok;
+}
+
 static parser_error_t readDataSection(parser_context_t *ctx, section_t *data) {
     if (ctx == NULL || data == NULL) {
         return parser_unexpected_error;
@@ -978,6 +1018,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     }
 
     v->transaction.sections.extraDataLen = 0;
+    v->transaction.sections.signaturesLen = 0;
 
     for (uint32_t i = 0; i < v->transaction.sections.sectionLen; i++) {
         const uint8_t discriminant = *(ctx->buffer + ctx->offset);
@@ -1001,8 +1042,15 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 v->transaction.sections.code.idx = i+1;
                 break;
             }
-            case DISCRIMINANT_SIGNATURE:
+            case DISCRIMINANT_SIGNATURE: {
+                if (v->transaction.sections.signaturesLen >= MAX_SIGNATURE_SECS) {
+                    return parser_value_out_of_range;
+                }
+                signature_section_t *signature = &v->transaction.sections.signatures[v->transaction.sections.signaturesLen++];
+                CHECK_ERROR(readSignatureSection(ctx, signature))
+                signature->idx = i+1;
                 break;
+            }
 #if(0)
             case DISCRIMINANT_CIPHERTEXT:
                 CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))

@@ -740,7 +740,6 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
             }
             snprintf(outVal, outValLen, "%04d-%02d-%02dT%02d:%02d:%02d.%09dZ",
             date.tm_year, date.tm_mon, date.tm_day, date.tm_hour, date.tm_min, date.tm_sec, ibc->timeout_timestamp.nanos);
-            // printTime(outVal, outValLen, ibc->timeout_timestamp.millis);
             break;
         }
 
