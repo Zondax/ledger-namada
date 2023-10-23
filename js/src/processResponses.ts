@@ -39,11 +39,13 @@ export function getSignatureResponse(response: Buffer): ISignature {
   offset += SIG_LEN_PLUS_TAG;
   const raw_indices_len = response[offset];
   offset += 1;
-  const wrapper_indices_len = response[offset];
-
-  offset += 1;
   const raw_indices = Buffer.from(response.subarray(offset, offset + raw_indices_len))
+  offset += raw_indices_len;
+  
+  const wrapper_indices_len = response[offset];
+  offset += 1;
   const wrapper_indices = Buffer.from(response.subarray(offset, offset + wrapper_indices_len))
+  offset += wrapper_indices_len;
 
   return {
     pubkey,

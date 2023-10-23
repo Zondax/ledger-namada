@@ -130,6 +130,7 @@ typedef struct {
 #endif
 
 typedef struct {
+    bytes_t ext_bytes;
     bytes_t bytes;
     fees_t fees;
     bytes_t pubkey;

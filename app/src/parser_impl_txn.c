@@ -830,6 +830,7 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
         return parser_unexpected_value;
     }
     v->transaction.header.bytes.ptr = ctx->buffer + ctx->offset;
+    v->transaction.header.ext_bytes.ptr = ctx->buffer + ctx->offset;
     const uint16_t tmpOffset = ctx->offset;
 
     // Read length of chain_id
@@ -858,6 +859,8 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     // Data hash
     v->transaction.header.dataHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
+
+    v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
@@ -894,7 +897,7 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
         ctx->offset += num_pow_solution * 17;
     }
 
-    v->transaction.header.bytes.len = ctx->offset - tmpOffset;
+    v->transaction.header.ext_bytes.len = ctx->offset - tmpOffset;
 
     return parser_ok;
 }
