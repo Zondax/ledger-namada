@@ -359,5 +359,12 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     uint8_t *wrapper = raw + SALT_LEN + SIG_LEN_25519_PLUS_TAG;
     CHECK_ZXERR(crypto_sign_ed25519(wrapper + 1, ED25519_SIGNATURE_SIZE, wrapper_sig_hash, sizeof(wrapper_sig_hash)))
 
+#if defined(DEBUG_HASHES)
+    for (uint8_t i = 0; i < section_hashes.hashesLen; i++) {
+        char hexString[100] = {0};
+        array_to_hexstr(hexString, sizeof(hexString), section_hashes.hashes.ptr + (HASH_LEN * i), HASH_LEN);
+        ZEMU_LOGF(100, "Hash %d: %s\n", i, hexString);
+    }
+#endif
     return zxerr_ok;
 }
