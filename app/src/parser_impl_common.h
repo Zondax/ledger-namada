@@ -39,8 +39,8 @@ extern "C" {
 #define VOTE_PROPOSAL_NORMAL_PARAMS 4
 #define VOTE_PROPOSAL_EXPERT_PARAMS 9
 
-#define INIT_VALIDATOR_NORMAL_PARAMS  8
-#define INIT_VALIDATOR_EXPERT_PARAMS  13
+#define INIT_VALIDATOR_NORMAL_PARAMS  10
+#define INIT_VALIDATOR_EXPERT_PARAMS  15
 
 #define REVEAL_PUBKEY_NORMAL_PARAMS  2
 #define REVEAL_PUBKEY_EXPERT_PARAMS  7
@@ -56,6 +56,12 @@ extern "C" {
 
 #define COMMISSION_CHANGE_NORMAL_PARAMS  3
 #define COMMISSION_CHANGE_EXPERT_PARAMS  8
+
+#define UNJAIL_VALIDATOR_NORMAL_PARAMS  2
+#define UNJAIL_VALIDATOR_EXPERT_PARAMS  7
+
+#define IBC_NORMAL_PARAMS  8
+#define IBC_EXPERT_PARAMS  13
 
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
@@ -74,8 +80,6 @@ parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
-
-parser_error_t readCouncils(parser_context_t *ctx, uint32_t numberOfCouncils, council_t *council);
 
 #ifdef __cplusplus
 }

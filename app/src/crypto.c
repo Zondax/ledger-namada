@@ -28,7 +28,7 @@
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
 
-#define MAX_SIGNATURE_HASHES 6
+#define MAX_SIGNATURE_HASHES 10
 
 static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen) {
     if (pubKey == NULL || pubKeyLen < PK_LEN_25519) {
@@ -177,13 +177,29 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
     if (prefix != NULL) {
         cx_sha256_update(&sha256, prefix, prefixLen);
     }
-    cx_sha256_update(&sha256, signature_section->salt.ptr, signature_section->salt.len);
     cx_sha256_update(&sha256, (uint8_t*) &signature_section->hashes.hashesLen, 4);
     cx_sha256_update(&sha256, signature_section->hashes.hashes.ptr, HASH_LEN * signature_section->hashes.hashesLen);
-    cx_sha256_update(&sha256, signature_section->pubKey.ptr, signature_section->pubKey.len);
-    cx_sha256_update(&sha256, (const uint8_t*) &signature_section->has_signature, 1);
-    if(signature_section->has_signature) {
-        cx_sha256_update(&sha256, signature_section->signature.ptr, signature_section->signature.len);
+    cx_sha256_update(&sha256, (uint8_t*) &signature_section->signerDiscriminant, 1);
+
+    switch (signature_section->signerDiscriminant) {
+        case PubKeys:
+            cx_sha256_update(&sha256, (uint8_t*) &signature_section->pubKeysLen, 4);
+            if (signature_section->pubKeysLen > 0) {
+                cx_sha256_update(&sha256, signature_section->pubKeys.ptr, PK_LEN_25519_PLUS_TAG * signature_section->pubKeysLen);
+            }
+            break;
+
+        case Address:
+            cx_sha256_update(&sha256, (uint8_t*) &signature_section->address.ptr, signature_section->address.len);
+            break;
+
+        default:
+            return zxerr_invalid_crypto_settings;
+    }
+
+    cx_sha256_update(&sha256, (const uint8_t*) &signature_section->signaturesLen, 4);
+    if(signature_section->signaturesLen > 0) {
+        cx_sha256_update(&sha256, signature_section->indexedSignatures.ptr, signature_section->indexedSignatures.len);
     }
     cx_sha256_final(&sha256, output);
     return zxerr_ok;
@@ -231,7 +247,7 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
 
 zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen) {
     const uint16_t minimumBufferSize = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG;
-    if (txObj ==NULL || output == NULL || outputLen < minimumBufferSize) {
+    if (txObj == NULL || output == NULL || outputLen < minimumBufferSize) {
         return zxerr_unknown;
     }
     MEMZERO(output, outputLen);
@@ -263,11 +279,13 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
 
     // Construct the unsigned variant of the raw signature section
     signature_section_t signature_section = {
-      .salt = salt,
-      .hashes = section_hashes,
-      .pubKey = pubkey,
-      .has_signature = false,
-      .signature = {NULL, 0},
+        .salt = salt,
+        .hashes = section_hashes,
+        .signerDiscriminant = PubKeys,
+        .pubKeysLen = 0,
+        .pubKeys = pubkey,
+        .signaturesLen = 0,
+        .indexedSignatures = {NULL, 0},
     };
 
     // Hash the unsigned signature section
@@ -281,9 +299,11 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     // ----------------------------------------------------------------------
     // Start generating wrapper signature
     // Affix the signature to make the signature section signed
-    signature_section.has_signature = true;
-    signature_section.signature.ptr = raw;
-    signature_section.signature.len = SIG_LEN_25519_PLUS_TAG;
+    signature_section.signaturesLen = 1;
+    //Use previous byte from salt that is always 0x00 but we're not sending an extra byte in the response since raw points to output buffer
+    signature_section.indexedSignatures.ptr = raw - 1;
+    signature_section.indexedSignatures.len = 1 + SIG_LEN_25519_PLUS_TAG;
+    signature_section.pubKeysLen = 1;
 
     // Compute the hash of the signed signature section and concatenate it
     const uint8_t sig_sec_prefix = 0x03;
@@ -291,13 +311,46 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     section_hashes.hashesLen++;
     signature_section.hashes.hashesLen++;
 
-    /// Hash the header section
+    // Hash the header section
     uint8_t *header_hash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
     CHECK_ZXERR(crypto_hashHeader(&txObj->transaction.header, header_hash, HASH_LEN))
     section_hashes.hashesLen++;
     signature_section.hashes.hashesLen++;
 
-    signature_section.has_signature = false;
+    // Hash the eligible signature sections
+    for (uint32_t i = 0; i < txObj->transaction.sections.signaturesLen; i++) {
+        const signature_section_t *prev_sig = &txObj->transaction.sections.signatures[i];
+        unsigned int j;
+
+        // Ensure that we recognize each hash that was signed over
+        for (j = 0; j < prev_sig->hashes.hashesLen; j++) {
+            unsigned int k;
+            // Check if we know the hash that was signed over
+            for (k = 0; k < signature_section.hashes.hashesLen; k++) {
+                if (!memcmp(prev_sig->hashes.hashes.ptr, signature_section.hashes.hashes.ptr, HASH_LEN)) {
+                    break;
+                }
+            }
+            // If loop counter makes it to end, then this hash was not recognized
+            if (k == signature_section.hashes.hashesLen) {
+                break;
+            }
+        }
+
+        // If loop counter doesn't make it to end, then a hash was not recognized
+        if (j != prev_sig->hashes.hashesLen) {
+            continue;
+        }
+
+        // We sign over a signature if it signs over hashes that we recognize
+        uint8_t *prev_sig_hash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
+        CHECK_ZXERR(crypto_hashSigSection(prev_sig, &sig_sec_prefix, 1, prev_sig_hash, HASH_LEN))
+        section_hashes.hashesLen++;
+        signature_section.hashes.hashesLen++;
+    }
+
+    signature_section.signaturesLen = 0;
+    signature_section.pubKeysLen = 0;
     // Hash the unsigned signature section into raw_sig_hash
     uint8_t wrapper_sig_hash[HASH_LEN] = {0};
     CHECK_ZXERR(crypto_hashSigSection(&signature_section, NULL, 0, wrapper_sig_hash, sizeof(wrapper_sig_hash)))
@@ -306,5 +359,12 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     uint8_t *wrapper = raw + SALT_LEN + SIG_LEN_25519_PLUS_TAG;
     CHECK_ZXERR(crypto_sign_ed25519(wrapper + 1, ED25519_SIGNATURE_SIZE, wrapper_sig_hash, sizeof(wrapper_sig_hash)))
 
+#if defined(DEBUG_HASHES)
+    for (uint8_t i = 0; i < section_hashes.hashesLen; i++) {
+        char hexString[100] = {0};
+        array_to_hexstr(hexString, sizeof(hexString), section_hashes.hashes.ptr + (HASH_LEN * i), HASH_LEN);
+        ZEMU_LOGF(100, "Hash %d: %s\n", i, hexString);
+    }
+#endif
     return zxerr_ok;
 }

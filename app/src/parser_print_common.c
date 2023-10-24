@@ -150,13 +150,14 @@ static parser_error_t printTimestamp(const bytes_t timestamp,
 
     // Received         "2023-04-19T14:19:38.114481351+00:00"
     // Expected         "2023-04-19 14:19:38.114481351 UTC"
-    if (timestamp.len != 35) {
+    if (timestamp.len > 35 || timestamp.len < 25) {
         return parser_unexpected_value;
     }
 
     char date[50] = {0};
+    uint32_t offset = timestamp.len - 6;
     memcpy(date, timestamp.ptr, timestamp.len - 6);
-    snprintf(date + 29, sizeof(date) - 29, " UTC");
+    snprintf(date + offset, sizeof(date) - offset, " UTC");
     if (date[10] == 'T') date[10] = ' ';
 
     pageString(outVal, outValLen, date, pageIdx, pageCount);
@@ -169,6 +170,25 @@ parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const 
 
     char strAmount[90] = {0};
     CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), amount))
+    if (intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom) == 0) {
+        return parser_unexpected_error;
+    }
+
+    z_str3join(strAmount, sizeof(strAmount), symbol, "");
+    number_inplace_trimming(strAmount, 1);
+    pageString(outVal, outValLen, strAmount, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
+static parser_error_t printAmount64( uint64_t amount, uint8_t amountDenom, const char* symbol,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount) {
+
+    char strAmount[33] = {0};
+    if (uint64_to_str(strAmount, sizeof(strAmount), amount) != NULL) {
+        return parser_unexpected_error;
+    }
     if (intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom) == 0) {
         return parser_unexpected_error;
     }
@@ -280,13 +300,12 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         case 3: {
             snprintf(outKey, outKeyLen, "Gas limit");
-            char strAmount[80] = {0};
-            CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), &ctx->tx_obj->transaction.header.gasLimit))
-            pageString(outVal, outValLen, (char *) &strAmount, pageIdx, pageCount);
+            CHECK_ERROR(printAmount64(ctx->tx_obj->transaction.header.gasLimit, COIN_AMOUNT_DECIMAL_PLACES, "",
+                                    outVal, outValLen, pageIdx, pageCount));
             break;
         }
         case 4: {
-            snprintf(outKey, outKeyLen, "Fees");
+            snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
                                     ctx->tx_obj->transaction.header.fees.symbol,
                                     outVal, outValLen, pageIdx, pageCount))

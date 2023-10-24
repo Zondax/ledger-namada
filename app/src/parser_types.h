@@ -42,6 +42,8 @@ typedef enum {
     Custom,
     Withdraw,
     CommissionChange,
+    IBC,
+    UnjailValidator,
 } transaction_type_e;
 
 typedef enum {
@@ -51,8 +53,8 @@ typedef enum {
 
 typedef enum {
     Default = 0,
-    Council = 1,
-    EthBridge = 2,
+    PGFSteward = 1,
+    PGFPayment = 2,
 } yay_vote_type_e;
 
 // Structure to match the Rust serialized Decimal format
@@ -73,17 +75,30 @@ typedef struct {
 
 typedef struct {
     uint8_t has_id;
-    bytes_t proposal_id;
+    uint64_t proposal_id;
     bytes_t content_hash;
     bytes_t content_sechash;
     bytes_t author;
     uint64_t voting_start_epoch;
     uint64_t voting_end_epoch;
     uint64_t grace_epoch;
-    uint8_t has_proposal_code;
-    bytes_t proposal_code_sechash;
-    bytes_t proposal_code_hash;
     uint8_t proposal_type;
+    union {
+        struct {
+            uint8_t has_proposal_code;
+            bytes_t proposal_code_sechash;
+            bytes_t proposal_code_hash;
+        };
+        struct {
+            uint32_t pgf_steward_actions_num;
+            bytes_t pgf_steward_actions;
+        };
+        struct {
+            uint32_t pgf_payment_actions_num;
+            bytes_t pgf_payment_actions;
+        };
+    };
+
     uint8_t content_secidx;
     uint8_t proposal_code_secidx;
 } tx_init_proposal_t;
@@ -91,6 +106,11 @@ typedef struct {
 typedef struct {
   uint64_t b[4];
 } uint256_t;
+
+typedef struct {
+    uint64_t millis;
+    uint32_t nanos;
+} timestamp_t;
 
 typedef struct {
     bytes_t council_address;
@@ -112,7 +132,9 @@ typedef struct {
 } tx_vote_proposal_t;
 
 typedef struct {
-    bytes_t pubkey;
+    uint32_t number_of_pubkeys;
+    bytes_t pubkeys;
+    uint8_t threshold;
     bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
     uint8_t vp_type_secidx;
@@ -140,12 +162,20 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
+} tx_unjail_validator_t;
+
+typedef struct {
+    bytes_t validator;
     uint256_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
-    bytes_t account_key;
+    uint32_t number_of_account_keys;
+    bytes_t account_keys;
+    uint8_t threshold;
     bytes_t consensus_key;
+    bytes_t eth_cold_key;
+    bytes_t eth_hot_key;
     bytes_t protocol_key;
     bytes_t dkg_key;
     uint256_t commission_rate;
@@ -158,6 +188,11 @@ typedef struct {
 
 typedef struct {
     bytes_t address;
+    uint32_t number_of_pubkeys;
+    bytes_t pubkeys;
+    uint8_t has_threshold;
+    uint8_t threshold;
+    uint8_t has_vp_code;
     bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
     uint8_t vp_type_secidx;
@@ -179,6 +214,17 @@ typedef struct {
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;
+
+typedef struct {
+    bytes_t port_id;
+    bytes_t channel_id;
+    bytes_t token_address;
+    bytes_t token_amount;
+    bytes_t sender_address;
+    bytes_t receiver;
+    uint8_t timeout_height;
+    timestamp_t timeout_timestamp;
+} tx_ibc_t;
 
 typedef struct {
     bytes_t address;

@@ -26,6 +26,8 @@ extern "C" {
 #include "coin.h"
 
 #define MAX_EXTRA_DATA_SECS 3
+#define MAX_SIGNATURE_SECS 3
+
 
 typedef struct {
     uint8_t address[ADDRESS_LEN_TESTNET];
@@ -46,13 +48,22 @@ typedef struct {
     uint32_t hashesLen;
     mut_bytes_t hashes;
 } concatenated_hashes_t;
+
+typedef enum {
+    Address = 0,
+    PubKeys = 1
+} signer_discriminant_e;
 // -----------------------------------------------------------------
 typedef struct {
     bytes_t salt;
+    uint8_t idx;
     concatenated_hashes_t hashes;
-    bytes_t pubKey;
-    bool has_signature;
-    bytes_t signature;
+    signer_discriminant_e signerDiscriminant;
+    bytes_t address;
+    uint32_t pubKeysLen;
+    bytes_t pubKeys;
+    uint32_t signaturesLen;
+    bytes_t indexedSignatures;
 } signature_section_t;
 #if(0)
 typedef struct {
@@ -122,7 +133,8 @@ typedef struct {
     fees_t fees;
     bytes_t pubkey;
     uint64_t epoch;
-    uint256_t gasLimit;
+    uint64_t gasLimit;
+    bytes_t unshieldSectionHash;
     bytes_t dataHash;
     bytes_t codeHash;
 } header_t;
@@ -137,9 +149,11 @@ typedef struct {
 typedef struct {
     uint32_t sectionLen;
     uint32_t extraDataLen;
+    uint32_t signaturesLen;
     section_t code;
     section_t data;
     section_t extraData[MAX_EXTRA_DATA_SECS];
+    signature_section_t signatures[MAX_SIGNATURE_SECS];
 #if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
     masp_tx_section_t maspTx;
@@ -164,10 +178,12 @@ typedef struct{
         tx_init_proposal_t initProposal;
         tx_vote_proposal_t voteProposal;
         tx_reveal_pubkey_t revealPubkey;
+        tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
         tx_commission_change_t commissionChange;
         tx_init_validator_t initValidator;
         tx_update_vp_t updateVp;
+        tx_ibc_t ibc;
     };
 
     transaction_t transaction;
