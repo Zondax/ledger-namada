@@ -257,7 +257,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                 case PGFPayment:
                     snprintf(outVal, outValLen, "PGF Payment");
                     break;
-                
+
                 default:
                     return parser_unexpected_type;
             }
@@ -423,12 +423,40 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
+                                            uint8_t displayIdx,
+                                            char *outKey, uint16_t outKeyLen,
+                                            char *outVal, uint16_t outValLen,
+                                            uint8_t pageIdx, uint8_t *pageCount) {
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Unjail Validator");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Validator");
+            CHECK_ERROR(printAddress(ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
+            break;
+        default:
+            if (!app_mode_expert()) {
+                return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 2;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+    return parser_ok;
+}
+
 static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                                        uint8_t displayIdx,
                                        char *outKey, uint16_t outKeyLen,
                                        char *outVal, uint16_t outValLen,
                                        uint8_t pageIdx, uint8_t *pageCount){
-    
+
     const tx_update_vp_t *updateVp = &ctx->tx_obj->updateVp;
 
     const uint32_t pubkeys_num = updateVp->number_of_pubkeys;
@@ -459,7 +487,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Address");
             CHECK_ERROR(printAddress(updateVp->address, outVal, outValLen, pageIdx, pageCount))
             break;
-        
+
         case 2: {
             if (pubkeys_num != 0) {
                 snprintf(outKey, outKeyLen, "Public key");
@@ -468,7 +496,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                     .ptr = updateVp->pubkeys.ptr + PK_LEN_25519_PLUS_TAG * key_index,
                     .len = PK_LEN_25519_PLUS_TAG,
                 };
-                pageStringHex(outVal, outValLen, key.ptr, key.len, pageIdx, pageCount); 
+                pageStringHex(outVal, outValLen, key.ptr, key.len, pageIdx, pageCount);
             } else {
                 return parser_unexpected_error;
             }
@@ -487,11 +515,11 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                 return parser_unexpected_error;
             }
             break;
-        }            
+        }
         case 4:
             snprintf(outKey, outKeyLen, "VP type");
             if (app_mode_expert()) {
-                pageStringHex(outVal, outValLen, updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount); 
+                pageStringHex(outVal, outValLen, updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount);
             } else {
                 pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
             }
@@ -552,7 +580,7 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             const bytes_t *consensusKey = &ctx->tx_obj->initValidator.consensus_key;
             pageStringHex(outVal, outValLen, consensusKey->ptr, consensusKey->len, pageIdx, pageCount);
             break;
-        
+
         case 4:
             snprintf(outKey, outKeyLen, "Ethereum cold key");
             const bytes_t *ethColdKey = &ctx->tx_obj->initValidator.eth_cold_key;
@@ -564,7 +592,7 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             const bytes_t *ethHotKey = &ctx->tx_obj->initValidator.eth_hot_key;
             pageStringHex(outVal, outValLen, ethHotKey->ptr, ethHotKey->len, pageIdx, pageCount);
             break;
-        
+
         case 6:
             snprintf(outKey, outKeyLen, "Protocol key");
             const bytes_t *protocolKey = &ctx->tx_obj->initValidator.protocol_key;
@@ -795,6 +823,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case UpdateVP:
             return printUpdateVPTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case UnjailValidator:
+            return printUnjailValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case IBC:
             return printIBCTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);

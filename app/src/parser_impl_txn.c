@@ -65,6 +65,9 @@ static const txn_types_t allowed_txn[] = {
     {{0x2e, 0xc2, 0xe9, 0x82, 0xbf, 0x93, 0xe3, 0x7e, 0x86, 0x5c, 0x35, 0x58, 0xe3, 0xcc, 0xbc, 0x52, 0x5a, 0xa0, 0xc5, 0xb7, 0xda, 0xc6, 0x71, 0x02, 0xda, 0x79, 0xbe, 0x1c, 0x7d, 0xa2, 0x94, 0x17},
     CommissionChange},
 
+    {{0x2e, 0x05, 0x0f, 0xf9, 0xc8, 0xc3, 0x5e, 0x71, 0x5c, 0x83, 0x8e, 0x11, 0x6c, 0x9e, 0x4a, 0x69, 0xbc, 0x07, 0x35, 0xf1, 0xa5, 0x89, 0xa8, 0x65, 0x1b, 0x4f, 0x55, 0x23, 0xef, 0xe7, 0x8d, 0xac},
+    UnjailValidator},
+
     {{0xa5, 0xbe, 0xe8, 0xcd, 0xed, 0x06, 0xf8, 0x3a, 0xc0, 0x6d, 0x2f, 0x5a, 0xdd, 0x87, 0x52, 0x40, 0x18, 0xc4, 0x5d, 0xb0, 0x74, 0x5a, 0x7c, 0xee, 0x35, 0x0c, 0x8c, 0x0e, 0x38, 0xf4, 0xe2, 0x46},
     IBC},
 
@@ -516,6 +519,22 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
     }
     v->revealPubkey.pubkey.len = 33;
     CHECK_ERROR(readBytes(&ctx, &v->revealPubkey.pubkey.ptr, v->revealPubkey.pubkey.len))
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readUnjailValidatorTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Address
+    if (ctx.bufferLen != ADDRESS_LEN_BYTES) {
+        return parser_unexpected_value;
+    }
+    v->revealPubkey.pubkey.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->unjailValidator.validator.ptr, v->unjailValidator.validator.len))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -1099,6 +1118,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case UpdateVP:
             CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            break;
+        case UnjailValidator:
+            CHECK_ERROR(readUnjailValidatorTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))

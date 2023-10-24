@@ -178,6 +178,7 @@ typedef struct{
         tx_init_proposal_t initProposal;
         tx_vote_proposal_t voteProposal;
         tx_reveal_pubkey_t revealPubkey;
+        tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
         tx_commission_change_t commissionChange;
         tx_init_validator_t initValidator;

@@ -88,6 +88,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         }
 
+        case UnjailValidator:
+            *numItems = (app_mode_expert() ? UNJAIL_VALIDATOR_EXPERT_PARAMS : UNJAIL_VALIDATOR_NORMAL_PARAMS);
+            break;
+
         case IBC:
             *numItems = (app_mode_expert() ? IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);
             break;

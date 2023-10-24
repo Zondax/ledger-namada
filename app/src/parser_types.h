@@ -43,6 +43,7 @@ typedef enum {
     Withdraw,
     CommissionChange,
     IBC,
+    UnjailValidator,
 } transaction_type_e;
 
 typedef enum {
@@ -87,7 +88,7 @@ typedef struct {
             uint8_t has_proposal_code;
             bytes_t proposal_code_sechash;
             bytes_t proposal_code_hash;
-        }; 
+        };
         struct {
             uint32_t pgf_steward_actions_num;
             bytes_t pgf_steward_actions;
@@ -158,6 +159,10 @@ typedef struct {
     uint8_t has_source;
     bytes_t source;
 } tx_withdraw_t;
+
+typedef struct {
+    bytes_t validator;
+} tx_unjail_validator_t;
 
 typedef struct {
     bytes_t validator;
