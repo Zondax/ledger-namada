@@ -61,6 +61,8 @@ export interface ISignature {
   raw_signature: Buffer
   wrapper_salt: Buffer
   wrapper_signature: Buffer
+  raw_indices: Buffer
+  wrapper_indices: Buffer
 }
 export class Signature implements ISignature {
   pubkey: Buffer
@@ -68,6 +70,8 @@ export class Signature implements ISignature {
   raw_signature: Buffer
   wrapper_salt: Buffer
   wrapper_signature: Buffer
+  raw_indices: Buffer
+  wrapper_indices: Buffer
   isFilled: boolean
 
   constructor(signature?: ISignature) {
@@ -78,6 +82,8 @@ export class Signature implements ISignature {
       this.raw_signature = Buffer.from([])
       this.wrapper_salt = Buffer.from([])
       this.wrapper_signature = Buffer.from([])
+      this.raw_indices = Buffer.from([])
+      this.wrapper_indices = Buffer.from([])
     } else {
       this.isFilled = true
       this.pubkey = signature.pubkey
@@ -85,6 +91,8 @@ export class Signature implements ISignature {
       this.raw_signature = signature.raw_signature
       this.wrapper_salt = signature.wrapper_salt
       this.wrapper_signature = signature.wrapper_signature
+      this.raw_indices = signature.raw_indices
+      this.wrapper_indices = signature.wrapper_indices
     }
   }
 }

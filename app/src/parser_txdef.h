@@ -47,6 +47,7 @@ typedef struct {
 typedef struct {
     uint32_t hashesLen;
     mut_bytes_t hashes;
+    mut_bytes_t indices;
 } concatenated_hashes_t;
 
 typedef enum {
@@ -129,6 +130,7 @@ typedef struct {
 #endif
 
 typedef struct {
+    bytes_t extBytes;
     bytes_t bytes;
     fees_t fees;
     bytes_t pubkey;
