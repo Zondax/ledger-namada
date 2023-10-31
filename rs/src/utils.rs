@@ -21,21 +21,25 @@ use std::error::Error;
 
 const HARDENED: u32 = 0x80000000;
 
-use crate::params::{ED25519_PUBKEY_LEN, ADDRESS_LEN, ED25519_SIGNATURE_LEN, SALT_LEN, HASH_LEN};
+use crate::params::{ED25519_PUBKEY_LEN, ADDRESS_LEN, ED25519_SIGNATURE_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG, HASH_LEN};
 use byteorder::{LittleEndian, WriteBytesExt};
 
 
 pub struct ResponseAddress {
-    pub public_key: [u8; ED25519_PUBKEY_LEN],
+    pub public_key: [u8; ED25519_PUBKEY_LEN+1],
     pub address_bytes: [u8; ADDRESS_LEN],
     pub address_str: String,
 }
 
 /// NamadaApp wrapper signature Ed25519 -> 64  bytes
 pub struct ResponseSignature {
-    pub header_signature: ResponseSignatureSection,
-    pub data_signature: ResponseSignatureSection,
-    pub code_signature: ResponseSignatureSection,
+    pub pubkey: [u8; PK_LEN_PLUS_TAG],
+    pub raw_salt: [u8; SALT_LEN],
+    pub raw_signature: [u8; SIG_LEN_PLUS_TAG],
+    pub wrapper_salt: [u8; SALT_LEN],
+    pub wrapper_signature: [u8; SIG_LEN_PLUS_TAG],
+    pub raw_indices: Vec<u8>,
+    pub wrapper_indices: Vec<u8>,
 }
 
 pub struct ResponseSignatureSection {

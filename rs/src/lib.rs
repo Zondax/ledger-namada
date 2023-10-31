@@ -27,10 +27,11 @@ use ledger_zondax_generic::{App, AppExt, ChunkPayloadType, Version};
 pub use ledger_zondax_generic::LedgerAppError;
 
 mod params;
-use params::{SignatureType, SALT_LEN, HASH_LEN, TOTAL_SIGNATURE_LEN};
-pub use params::{InstructionCode, CLA, ED25519_PUBKEY_LEN, ED25519_SIGNATURE_LEN, ADDRESS_LEN};
+use params::SALT_LEN;
+pub use params::{InstructionCode, CLA, ED25519_PUBKEY_LEN, ED25519_SIGNATURE_LEN, PK_LEN_PLUS_TAG, SIG_LEN_PLUS_TAG, ADDRESS_LEN};
 use utils::{ResponseAddress, ResponseSignature, ResponseSignatureSection};
 
+use std::convert::TryInto;
 use std::str;
 
 mod utils;
@@ -127,11 +128,11 @@ impl<E> NamadaApp<E>
             }
         }
 
-        let mut public_key = [0; ED25519_PUBKEY_LEN];
-        public_key.copy_from_slice(&response_data[..ED25519_PUBKEY_LEN]);
+        let mut public_key = [0; ED25519_PUBKEY_LEN+1];
+        public_key.copy_from_slice(&response_data[..ED25519_PUBKEY_LEN+1]);
 
         let mut address_bytes = [0; ADDRESS_LEN];
-        address_bytes.copy_from_slice(&response_data[ED25519_PUBKEY_LEN..]);
+        address_bytes.copy_from_slice(&response_data[ED25519_PUBKEY_LEN+1..]);
 
         let address_str = str::from_utf8(&address_bytes).map_err(|_| LedgerAppError::Utf8)?.to_owned();
 
@@ -179,92 +180,26 @@ impl<E> NamadaApp<E>
         }
 
         // Transactions is signed - Retrieve signatures
-        let header_signature: ResponseSignatureSection = self.get_signature(SignatureType::HeaderSignature).await?;
-        let data_signature: ResponseSignatureSection = self.get_signature(SignatureType::DataSignature).await?;
-        let code_signature: ResponseSignatureSection = self.get_signature(SignatureType::CodeSignature).await?;
+        let rest = response.apdu_data();
+        let (pubkey, rest) = rest.split_at(PK_LEN_PLUS_TAG);
+        let (raw_salt, rest) = rest.split_at(SALT_LEN);
+        let (raw_signature, rest) = rest.split_at(SIG_LEN_PLUS_TAG);
+        let (wrapper_salt, rest) = rest.split_at(SALT_LEN);
+        let (wrapper_signature, rest) = rest.split_at(SIG_LEN_PLUS_TAG);
+        let (raw_indices_len, rest) = rest.split_at(1);
+        let (raw_indices, rest) = rest.split_at(raw_indices_len[0] as usize);
+        let (wrapper_indices_len, rest) = rest.split_at(1);
+        let (wrapper_indices, _rest) = rest.split_at(wrapper_indices_len[0] as usize);
 
         Ok(ResponseSignature {
-            header_signature,
-            data_signature,
-            code_signature
+            pubkey: pubkey.try_into().unwrap(),
+            raw_salt: raw_salt.try_into().unwrap(),
+            raw_signature: raw_signature.try_into().unwrap(),
+            wrapper_salt: wrapper_salt.try_into().unwrap(),
+            wrapper_signature: wrapper_signature.try_into().unwrap(),
+            raw_indices: raw_indices.into(),
+            wrapper_indices: wrapper_indices.into(),
         })
-    }
-
-    /// Get signature section
-    async fn get_signature(
-        &self,
-        signature_type: SignatureType,
-    ) -> Result<ResponseSignatureSection, NamError<E::Error>> {
-
-        let command = APDUCommand {
-            cla: CLA,
-            ins: InstructionCode::GetSignature as _,
-            p1: 0x00,
-            p2: signature_type as u8,
-            data: Vec::new(),
-        };
-
-        let response = self
-            .apdu_transport
-            .exchange(&command)
-            .await
-            .map_err(LedgerAppError::TransportError)?;
-
-        let response_data = response.data();
-        match response.error_code() {
-            Ok(APDUErrorCode::NoError) if response_data.is_empty() => {
-                return Err(NamError::Ledger(LedgerAppError::NoSignature))
-            }
-            // Last response should contain the answer
-            Ok(APDUErrorCode::NoError) if response_data.len() < TOTAL_SIGNATURE_LEN => {
-                return Err(NamError::Ledger(LedgerAppError::InvalidSignature))
-            }
-            Ok(APDUErrorCode::NoError) => {}
-            Ok(err) => {
-                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
-                    err as _,
-                    err.description(),
-                )))
-            }
-            Err(err) => {
-                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
-                    err,
-                    "[APDU_ERROR] Unknown".to_string(),
-                )))
-            }
-        }
-
-        let salt: [u8; SALT_LEN] = {
-            let mut arr = [0u8; SALT_LEN];
-            arr.copy_from_slice(&response_data[0..SALT_LEN]);
-            arr
-        };
-
-        let hash: [u8; HASH_LEN] = {
-            let mut arr = [0u8; HASH_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN..SALT_LEN + HASH_LEN]);
-            arr
-        };
-
-        let pubkey: [u8; ED25519_PUBKEY_LEN] = {
-            let mut arr = [0u8; ED25519_PUBKEY_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN]);
-            arr
-        };
-
-        let signature: [u8; ED25519_SIGNATURE_LEN] = {
-            let mut arr = [0u8; ED25519_SIGNATURE_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN + ED25519_SIGNATURE_LEN]);
-            arr
-        };
-
-        Ok(ResponseSignatureSection {
-            salt,
-            hash,
-            pubkey,
-            signature
-        })
-
     }
 
     /// Verify signature
