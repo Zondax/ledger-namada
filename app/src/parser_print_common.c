@@ -272,6 +272,25 @@ parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size
     return parser_ok;
 }
 
+parser_error_t printPublicKey( const bytes_t *pubkey,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount) {
+    char bech32String[79] = {0};
+    const zxerr_t err = bech32EncodeFromBytes(bech32String,
+                        sizeof(bech32String),
+                        "tpknam",
+                        (uint8_t*) pubkey->ptr,
+                        pubkey->len,
+                        1,
+                        BECH32_ENCODING_BECH32M);
+            
+    if (err != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    pageString(outVal, outValLen, (const char*) &bech32String, pageIdx, pageCount);
+    return parser_ok;
+}
+
 parser_error_t printExpert( const parser_context_t *ctx,
                                    uint8_t displayIdx,
                                    char *outKey, uint16_t outKeyLen,
@@ -286,10 +305,8 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         case 1: {
             const bytes_t *pubkey = &ctx->tx_obj->transaction.header.pubkey;
-            char hexString[67] = {0};
             snprintf(outKey, outKeyLen, "Pubkey");
-            array_to_hexstr((char*) hexString, sizeof(hexString), pubkey->ptr, pubkey->len);
-            pageString(outVal, outValLen, (const char*) &hexString, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
         case 2:

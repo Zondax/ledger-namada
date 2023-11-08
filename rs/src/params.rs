@@ -25,7 +25,7 @@ pub const ED25519_PUBKEY_LEN: usize = 32;
 /// Public Key + Tag Length
 pub const PK_LEN_PLUS_TAG: usize = ED25519_PUBKEY_LEN+1;
 /// Address array size
-pub const ADDRESS_LEN: usize = 84;  // 84 --> Testnet | 80 --> Mainnet
+pub const ADDRESS_LEN: usize = 45;  // 45 --> Testnet | 42 --> Mainnet
 /// ED25519 signature Length
 pub const ED25519_SIGNATURE_LEN: usize = 64;
 /// ED25519 signature + Tag Length
