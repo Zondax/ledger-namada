@@ -600,31 +600,15 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             const bytes_t *protocolKey = &ctx->tx_obj->initValidator.protocol_key;
             CHECK_ERROR(printPublicKey(protocolKey, outVal, outValLen, pageIdx, pageCount));
             break;
-        } case 7: {
-            snprintf(outKey, outKeyLen, "DKG key");
-            const bytes_t *dkgKey = &ctx->tx_obj->initValidator.dkg_key;
-            char bech32String[300] = {0};
-            const zxerr_t err = bech32EncodeFromBytes(bech32String,
-                                sizeof(bech32String),
-                                "dpknam",
-                                (uint8_t*) dkgKey->ptr,
-                                dkgKey->len,
-                                0,
-                                BECH32_ENCODING_BECH32M);
-            if (err != zxerr_ok) {
-              return parser_unexpected_error;
-            }
-            pageString(outVal, outValLen, (const char*)&bech32String, pageIdx, pageCount);
-            break;
-        } case 8:
+        } case 7:
             snprintf(outKey, outKeyLen, "Commission rate");
             CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
-        case 9:
+        case 8:
             snprintf(outKey, outKeyLen, "Maximum commission rate change");
             CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
-        case 10:
+        case 9:
             snprintf(outKey, outKeyLen, "Validator VP type");
             pageString(outVal, outValLen,ctx->tx_obj->initValidator.vp_type_text, pageIdx, pageCount);
             if (app_mode_expert()) {
@@ -636,7 +620,7 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 10 + account_keys;
+            displayIdx -= 9 + account_keys;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
