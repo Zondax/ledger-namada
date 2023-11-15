@@ -32,56 +32,26 @@
 #define DISCRIMINANT_MASP_BUILDER 0x06
 
 static const txn_types_t allowed_txn[] = {
-    {{0x65, 0x0c, 0x70, 0x5e, 0xde, 0x1b, 0xf1, 0xcc, 0x8e, 0x8e, 0xc7, 0x54, 0x14, 0x7c, 0xad, 0x77, 0x11, 0x4b, 0xe4, 0xa8, 0xe3, 0xa3, 0x92, 0xcc, 0xdf, 0xd9, 0xd1, 0x78, 0x85, 0x82, 0xad, 0x6d},
-    Bond},
-
-    {{0x7b, 0x58, 0xad, 0x5c, 0x6a, 0x32, 0x55, 0x4f, 0xcf, 0xbe, 0x61, 0x5a, 0x75, 0xab, 0x06, 0x76, 0x14, 0x5d, 0x2b, 0xe9, 0xec, 0xb0, 0x0a, 0xd5, 0xc0, 0xe6, 0x07, 0x93, 0x3d, 0x52, 0x3a, 0x24},
-    Unbond},
-
-    {{0xd0, 0xe9, 0x36, 0x84, 0xef, 0xdc, 0x5e, 0x91, 0xbb, 0xf9, 0x38, 0x0c, 0xd8, 0xf3, 0x7e, 0xdc, 0x6d, 0x34, 0xce, 0x13, 0x87, 0x32, 0x7f, 0xb4, 0x18, 0xa0, 0x7c, 0xbb, 0xca, 0x4c, 0xc1, 0x2f},
-    InitAccount},
-
-    {{0xbd, 0x79, 0x15, 0x35, 0xba, 0xa2, 0x05, 0x0a, 0x65, 0x16, 0x07, 0x46, 0x28, 0xa1, 0xc7, 0xab, 0x1e, 0xc1, 0xb1, 0xa6, 0x44, 0x3a, 0x90, 0xec, 0x88, 0xd6, 0x12, 0x1a, 0x9a, 0xac, 0xe4, 0x34},
-    InitProposal},
-
-    {{0xc5, 0x62, 0x89, 0xb2, 0xf5, 0x1a, 0xc9, 0x95, 0xb6, 0x43, 0xa6, 0xda, 0xf5, 0x3f, 0x3e, 0xf8, 0x43, 0x66, 0xaa, 0x2c, 0xc1, 0x5e, 0x96, 0xb3, 0xad, 0x30, 0x95, 0x04, 0x56, 0x75, 0x14, 0x13},
-    VoteProposal},
-
-    {{0x49, 0xaf, 0x01, 0xcd, 0x82, 0x48, 0x08, 0xcb, 0xfa, 0x4c, 0x1e, 0x8a, 0x6b, 0x84, 0xe0, 0x93, 0x68, 0x06, 0xba, 0xfd, 0xf8, 0x6c, 0xbd, 0xe3, 0xd3, 0x66, 0x50, 0x55, 0xe8, 0xa2, 0x3d, 0xb3},
-    InitValidator},
-
-    {{0x7a, 0x7d, 0x65, 0x25, 0x0e, 0xf9, 0xf4, 0xdd, 0xc9, 0x2d, 0xe5, 0xa7, 0x6b, 0x80, 0xf8, 0xbe, 0x00, 0x57, 0xdb, 0x43, 0x33, 0x3e, 0x65, 0xbf, 0xde, 0x96, 0x0d, 0xdf, 0xe2, 0xd1, 0x54, 0x38},
-    RevealPubkey},
-
-    {{0x17, 0x4e, 0x64, 0xbd, 0xe2, 0xc8, 0x79, 0xba, 0x1f, 0x0d, 0x7e, 0x01, 0xd1, 0xad, 0xd7, 0xeb, 0xd3, 0x73, 0x50, 0x4d, 0xc6, 0xf7, 0x75, 0xe3, 0x50, 0x5a, 0xbb, 0x1b, 0xc6, 0x74, 0x56, 0x3d},
-    Transfer},
-
-    {{0x4b, 0xea, 0x39, 0xea, 0x11, 0xd1, 0x10, 0x4b, 0xca, 0xba, 0xf8, 0xbf, 0x4b, 0x5d, 0x4c, 0x8b, 0x2c, 0xdb, 0x6b, 0xdf, 0x8c, 0x1c, 0x87, 0x43, 0xf6, 0xf3, 0x6b, 0xb5, 0xf2, 0xa8, 0x8a, 0x72},
-    UpdateVP},
-
-    {{0x01, 0x1e, 0x18, 0x3d, 0x88, 0xac, 0xc9, 0x1a, 0xb2, 0x07, 0xc7, 0x32, 0xb5, 0x46, 0x3f, 0xee, 0x60, 0x70, 0x8c, 0x0f, 0x1f, 0x2f, 0x45, 0xe2, 0xd1, 0x16, 0xb3, 0x10, 0x53, 0x5d, 0x60, 0x01},
-    Withdraw},
-
-    {{0x22, 0x87, 0x48, 0x75, 0x7e, 0x6f, 0xda, 0x18, 0xff, 0x98, 0x14, 0x86, 0x45, 0xfd, 0xb6, 0x83, 0x7a, 0x44, 0x53, 0x99, 0xd0, 0x52, 0x0b, 0x05, 0x22, 0x48, 0xa0, 0xaf, 0xa4, 0x8b, 0x74, 0x71},
-    CommissionChange},
-
-    {{0x78, 0x1f, 0xfe, 0xe1, 0x94, 0xd8, 0x92, 0xbf, 0x1d, 0x2e, 0x2c, 0x8e, 0xf7, 0x48, 0x62, 0xae, 0xdb, 0x59, 0x57, 0x24, 0x6f, 0x12, 0xef, 0x33, 0x01, 0x40, 0xb5, 0xc5, 0xff, 0x46, 0xc4, 0x57},
-    UnjailValidator},
-
-    {{0x39, 0xf2, 0xba, 0x7b, 0xfd, 0x12, 0xef, 0xab, 0x2b, 0x47, 0xdf, 0x2f, 0xa8, 0x1b, 0x30, 0xa0, 0x5c, 0x44, 0xaf, 0x02, 0x85, 0x3f, 0x3d, 0x54, 0x90, 0x1b, 0x8d, 0x8d, 0xd3, 0xf8, 0x9d, 0x29},
-    IBC},
+    {"tx_bond.wasm", Bond},
+    {"tx_unbond.wasm", Unbond},
+    {"tx_init_account.wasm", InitAccount},
+    {"tx_init_proposal.wasm", InitProposal},
+    {"tx_vote_proposal.wasm", VoteProposal},
+    {"tx_init_validator.wasm", InitValidator},
+    {"tx_reveal_pk.wasm", RevealPubkey},
+    {"tx_transfer.wasm", Transfer},
+    {"tx_update_account.wasm", UpdateVP},
+    {"tx_withdraw.wasm", Withdraw},
+    {"tx_change_validator_commission.wasm", CommissionChange},
+    {"tx_unjail_validator.wasm", UnjailValidator},
+    {"tx_ibc.wasm", IBC},
 
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
 // Update VP types
-static const vp_types_t vp_user = {
-    {0x7d, 0x97, 0x7f, 0x31, 0x28, 0x43, 0xa1, 0x4e, 0x6f, 0xc4, 0x01, 0xa8, 0x08, 0xa4, 0x2e, 0xbd, 0xa2, 0x2e, 0x88, 0x70, 0xe7, 0x93, 0x09, 0x02, 0xf1, 0x1c, 0xef, 0xbf, 0x9f, 0xdd, 0xe0, 0xee},
-    "User"};
-static const vp_types_t vp_validator = {
-        {0x5c, 0x34, 0x93, 0xd4, 0x7a, 0xbb, 0x91, 0xc3, 0x5d, 0x35, 0xe4, 0xe9, 0x8b, 0x4c, 0x7d, 0xaa, 0xb4, 0x2b, 0x46, 0x46, 0xb9, 0x15, 0x47, 0x86, 0x39, 0xfd, 0xce, 0x6e, 0x9e, 0xe5, 0x7c, 0x15},
-        "Validator"
-};
+static const vp_types_t vp_user = { "vp_user.wasm", "User"};
+static const vp_types_t vp_validator = { "vp_validator.wasm", "Validator"};
 static const char *unknown_vp = "Unknown VP hash";
 
 #define NAM_TOKEN(_address, _symbol) { \
@@ -123,15 +93,22 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
     return parser_unexpected_value;
 }
 
-parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text) {
-    if (vp_type_hash == NULL || vp_type_text == NULL) {
+parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text) {
+    if (vp_type_tag == NULL || vp_type_text == NULL) {
         return parser_unexpected_value;
     }
 
     *vp_type_text = (char*) PIC(unknown_vp);
-    if (!memcmp(vp_type_hash->ptr, vp_user.hash, HASH_LEN)) {
+
+    if (vp_type_tag->ptr == NULL) {
+        return parser_ok;
+    }
+
+    if (strlen(vp_user.tag) == vp_type_tag->len &&
+        !memcmp(vp_type_tag->ptr, vp_user.tag, vp_type_tag->len)) {
         *vp_type_text = (char*) PIC(vp_user.text);
-    } else if (!memcmp(vp_type_hash->ptr, vp_validator.hash, HASH_LEN)) {
+    } else if (strlen(vp_validator.tag) == vp_type_tag->len &&
+               !memcmp(vp_type_tag->ptr, vp_validator.tag, vp_type_tag->len)) {
         *vp_type_text = (char*) PIC(vp_validator.text);
     }
     return parser_ok;
@@ -173,15 +150,21 @@ parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLe
     return parser_ok;
 }
 
-static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *type) {
-    if (type == NULL) {
+static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *type) {
+    if (codeTag == NULL || type == NULL) {
          return parser_unexpected_error;
     }
 
     // Custom txn as default value
     *type = Custom;
+
+    if (codeTag->ptr == NULL) {
+        return parser_ok;
+    }
+
     for (uint32_t i = 0; i < allowed_txn_len; i++) {
-        if (memcmp(codeHash.ptr, allowed_txn[i].hash, HASH_LEN) == 0) {
+        if (strlen(allowed_txn[i].tag) == codeTag->len &&
+            memcmp(codeTag->ptr, allowed_txn[i].tag, codeTag->len) == 0) {
             *type = allowed_txn[i].type;
             break;
         }
@@ -283,7 +266,7 @@ static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra
             // If this section contains the VP code hash
             v->initValidator.vp_type_secidx = extra_data[i].idx;
             v->initValidator.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->initValidator.vp_type_hash, &v->initValidator.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->initValidator.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -342,7 +325,7 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
             // If this section contains the VP code hash
             v->initAccount.vp_type_secidx = extra_data[i].idx;
             v->initAccount.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->initAccount.vp_type_hash, &v->initAccount.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->initAccount.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -671,7 +654,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
             // If this section contains the VP code hash
             v->updateVp.vp_type_secidx = extra_data[i].idx;
             v->updateVp.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->updateVp.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -902,17 +885,6 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
         CHECK_ERROR(readBytes(ctx, &v->transaction.header.unshieldSectionHash.ptr, v->transaction.header.unshieldSectionHash.len))
     }
 
-    // Check if a PoW solution is present (should only exist in mainnet)
-    uint8_t num_pow_solution = 0;
-    CHECK_ERROR(readByte(ctx, &num_pow_solution))
-    if (num_pow_solution){
-        // A PoW solution consists of :
-        // - challenge parameters = Difficulty (u8) and a Counter (u64)
-        // - a SolutionValue (u64)
-        // so we skip 17 bytes
-        ctx->offset += num_pow_solution * 17;
-    }
-
     v->transaction.header.extBytes.len = ctx->offset - tmpOffset;
 
     return parser_ok;
@@ -939,10 +911,19 @@ static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *ext
     }
     CHECK_ERROR(readSalt(ctx, &extraData->salt))
     // TODO Check this byte
-    uint8_t hashType = 0;
-    CHECK_ERROR(readByte(ctx, &hashType))
+    CHECK_ERROR(checkTag(ctx, 0x00))
     extraData->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &extraData->bytes.ptr, extraData->bytes.len))
+
+    uint8_t has_tag;
+    CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag) {
+        CHECK_ERROR(readUint32(ctx, &extraData->tag.len))
+        CHECK_ERROR(readBytes(ctx, &extraData->tag.ptr, extraData->tag.len))
+    } else {
+        extraData->tag.len = 0;
+        extraData->tag.ptr = NULL;
+    }
 
     return parser_ok;
 }
@@ -1023,10 +1004,19 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     }
     CHECK_ERROR(readSalt(ctx, &code->salt))
     // Check this byte
-    uint8_t hashType = 0;
-    CHECK_ERROR(readByte(ctx, &hashType))
+    CHECK_ERROR(checkTag(ctx, 0x00))
     code->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &code->bytes.ptr, code->bytes.len))
+
+    uint8_t has_tag;
+    CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag) {
+        CHECK_ERROR(readUint32(ctx, &code->tag.len))
+        CHECK_ERROR(readBytes(ctx, &code->tag.ptr, code->tag.len))
+    } else {
+        code->tag.len = 0;
+        code->tag.ptr = NULL;
+    }
 
     // Must make sure that header codeHash refers to this section's hash
     uint8_t codeHash[HASH_LEN] = {0};
@@ -1130,7 +1120,8 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         return parser_unexpected_error;
     }
 
-    CHECK_ERROR(readTransactionType(txObj->transaction.sections.code.bytes, &txObj->typeTx))
+    CHECK_ERROR(readTransactionType(&txObj->transaction.sections.code.tag, &txObj->typeTx))
+    
     switch (txObj->typeTx) {
         case Bond:
         case Unbond:

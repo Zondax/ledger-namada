@@ -546,8 +546,21 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
     const tx_init_validator_t *initValidator = &ctx->tx_obj->initValidator;
     const uint32_t account_keys = initValidator->number_of_account_keys;
 
-    const uint8_t adjustedDisplayIdx = (displayIdx == 0) ? displayIdx : \
+    uint8_t adjustedDisplayIdx = (displayIdx == 0) ? displayIdx : \
     (displayIdx < account_keys + 1) ? 1 : displayIdx - account_keys + 1;
+
+    if(adjustedDisplayIdx >= 10 && !ctx->tx_obj->initValidator.description.ptr) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
+    if(adjustedDisplayIdx >= 11 && !ctx->tx_obj->initValidator.website.ptr) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
+    if(adjustedDisplayIdx >= 12 && !ctx->tx_obj->initValidator.discord_handle.ptr) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
 
     switch (adjustedDisplayIdx) {
         case 0:
@@ -609,6 +622,22 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         case 9:
+            snprintf(outKey, outKeyLen, "Email");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.email.ptr, ctx->tx_obj->initValidator.email.len, pageIdx, pageCount);
+            break;
+        case 10:
+            snprintf(outKey, outKeyLen, "Description");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.description.ptr, ctx->tx_obj->initValidator.description.len, pageIdx, pageCount);
+            break;
+        case 11:
+            snprintf(outKey, outKeyLen, "Website");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.website.ptr, ctx->tx_obj->initValidator.website.len, pageIdx, pageCount);
+            break;
+        case 12:
+            snprintf(outKey, outKeyLen, "Discord handle");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.discord_handle.ptr, ctx->tx_obj->initValidator.discord_handle.len, pageIdx, pageCount);
+            break;
+        case 13:
             snprintf(outKey, outKeyLen, "Validator VP type");
             pageString(outVal, outValLen,ctx->tx_obj->initValidator.vp_type_text, pageIdx, pageCount);
             if (app_mode_expert()) {
@@ -620,7 +649,7 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 9 + account_keys;
+            displayIdx -= 13 + account_keys;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
