@@ -40,7 +40,7 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
     uint8_t privateKeyData[2 * SK_LEN_25519] = {0};
 
     // Generate keys
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
                                                      HDPATH_LEN_DEFAULT,
@@ -81,7 +81,7 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
 
     zxerr_t error = zxerr_unknown;
 
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
                                                      HDPATH_LEN_DEFAULT,
