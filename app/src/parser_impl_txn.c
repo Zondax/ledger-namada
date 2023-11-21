@@ -87,18 +87,18 @@ static const char *unknown_vp = "Unknown VP hash";
     }
 
 static const tokens_t nam_tokens[] = {
-    NAM_TOKEN("atest1v4ehgw36x3prswzxggunzv6pxqmnvdj9xvcyzvpsggeyvs3cg9qnywf589qnwvfsg5erg3fkl09rg5", "NAM "),
-    NAM_TOKEN("atest1v4ehgw36xdzryve5gsc52veeg5cnsv2yx5eygvp38qcrvd29xy6rys6p8yc5xvp4xfpy2v694wgwcp", "BTC "),
-    NAM_TOKEN("atest1v4ehgw36xqmr2d3nx3ryvd2xxgmrq33j8qcns33sxezrgv6zxdzrydjrxveygd2yxumrsdpsf9jc2p", "ETH "),
-    NAM_TOKEN("atest1v4ehgw36gg6nvs2zgfpyxsfjgc65yv6pxy6nwwfsxgungdzrggeyzv35gveyxsjyxymyz335hur2jn", "DOT "),
-    NAM_TOKEN("atest1v4ehgw36xue5xvf5xvuyzvpjx5un2v3k8qeyvd3cxdqns32p89rrxd6xx9zngvpegccnzs699rdnnt", "Schnitzel "),
-    NAM_TOKEN("atest1v4ehgw36gfryydj9g3p5zv3kg9znyd358ycnzsfcggc5gvecgc6ygs2rxv6ry3zpg4zrwdfeumqcz9", "Apfel "),
-    NAM_TOKEN("atest1v4ehgw36gep5ysecxq6nyv3jg3zygv3e89qn2vp48pryxsf4xpznvve5gvmy23fs89pryvf5a6ht90", "Kartoffel "),
+    NAM_TOKEN("tnam1qxedtm24ylvk32vr8ed33sff78gg342k9uj9sxh5", "NAM "),
+    NAM_TOKEN("tnam1q96nhtv3s7drjkhyya64n4gz0e2xfvudzgz7x5dm", "BTC "),
+    NAM_TOKEN("tnam1qyq4vs8mmd7hsjdz243y3dzxqnx2ezhslv7shjk3", "ETH "),
+    NAM_TOKEN("tnam1qy0vm0qvlz8fdftlvjp7tl8feuugvz07hv6f8ztk", "DOT "),
+    NAM_TOKEN("tnam1q9nfeagw5u44tkm95z5h99hpg8wwepc3s502cwry", "Schnitzel "),
+    NAM_TOKEN("tnam1qxxex0c7z6j4nhf4gvgstgqdcyhfdmhh3cjz28mc", "Apfel "),
+    NAM_TOKEN("tnam1q8s5w6q2zcsa3664zn8tqm39l7k9txvyacuya6hm", "Kartoffel "),
 };
 
-static const char* prefix_implicit = "imp::";
-static const char* prefix_established = "est::";
-static const char* prefix_internal = "int::";
+#define PREFIX_IMPLICIT 0
+#define PREFIX_ESTABLISHED 1
+#define PREFIX_INTERNAL 2
 
 parser_error_t readToken(const bytes_t *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
@@ -106,7 +106,7 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
     }
 
     // Convert token to address
-    char address[110] = {0};
+    char address[53] = {0};
     CHECK_ERROR(readAddress(*token, address, sizeof(address)))
 
     const uint16_t tokenListLen = sizeof(nam_tokens) / sizeof(nam_tokens[0]);
@@ -134,36 +134,33 @@ parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text
 
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen) {
     const uint8_t addressType = *pubkeyHash.ptr++;
-    const char* prefix = NULL;
+    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
 
     switch (addressType) {
         case 0:
-            prefix = PIC(prefix_established);
+            tmpBuffer[0] = PREFIX_ESTABLISHED;
             break;
         case 1:
-            prefix = PIC(prefix_implicit);
+            tmpBuffer[1] = PREFIX_IMPLICIT;
             break;
         case 2:
-            prefix = PIC(prefix_internal);
+            tmpBuffer[2] = PREFIX_INTERNAL;
             break;
 
         default:
             return parser_value_out_of_range;
     }
 
-    char tmpBuffer[FIXED_LEN_STRING_BYTES+1] = {0};
-    snprintf(tmpBuffer, sizeof(tmpBuffer), "%s", prefix);
-    const uint8_t prefixLen = strlen(prefix);
-    array_to_hexstr_uppercase(tmpBuffer + prefixLen, sizeof(tmpBuffer) - prefixLen, pubkeyHash.ptr, PK_HASH_LEN);
+    MEMCPY(tmpBuffer + 1, pubkeyHash.ptr, 20);
 
     // Check HRP for mainnet/testnet
-    const char *hrp = "atest";
+    const char *hrp = "tnam";
     const zxerr_t err = bech32EncodeFromBytes(address,
                                 addressLen,
                                 hrp,
                                 (uint8_t*) tmpBuffer,
-                                FIXED_LEN_STRING_BYTES,
-                                0,
+                                ADDRESS_LEN_BYTES,
+                                1,
                                 BECH32_ENCODING_BECH32M);
 
     if (err != zxerr_ok) {

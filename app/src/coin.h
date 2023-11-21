@@ -62,9 +62,6 @@ extern "C" {
 
 #define MAX_BECH32_HRP_LEN  83u
 
-/// An address string before bech32m encoding must be this size.
-#define FIXED_LEN_STRING_BYTES 45u
-
 /// For payment addresses on the Testnet, the Human-Readable Part is "patest"
 #define SAPLING_PAYMENT_ADDR_HRP "patest"
 
