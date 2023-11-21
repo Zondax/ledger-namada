@@ -50,8 +50,8 @@ extern "C" {
 #define SIG_LEN_25519_PLUS_TAG 65u
 
 
-#define ADDRESS_LEN_MAINNET 80u
-#define ADDRESS_LEN_TESTNET 84u
+#define ADDRESS_LEN_MAINNET 42u
+#define ADDRESS_LEN_TESTNET 45u
 
 #define SALT_LEN     8
 #define HASH_LEN    32

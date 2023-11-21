@@ -62,10 +62,10 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     array_to_hexstr_uppercase(hexPubKeyHash, 2 * CX_SHA256_SIZE + 1, pkh, CX_SHA256_SIZE);
 
     // Prepend implicit address prefix
-    snprintf((char*) publicKeyHash, FIXED_LEN_STRING_BYTES, "imp::");
+    publicKeyHash[0] = 0;
 
     // Step 4. The Public Key Hash consists of the first 40 characters of the hex encoding. ---> UPPERCASE
-    MEMCPY(publicKeyHash + 5, hexPubKeyHash, PK_HASH_STR_LEN);
+    MEMCPY(publicKeyHash + 1, pkh, PK_HASH_LEN);
 
     return zxerr_ok;
 }
@@ -75,24 +75,24 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
         return 0;
     }
 
-    if (bufferLen < ADDRESS_LEN_MAINNET || (bufferLen < ADDRESS_LEN_TESTNET && isTestnet)) {
+    if ((bufferLen < ADDRESS_LEN_TESTNET && isTestnet) || bufferLen < ADDRESS_LEN_MAINNET) {
         return 0;
     }
 
-    const char *hrp = isTestnet ? "atest" : "a";
+    const char *hrp = isTestnet ? "tnam" : "a";
 
     // Step 1:  Compute the hash of the Ed25519 public key
-    uint8_t publicKeyHash[FIXED_LEN_STRING_BYTES] = {0};
+    uint8_t publicKeyHash[21] = {0};
     crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
 
     // Step 2. Encode the public key hash with bech32m
-    char addr_out[110] = {0};
+    char addr_out[79] = {0};
     zxerr_t err = bech32EncodeFromBytes(addr_out,
                                         sizeof(addr_out),
                                         hrp,
                                         publicKeyHash,
                                         sizeof(publicKeyHash),
-                                        0,
+                                        1,
                                         BECH32_ENCODING_BECH32M);
 
     if (err != zxerr_ok){
