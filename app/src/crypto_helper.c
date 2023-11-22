@@ -133,6 +133,10 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
     cx_sha256_update(&sha256, &extraData->discriminant, 1);
     cx_sha256_update(&sha256, extraData->salt.ptr, extraData->salt.len);
     cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    uint8_t has_tag = (extraData->tag.ptr == NULL) ? 0 : 1;
+    cx_sha256_update(&sha256, &has_tag, 1);
+    cx_sha256_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len));
+    cx_sha256_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len);
     cx_sha256_final(&sha256, output);
 #else
     picohash_ctx_t sha256 = {0};
@@ -140,6 +144,10 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
     picohash_update(&sha256, &extraData->discriminant, 1);
     picohash_update(&sha256, extraData->salt.ptr, extraData->salt.len);
     picohash_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    uint8_t has_tag = (extraData->tag.ptr == NULL) ? 0 : 1;
+    picohash_update(&sha256, &has_tag, 1);
+    picohash_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len));
+    picohash_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len);
     picohash_final(&sha256, output);
 #endif
 
@@ -183,6 +191,10 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
     cx_sha256_update(&sha256, &code->discriminant, 1);
     cx_sha256_update(&sha256, code->salt.ptr, code->salt.len);
     cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len);
+    uint8_t has_tag = (code->tag.ptr == NULL) ? 0 : 1;
+    cx_sha256_update(&sha256, &has_tag, 1);
+    cx_sha256_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len));
+    cx_sha256_update(&sha256, code->tag.ptr, has_tag*code->tag.len);
     cx_sha256_final(&sha256, output);
 #else
     picohash_ctx_t sha256 = {0};
@@ -190,6 +202,10 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
     picohash_update(&sha256, &code->discriminant, 1);
     picohash_update(&sha256, code->salt.ptr, code->salt.len);
     picohash_update(&sha256, code->bytes.ptr, code->bytes.len);
+    uint8_t has_tag = (code->tag.ptr == NULL) ? 0 : 1;
+    picohash_update(&sha256, &has_tag, 1);
+    picohash_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len));
+    picohash_update(&sha256, code->tag.ptr, has_tag*code->tag.len);
     picohash_final(&sha256, output);
 #endif
 

@@ -20,6 +20,7 @@
 #include <zxformat.h>
 #include "coin.h"
 #include "timeutils.h"
+#include "bech32.h"
 
 static parser_error_t printBondTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
@@ -76,6 +77,11 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
+
+    if(displayIdx >= 4 && ctx->tx_obj->transfer.symbol) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -94,16 +100,27 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
+            if(ctx->tx_obj->transfer.symbol != NULL) {
+                snprintf(outKey, outKeyLen, "Amount");
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
+                                    ctx->tx_obj->transfer.symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
+            } else {
+                snprintf(outKey, outKeyLen, "Token");
+                CHECK_ERROR(printAddress(ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 4:
             snprintf(outKey, outKeyLen, "Amount");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
-                                    ctx->tx_obj->transfer.symbol,
+                                    "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 4;
+            displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -169,8 +186,11 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             }
             snprintf(outKey, outKeyLen, "Public key");
             const uint8_t keyIndex = displayIdx - pubkeys_first_field_idx;
-            const uint8_t *pubkey = ctx->tx_obj->initAccount.pubkeys.ptr + PK_LEN_25519_PLUS_TAG * keyIndex;
-            pageStringHex(outVal, outValLen, pubkey, PK_LEN_25519_PLUS_TAG, pageIdx, pageCount);
+            const bytes_t pubkey = {
+              .ptr = ctx->tx_obj->initAccount.pubkeys.ptr + PK_LEN_25519_PLUS_TAG * keyIndex,
+              .len = PK_LEN_25519_PLUS_TAG,
+            };
+            CHECK_ERROR(printPublicKey(&pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         case 2: {
             snprintf(outKey, outKeyLen, "Threshold");
@@ -396,7 +416,6 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
 
-    char hexString[67] = {0};
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -409,9 +428,9 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
         case 1:
             snprintf(outKey, outKeyLen, "Public key");
             const bytes_t *pubkey = &ctx->tx_obj->revealPubkey.pubkey;
-            array_to_hexstr((char*) hexString, sizeof(hexString), pubkey->ptr, pubkey->len);
-            pageString(outVal, outValLen, (const char*) &hexString, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
@@ -496,7 +515,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                     .ptr = updateVp->pubkeys.ptr + PK_LEN_25519_PLUS_TAG * key_index,
                     .len = PK_LEN_25519_PLUS_TAG,
                 };
-                pageStringHex(outVal, outValLen, key.ptr, key.len, pageIdx, pageCount);
+                CHECK_ERROR(printPublicKey(&key, outVal, outValLen, pageIdx, pageCount));
             } else {
                 return parser_unexpected_error;
             }
@@ -519,7 +538,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
         case 4:
             snprintf(outKey, outKeyLen, "VP type");
             if (app_mode_expert()) {
-                pageStringHex(outVal, outValLen, updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount);
+                pageStringHex(outVal, outValLen, (const char *) updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount);
             } else {
                 pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
             }
@@ -544,8 +563,21 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
     const tx_init_validator_t *initValidator = &ctx->tx_obj->initValidator;
     const uint32_t account_keys = initValidator->number_of_account_keys;
 
-    const uint8_t adjustedDisplayIdx = (displayIdx == 0) ? displayIdx : \
+    uint8_t adjustedDisplayIdx = (displayIdx == 0) ? displayIdx : \
     (displayIdx < account_keys + 1) ? 1 : displayIdx - account_keys + 1;
+
+    if(adjustedDisplayIdx >= 10 && ctx->tx_obj->initValidator.description.ptr == NULL) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
+    if(adjustedDisplayIdx >= 11 && ctx->tx_obj->initValidator.website.ptr == NULL) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
+    if(adjustedDisplayIdx >= 12 && ctx->tx_obj->initValidator.discord_handle.ptr == NULL) {
+        adjustedDisplayIdx++;
+        displayIdx++;
+    }
 
     switch (adjustedDisplayIdx) {
         case 0:
@@ -556,15 +588,16 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
-        case 1:
+        case 1: {
             snprintf(outKey, outKeyLen, "Account key");
             const uint8_t key_index = displayIdx - 1;
             const bytes_t key = {
                 .ptr = initValidator->account_keys.ptr + PK_LEN_25519_PLUS_TAG * key_index,
                 .len = PK_LEN_25519_PLUS_TAG
             };
-            pageStringHex(outVal, outValLen, (const uint8_t*)key.ptr, key.len, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(&key, outVal, outValLen, pageIdx, pageCount));
             break;
+        }
         case 2: {
             snprintf(outKey, outKeyLen, "Threshold");
             // Threshold value is less than 3 characters (uint8)
@@ -575,43 +608,54 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             snprintf(outVal, outKeyLen, "%s", strThreshold);
             break;
         }
-        case 3:
+        case 3: {
             snprintf(outKey, outKeyLen, "Consensus key");
             const bytes_t *consensusKey = &ctx->tx_obj->initValidator.consensus_key;
-            pageStringHex(outVal, outValLen, consensusKey->ptr, consensusKey->len, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(consensusKey, outVal, outValLen, pageIdx, pageCount));
             break;
-
+        }
         case 4:
             snprintf(outKey, outKeyLen, "Ethereum cold key");
             const bytes_t *ethColdKey = &ctx->tx_obj->initValidator.eth_cold_key;
-            pageStringHex(outVal, outValLen, ethColdKey->ptr, ethColdKey->len, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, (const char*) ethColdKey->ptr, ethColdKey->len, pageIdx, pageCount);
             break;
 
         case 5:
             snprintf(outKey, outKeyLen, "Ethereum hot key");
             const bytes_t *ethHotKey = &ctx->tx_obj->initValidator.eth_hot_key;
-            pageStringHex(outVal, outValLen, ethHotKey->ptr, ethHotKey->len, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, (const char*) ethHotKey->ptr, ethHotKey->len, pageIdx, pageCount);
             break;
 
         case 6:
             snprintf(outKey, outKeyLen, "Protocol key");
             const bytes_t *protocolKey = &ctx->tx_obj->initValidator.protocol_key;
-            pageStringHex(outVal, outValLen, protocolKey->ptr, protocolKey->len, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(protocolKey, outVal, outValLen, pageIdx, pageCount));
             break;
         case 7:
-            snprintf(outKey, outKeyLen, "DKG key");
-            const bytes_t *dkgKey = &ctx->tx_obj->initValidator.dkg_key;
-            pageStringHex(outVal, outValLen, dkgKey->ptr, dkgKey->len, pageIdx, pageCount);
-            break;
-        case 8:
             snprintf(outKey, outKeyLen, "Commission rate");
             CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
-        case 9:
+        case 8:
             snprintf(outKey, outKeyLen, "Maximum commission rate change");
             CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
+        case 9:
+            snprintf(outKey, outKeyLen, "Email");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.email.ptr, ctx->tx_obj->initValidator.email.len, pageIdx, pageCount);
+            break;
         case 10:
+            snprintf(outKey, outKeyLen, "Description");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.description.ptr, ctx->tx_obj->initValidator.description.len, pageIdx, pageCount);
+            break;
+        case 11:
+            snprintf(outKey, outKeyLen, "Website");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.website.ptr, ctx->tx_obj->initValidator.website.len, pageIdx, pageCount);
+            break;
+        case 12:
+            snprintf(outKey, outKeyLen, "Discord handle");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.discord_handle.ptr, ctx->tx_obj->initValidator.discord_handle.len, pageIdx, pageCount);
+            break;
+        case 13:
             snprintf(outKey, outKeyLen, "Validator VP type");
             pageString(outVal, outValLen,ctx->tx_obj->initValidator.vp_type_text, pageIdx, pageCount);
             if (app_mode_expert()) {
@@ -623,7 +667,16 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 10 + account_keys;
+            displayIdx -= INIT_VALIDATOR_NORMAL_PARAMS + account_keys;
+            if (initValidator->description.ptr != NULL) {
+                displayIdx--;
+            }
+            if (initValidator->discord_handle.ptr != NULL) {
+                displayIdx--;
+            }
+            if (initValidator->website.ptr != NULL) {
+                displayIdx--;
+            }
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -739,7 +792,8 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
             }
             snprintf(outKey, outKeyLen, "Token");
             snprintf(buffer, sizeof(buffer), "%.*s %.*s", ibc->token_amount.len, ibc->token_amount.ptr, ibc->token_address.len, ibc->token_address.ptr);
-            pageStringExt(outVal, outValLen, buffer, sizeof(buffer), pageIdx, pageCount);
+            const uint16_t bufferLen = strnlen(buffer, sizeof(buffer));
+            pageStringExt(outVal, outValLen, buffer, bufferLen, pageIdx, pageCount);
             break;
 
         case 4:

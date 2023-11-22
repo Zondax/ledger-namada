@@ -48,6 +48,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case Transfer:
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
+            if(!ctx->tx_obj->transfer.symbol) {
+                (*numItems)++;
+            }
             break;
 
         case InitAccount: {
@@ -79,6 +82,15 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case InitValidator: {
             const uint32_t accounts = ctx->tx_obj->initValidator.number_of_account_keys;
             *numItems = (uint8_t) ((app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS) + accounts);
+            if(ctx->tx_obj->initValidator.description.ptr) {
+                (*numItems)++;
+            }
+            if(ctx->tx_obj->initValidator.discord_handle.ptr) {
+                (*numItems)++;
+            }
+            if(ctx->tx_obj->initValidator.website.ptr) {
+                (*numItems)++;
+            }
             break;
         }
         case UpdateVP: {
@@ -98,6 +110,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         default:
             break;
+    }
+
+    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
+        (*numItems)++;
     }
 
     if(*numItems == 0) {

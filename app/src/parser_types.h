@@ -177,9 +177,12 @@ typedef struct {
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
     bytes_t protocol_key;
-    bytes_t dkg_key;
     uint256_t commission_rate;
     uint256_t max_commission_rate_change;
+    bytes_t email;
+    bytes_t description;
+    bytes_t website;
+    bytes_t discord_handle;
     uint8_t vp_type_secidx;
     bytes_t vp_type_sechash;
     bytes_t vp_type_hash;
