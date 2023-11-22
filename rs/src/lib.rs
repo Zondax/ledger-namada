@@ -24,13 +24,19 @@ use ed25519_dalek::Verifier;
 use ledger_transport::{APDUCommand, APDUErrorCode, Exchange};
 use ledger_zondax_generic::{App, AppExt, ChunkPayloadType, Version};
 
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+
 pub use ledger_zondax_generic::LedgerAppError;
 
 mod params;
-use params::{SignatureType, SALT_LEN, HASH_LEN, TOTAL_SIGNATURE_LEN};
-pub use params::{InstructionCode, CLA, ED25519_PUBKEY_LEN, ED25519_SIGNATURE_LEN, ADDRESS_LEN};
-use utils::{ResponseAddress, ResponseSignature, ResponseSignatureSection};
+use params::SALT_LEN;
+pub use params::{
+    InstructionCode, ADDRESS_LEN, CLA, ED25519_PUBKEY_LEN, PK_LEN_PLUS_TAG, SIG_LEN_PLUS_TAG,
+};
+use utils::{ResponseAddress, ResponseSignature};
 
+use std::convert::TryInto;
 use std::str;
 
 mod utils;
@@ -39,13 +45,12 @@ pub use utils::BIP44Path;
 /// Ledger App Error
 #[derive(Debug, thiserror::Error)]
 pub enum NamError<E>
-    where
-        E: std::error::Error,
+where
+    E: std::error::Error,
 {
     #[error("Ledger | {0}")]
     /// Common Ledger errors
     Ledger(#[from] LedgerAppError<E>),
-
     // /// Device related errors
     // #[error("Secp256k1 error: {0}")]
     // Secp256k1(#[from] k256::elliptic_curve::Error),
@@ -74,9 +79,9 @@ impl<E> NamadaApp<E> {
 }
 
 impl<E> NamadaApp<E>
-    where
-        E: Exchange + Send + Sync,
-        E::Error: std::error::Error,
+where
+    E: Exchange + Send + Sync,
+    E::Error: std::error::Error,
 {
     /// Retrieve the app version
     pub async fn version(&self) -> Result<Version, NamError<E::Error>> {
@@ -92,7 +97,7 @@ impl<E> NamadaApp<E>
         require_confirmation: bool,
     ) -> Result<ResponseAddress, NamError<E::Error>> {
         let serialized_path = path.serialize_path().unwrap();
-        let p1:u8 = if require_confirmation { 1 } else { 0 };
+        let p1: u8 = if require_confirmation { 1 } else { 0 };
         let command = APDUCommand {
             cla: CLA,
             ins: InstructionCode::GetAddressAndPubkey as _,
@@ -127,13 +132,15 @@ impl<E> NamadaApp<E>
             }
         }
 
-        let mut public_key = [0; ED25519_PUBKEY_LEN];
-        public_key.copy_from_slice(&response_data[..ED25519_PUBKEY_LEN]);
+        let mut public_key = [0; ED25519_PUBKEY_LEN + 1];
+        public_key.copy_from_slice(&response_data[..ED25519_PUBKEY_LEN + 1]);
 
         let mut address_bytes = [0; ADDRESS_LEN];
-        address_bytes.copy_from_slice(&response_data[ED25519_PUBKEY_LEN..]);
+        address_bytes.copy_from_slice(&response_data[ED25519_PUBKEY_LEN + 1..]);
 
-        let address_str = str::from_utf8(&address_bytes).map_err(|_| LedgerAppError::Utf8)?.to_owned();
+        let address_str = str::from_utf8(&address_bytes)
+            .map_err(|_| LedgerAppError::Utf8)?
+            .to_owned();
 
         Ok(ResponseAddress {
             public_key,
@@ -148,7 +155,6 @@ impl<E> NamadaApp<E>
         path: &BIP44Path,
         blob: &[u8],
     ) -> Result<ResponseSignature, NamError<E::Error>> {
-
         let first_chunk = path.serialize_path().unwrap();
 
         let start_command = APDUCommand {
@@ -179,114 +185,121 @@ impl<E> NamadaApp<E>
         }
 
         // Transactions is signed - Retrieve signatures
-        let header_signature: ResponseSignatureSection = self.get_signature(SignatureType::HeaderSignature).await?;
-        let data_signature: ResponseSignatureSection = self.get_signature(SignatureType::DataSignature).await?;
-        let code_signature: ResponseSignatureSection = self.get_signature(SignatureType::CodeSignature).await?;
+        let rest = response.apdu_data();
+        let (pubkey, rest) = rest.split_at(PK_LEN_PLUS_TAG);
+        let (raw_salt, rest) = rest.split_at(SALT_LEN);
+        let (raw_signature, rest) = rest.split_at(SIG_LEN_PLUS_TAG);
+        let (wrapper_salt, rest) = rest.split_at(SALT_LEN);
+        let (wrapper_signature, rest) = rest.split_at(SIG_LEN_PLUS_TAG);
+        let (raw_indices_len, rest) = rest.split_at(1);
+        let (raw_indices, rest) = rest.split_at(raw_indices_len[0] as usize);
+        let (wrapper_indices_len, rest) = rest.split_at(1);
+        let (wrapper_indices, _rest) = rest.split_at(wrapper_indices_len[0] as usize);
 
         Ok(ResponseSignature {
-            header_signature,
-            data_signature,
-            code_signature
+            pubkey: pubkey.try_into().unwrap(),
+            raw_salt: raw_salt.try_into().unwrap(),
+            raw_signature: raw_signature.try_into().unwrap(),
+            wrapper_salt: wrapper_salt.try_into().unwrap(),
+            wrapper_signature: wrapper_signature.try_into().unwrap(),
+            raw_indices: raw_indices.into(),
+            wrapper_indices: wrapper_indices.into(),
         })
     }
 
-    /// Get signature section
-    async fn get_signature(
+    /// Compute hash from signature section
+    pub fn hash_signature_sec(
         &self,
-        signature_type: SignatureType,
-    ) -> Result<ResponseSignatureSection, NamError<E::Error>> {
+        pubkeys: Vec<Vec<u8>>,
+        hashes: &HashMap<usize, Vec<u8>>,
+        indices: Vec<u8>,
+        signature: Option<Vec<u8>>,
+        prefix: Option<Vec<u8>>,
+    ) -> Vec<u8> {
+        let mut hasher = Sha256::new();
 
-        let command = APDUCommand {
-            cla: CLA,
-            ins: InstructionCode::GetSignature as _,
-            p1: 0x00,
-            p2: signature_type as u8,
-            data: Vec::new(),
-        };
+        if let Some(prefix) = prefix {
+            hasher.update(prefix);
+        }
 
-        let response = self
-            .apdu_transport
-            .exchange(&command)
-            .await
-            .map_err(LedgerAppError::TransportError)?;
+        hasher.update((indices.len() as u32).to_le_bytes());
+        for &index in &indices {
+            hasher.update(&hashes[&(index as usize)]);
+        }
 
-        let response_data = response.data();
-        match response.error_code() {
-            Ok(APDUErrorCode::NoError) if response_data.is_empty() => {
-                return Err(NamError::Ledger(LedgerAppError::NoSignature))
+        hasher.update([0x01]);
+
+        hasher.update(&[pubkeys.len() as u8, 0, 0, 0]);
+        for pubkey in pubkeys {
+            hasher.update(pubkey);
+        }
+
+        match signature {
+            Some(sig) => {
+                hasher.update([1, 0, 0, 0]);
+                hasher.update([0x00]);
+                hasher.update(sig);
             }
-            // Last response should contain the answer
-            Ok(APDUErrorCode::NoError) if response_data.len() < TOTAL_SIGNATURE_LEN => {
-                return Err(NamError::Ledger(LedgerAppError::InvalidSignature))
-            }
-            Ok(APDUErrorCode::NoError) => {}
-            Ok(err) => {
-                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
-                    err as _,
-                    err.description(),
-                )))
-            }
-            Err(err) => {
-                return Err(NamError::Ledger(LedgerAppError::AppSpecific(
-                    err,
-                    "[APDU_ERROR] Unknown".to_string(),
-                )))
+            None => {
+                hasher.update([0, 0, 0, 0]);
             }
         }
 
-        let salt: [u8; SALT_LEN] = {
-            let mut arr = [0u8; SALT_LEN];
-            arr.copy_from_slice(&response_data[0..SALT_LEN]);
-            arr
-        };
-
-        let hash: [u8; HASH_LEN] = {
-            let mut arr = [0u8; HASH_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN..SALT_LEN + HASH_LEN]);
-            arr
-        };
-
-        let pubkey: [u8; ED25519_PUBKEY_LEN] = {
-            let mut arr = [0u8; ED25519_PUBKEY_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN]);
-            arr
-        };
-
-        let signature: [u8; ED25519_SIGNATURE_LEN] = {
-            let mut arr = [0u8; ED25519_SIGNATURE_LEN];
-            arr.copy_from_slice(&response_data[SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN..SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN + ED25519_SIGNATURE_LEN]);
-            arr
-        };
-
-        Ok(ResponseSignatureSection {
-            salt,
-            hash,
-            pubkey,
-            signature
-        })
-
+        hasher.finalize().to_vec()
     }
 
     /// Verify signature
     pub fn verify_signature(
         &self,
-        signature: &ResponseSignatureSection,
-        hash: &[u8],
-        pubkey: &[u8]
+        signature: &ResponseSignature,
+        section_hashes: HashMap<usize, Vec<u8>>,
+        pubkey: &[u8],
     ) -> bool {
-
-        // use sha2::{Sha256, Digest};
         use ed25519_dalek::{PublicKey, Signature};
 
-        if signature.hash != hash || signature.pubkey != pubkey {
+        if pubkey != &signature.pubkey {
             return false;
         }
 
-        // Verify signature
-        let public_key = PublicKey::from_bytes(&signature.pubkey).unwrap();
-        let signature = Signature::from_bytes(&signature.signature).unwrap();
+        let public_key = PublicKey::from_bytes(&signature.pubkey[1..]).unwrap();
+        let unsigned_raw_sig_hash = self.hash_signature_sec(
+            vec![],
+            &section_hashes,
+            signature.raw_indices.clone(),
+            None,
+            None,
+        );
+        let raw_signature = Signature::from_bytes(&signature.raw_signature[1..]).unwrap();
+        let raw_sig = public_key
+            .verify(&unsigned_raw_sig_hash, &raw_signature)
+            .is_ok();
 
-        public_key.verify(&hash, &signature).is_ok()
+        // Verify wrapper signature
+        let prefix: Vec<u8> = vec![0x03];
+        let raw_hash = self.hash_signature_sec(
+            vec![signature.pubkey.to_vec()],
+            &section_hashes,
+            signature.raw_indices.clone(),
+            Some(signature.raw_signature.to_vec()),
+            Some(prefix),
+        );
+
+        let mut tmp_hashes = section_hashes.clone();
+        tmp_hashes.insert(tmp_hashes.len() - 1, raw_hash);
+
+        let unsigned_wrapper_sig_hash = self.hash_signature_sec(
+            vec![],
+            &tmp_hashes,
+            signature.wrapper_indices.clone(),
+            None,
+            None,
+        );
+
+        let wrapper_signature = Signature::from_bytes(&signature.wrapper_signature[1..]).unwrap();
+        let wrapper_sig = public_key
+            .verify(&unsigned_wrapper_sig_hash, &wrapper_signature)
+            .is_ok();
+
+        raw_sig && wrapper_sig
     }
-
 }
