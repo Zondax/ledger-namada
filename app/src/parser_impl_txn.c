@@ -951,8 +951,25 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     switch (signature->signerDiscriminant) {
         case PubKeys:
         CHECK_ERROR(readUint32(ctx, &signature->pubKeysLen))
-        signature->pubKeys.len = PK_LEN_25519_PLUS_TAG * signature->pubKeysLen;
+        signature->pubKeys.len = 0;
         CHECK_ERROR(readBytes(ctx, &signature->pubKeys.ptr, signature->pubKeys.len))
+        for (uint32_t i = 0; i < signature->pubKeysLen; i++) {
+            // Read the public key's tag
+            uint8_t tag;
+            CHECK_ERROR(readByte(ctx, &tag))
+            signature->pubKeys.len ++;
+            // Read the public key proper
+            switch (tag) {
+                case key_ed25519:
+                    ctx->offset += PK_LEN_25519;
+                    signature->pubKeys.len += PK_LEN_25519;
+                    break;
+                case key_secp256k1:
+                    ctx->offset += COMPRESSED_SECP256K1_PK_LEN;
+                    signature->pubKeys.len += COMPRESSED_SECP256K1_PK_LEN;
+                    break;
+            }
+        }
         break;
 
         case Address:
@@ -965,8 +982,28 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     }
 
     CHECK_ERROR(readUint32(ctx, &signature->signaturesLen))
-    signature->indexedSignatures.len = signature->signaturesLen * (1 + SIG_LEN_25519_PLUS_TAG);
+    signature->indexedSignatures.len = 0;
     CHECK_ERROR(readBytes(ctx, &signature->indexedSignatures.ptr, signature->indexedSignatures.len))
+    for (uint32_t i = 0; i < signature->signaturesLen; i++) {
+        // Skip the signatures 1 byte index
+        ctx->offset ++;
+        signature->indexedSignatures.len ++;
+        // Read the signature's tag
+        uint8_t tag;
+        CHECK_ERROR(readByte(ctx, &tag))
+        signature->indexedSignatures.len ++;
+        // Read the signature proper
+        switch (tag) {
+            case key_ed25519:
+                ctx->offset += ED25519_SIGNATURE_SIZE;
+                signature->indexedSignatures.len += ED25519_SIGNATURE_SIZE;
+                break;
+            case key_secp256k1:
+                ctx->offset += SIG_SECP256K1_LEN;
+                signature->indexedSignatures.len += SIG_SECP256K1_LEN;
+                break;
+        }
+    }
     return parser_ok;
 }
 
