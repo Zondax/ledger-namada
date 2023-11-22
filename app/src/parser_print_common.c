@@ -164,17 +164,6 @@ static parser_error_t printAmount64( uint64_t amount, uint8_t amountDenom, const
     return parser_ok;
 }
 
-parser_error_t printVPTypeHash(bytes_t *codeHash,
-                               char *outVal, uint16_t outValLen,
-                               uint8_t pageIdx, uint8_t *pageCount) {
-
-    char hexString[65] = {0};
-    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
-    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
-
-    return parser_ok;
-}
-
 parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
 
     if (strDec == NULL || bufferSize == 0) {
