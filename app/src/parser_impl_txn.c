@@ -82,6 +82,8 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
     char address[53] = {0};
     CHECK_ERROR(readAddress(*token, address, sizeof(address)))
 
+    *symbol = NULL;
+
     const uint16_t tokenListLen = sizeof(nam_tokens) / sizeof(nam_tokens[0]);
     for (uint16_t i = 0; i < tokenListLen; i++) {
         if (!memcmp(&address, &nam_tokens[i].address, ADDRESS_LEN_TESTNET)) {
@@ -90,7 +92,7 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
         }
     }
 
-    return parser_unexpected_value;
+    return parser_ok;
 }
 
 parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text) {
@@ -179,7 +181,9 @@ static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     v->initValidator.number_of_account_keys = 0;
+
     CHECK_ERROR(readUint32(&ctx, &v->initValidator.number_of_account_keys))
+
     if (v->initValidator.number_of_account_keys == 0) {
         return parser_unexpected_number_items;
     }
@@ -943,7 +947,6 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     signature->hashes.hashes.len = HASH_LEN * signature->hashes.hashesLen;
     CHECK_ERROR(readBytes(ctx, (const uint8_t **) &signature->hashes.hashes.ptr, signature->hashes.hashes.len))
 
-
     CHECK_ERROR(readByte(ctx, (uint8_t *) &signature->signerDiscriminant))
     switch (signature->signerDiscriminant) {
         case PubKeys:
@@ -964,7 +967,6 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     CHECK_ERROR(readUint32(ctx, &signature->signaturesLen))
     signature->indexedSignatures.len = signature->signaturesLen * (1 + SIG_LEN_25519_PLUS_TAG);
     CHECK_ERROR(readBytes(ctx, &signature->indexedSignatures.ptr, signature->indexedSignatures.len))
-
     return parser_ok;
 }
 

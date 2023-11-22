@@ -48,6 +48,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case Transfer:
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
+            if(!ctx->tx_obj->transfer.symbol) {
+                (*numItems)++;
+            }
             break;
 
         case InitAccount: {
@@ -107,6 +110,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         default:
             break;
+    }
+    if(app_mode_expert() && !ctx->tx_obj->transaction.header.fees.symbol) {
+        (*numItems)++;
     }
 
     if(*numItems == 0) {

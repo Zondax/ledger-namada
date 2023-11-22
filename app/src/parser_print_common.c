@@ -296,7 +296,9 @@ parser_error_t printExpert( const parser_context_t *ctx,
                                    char *outKey, uint16_t outKeyLen,
                                    char *outVal, uint16_t outValLen,
                                    uint8_t pageIdx, uint8_t *pageCount) {
-
+    if(displayIdx >= 5 && ctx->tx_obj->transaction.header.fees.symbol) {
+        displayIdx++;
+    }
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Timestamp");
@@ -322,9 +324,21 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         }
         case 4: {
+            if(ctx->tx_obj->transaction.header.fees.symbol) {
+                snprintf(outKey, outKeyLen, "Fees/gas unit");
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
+                                    ctx->tx_obj->transaction.header.fees.symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
+            } else {
+                snprintf(outKey, outKeyLen, "Fee token");
+                CHECK_ERROR(printAddress(ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        }
+        case 5: {
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
-                                    ctx->tx_obj->transaction.header.fees.symbol,
+                                    "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         }

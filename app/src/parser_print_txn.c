@@ -77,6 +77,9 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
+    if(displayIdx >= 4 && ctx->tx_obj->transfer.symbol) {
+        displayIdx++;
+    }
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -95,16 +98,27 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
+            if(ctx->tx_obj->transfer.symbol) {
+                snprintf(outKey, outKeyLen, "Amount");
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
+                                    ctx->tx_obj->transfer.symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
+            } else {
+                snprintf(outKey, outKeyLen, "Token");
+                CHECK_ERROR(printAddress(ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 4:
             snprintf(outKey, outKeyLen, "Amount");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
-                                    ctx->tx_obj->transfer.symbol,
+                                    "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 4;
+            displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
