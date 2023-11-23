@@ -35,12 +35,12 @@ typedef struct {
 } tokens_t;
 
 typedef struct {
-    uint8_t hash[HASH_LEN];
+    const char tag[40];
     const char *text;
 } vp_types_t;
 
 typedef struct {
-    uint8_t hash[HASH_LEN];
+    const char tag[40];
     transaction_type_e type;
 } txn_types_t;
 
@@ -145,6 +145,7 @@ typedef struct {
     uint8_t discriminant;
     bytes_t salt;
     bytes_t bytes;
+    bytes_t tag;
     uint8_t idx;
 } section_t;
 

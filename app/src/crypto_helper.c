@@ -23,7 +23,7 @@
 #include "bolos_target.h"
 #endif
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     #include "cx.h"
     #include "cx_sha256.h"
 #else
@@ -47,7 +47,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
 
     // Step 2. Hash the serialized public key with sha256.
     uint8_t pkh[CX_SHA256_SIZE] = {0};
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_hash_sha256((const uint8_t*) borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -62,10 +62,10 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     array_to_hexstr_uppercase(hexPubKeyHash, 2 * CX_SHA256_SIZE + 1, pkh, CX_SHA256_SIZE);
 
     // Prepend implicit address prefix
-    snprintf((char*) publicKeyHash, FIXED_LEN_STRING_BYTES, "imp::");
+    publicKeyHash[0] = 0;
 
     // Step 4. The Public Key Hash consists of the first 40 characters of the hex encoding. ---> UPPERCASE
-    MEMCPY(publicKeyHash + 5, hexPubKeyHash, PK_HASH_STR_LEN);
+    MEMCPY(publicKeyHash + 1, pkh, PK_HASH_LEN);
 
     return zxerr_ok;
 }
@@ -75,24 +75,24 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
         return 0;
     }
 
-    if (bufferLen < ADDRESS_LEN_MAINNET || (bufferLen < ADDRESS_LEN_TESTNET && isTestnet)) {
+    if ((bufferLen < ADDRESS_LEN_TESTNET && isTestnet) || bufferLen < ADDRESS_LEN_MAINNET) {
         return 0;
     }
 
-    const char *hrp = isTestnet ? "atest" : "a";
+    const char *hrp = isTestnet ? "tnam" : "a";
 
     // Step 1:  Compute the hash of the Ed25519 public key
-    uint8_t publicKeyHash[FIXED_LEN_STRING_BYTES] = {0};
+    uint8_t publicKeyHash[21] = {0};
     crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
 
     // Step 2. Encode the public key hash with bech32m
-    char addr_out[110] = {0};
+    char addr_out[79] = {0};
     zxerr_t err = bech32EncodeFromBytes(addr_out,
                                         sizeof(addr_out),
                                         hrp,
                                         publicKeyHash,
                                         sizeof(publicKeyHash),
-                                        0,
+                                        1,
                                         BECH32_ENCODING_BECH32M);
 
     if (err != zxerr_ok){
@@ -111,7 +111,7 @@ zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, 
 
     MEMZERO(output, outputLen);
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_hash_sha256(input, inputLen, output, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -127,12 +127,16 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
          return zxerr_invalid_crypto_settings;
     }
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     cx_sha256_update(&sha256, &extraData->discriminant, 1);
     cx_sha256_update(&sha256, extraData->salt.ptr, extraData->salt.len);
     cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    uint8_t has_tag = (extraData->tag.ptr == NULL) ? 0 : 1;
+    cx_sha256_update(&sha256, &has_tag, 1);
+    cx_sha256_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len));
+    cx_sha256_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len);
     cx_sha256_final(&sha256, output);
 #else
     picohash_ctx_t sha256 = {0};
@@ -140,6 +144,10 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
     picohash_update(&sha256, &extraData->discriminant, 1);
     picohash_update(&sha256, extraData->salt.ptr, extraData->salt.len);
     picohash_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    uint8_t has_tag = (extraData->tag.ptr == NULL) ? 0 : 1;
+    picohash_update(&sha256, &has_tag, 1);
+    picohash_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len));
+    picohash_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len);
     picohash_final(&sha256, output);
 #endif
 
@@ -151,7 +159,7 @@ zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t 
         return zxerr_no_data;
     }
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     cx_sha256_update(&sha256, &data->discriminant, 1);
@@ -177,12 +185,16 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
          return zxerr_invalid_crypto_settings;
     }
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     cx_sha256_update(&sha256, &code->discriminant, 1);
     cx_sha256_update(&sha256, code->salt.ptr, code->salt.len);
     cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len);
+    uint8_t has_tag = (code->tag.ptr == NULL) ? 0 : 1;
+    cx_sha256_update(&sha256, &has_tag, 1);
+    cx_sha256_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len));
+    cx_sha256_update(&sha256, code->tag.ptr, has_tag*code->tag.len);
     cx_sha256_final(&sha256, output);
 #else
     picohash_ctx_t sha256 = {0};
@@ -190,6 +202,10 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
     picohash_update(&sha256, &code->discriminant, 1);
     picohash_update(&sha256, code->salt.ptr, code->salt.len);
     picohash_update(&sha256, code->bytes.ptr, code->bytes.len);
+    uint8_t has_tag = (code->tag.ptr == NULL) ? 0 : 1;
+    picohash_update(&sha256, &has_tag, 1);
+    picohash_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len));
+    picohash_update(&sha256, code->tag.ptr, has_tag*code->tag.len);
     picohash_final(&sha256, output);
 #endif
 

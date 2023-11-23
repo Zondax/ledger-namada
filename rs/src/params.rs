@@ -22,16 +22,18 @@ pub const CLA: u8 = 0x57;
 
 /// Public Key Length
 pub const ED25519_PUBKEY_LEN: usize = 32;
+/// Public Key + Tag Length
+pub const PK_LEN_PLUS_TAG: usize = ED25519_PUBKEY_LEN + 1;
 /// Address array size
-pub const ADDRESS_LEN: usize = 84;  // 84 --> Testnet | 80 --> Mainnet
+pub const ADDRESS_LEN: usize = 45; // 45 --> Testnet | 42 --> Mainnet
 /// ED25519 signature Length
 pub const ED25519_SIGNATURE_LEN: usize = 64;
+/// ED25519 signature + Tag Length
+pub const SIG_LEN_PLUS_TAG: usize = ED25519_SIGNATURE_LEN + 1;
 /// Salt Length
 pub const SALT_LEN: usize = 8;
 /// Hash Length
-pub const HASH_LEN: usize = 32;
-/// Get signature response
-pub const TOTAL_SIGNATURE_LEN: usize = SALT_LEN + HASH_LEN + ED25519_PUBKEY_LEN + ED25519_SIGNATURE_LEN;
+// pub const HASH_LEN: usize = 32;
 /// Available instructions to interact with the Ledger device
 #[repr(u8)]
 pub enum InstructionCode {
@@ -42,15 +44,4 @@ pub enum InstructionCode {
 
     /// Instruction to retrieve a signed section
     GetSignature = 0x0a,
-}
-
-/// Different signed sections
-#[repr(u8)]
-pub enum SignatureType {
-    /// Header signature
-    HeaderSignature = 0,
-    /// Data signature
-    DataSignature = 1,
-    /// Code signature
-    CodeSignature = 2,
 }

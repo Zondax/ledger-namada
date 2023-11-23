@@ -14,14 +14,14 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu from '@zondax/zemu'
+import Zemu, { ButtonKind, zondaxMainmenuNavigation } from '@zondax/zemu'
 import { NamadaApp } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions } from './common'
 
-jest.setTimeout(90000)
+jest.setTimeout(120000)
 
-const expected_pubkey = '00f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf'
-const expected_address = "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"
+const expected_pubkey = '0039c1a4bea74c320ab04be5b218369d8c1ae21e41f27edee173ce5e6a51015a4d'
+const expected_address = "tnam1qq6qyugak0gd4up6lma8z8wr88w3pq9lgvfhw6yu"
 
 describe('Standard', function () {
   test.concurrent.each(models)('can start and stop container', async function (m) {
@@ -36,8 +36,9 @@ describe('Standard', function () {
   test.concurrent.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
+      const mainmenuNavigation = zondaxMainmenuNavigation(m.name)
       await sim.start({ ...defaultOptions, model: m.name })
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, mainmenuNavigation.schedule)
     } finally {
       await sim.close()
     }
@@ -91,7 +92,12 @@ describe('Standard', function () {
   test.concurrent.each(models)('show address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new NamadaApp(sim.getTransport())
 
       const respRequest = app.showAddressAndPubKey(hdpath)
@@ -120,13 +126,17 @@ describe('Standard', function () {
   test.concurrent.each(models)('show address - reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        rejectKeyword: m.name === 'stax' ? 'QR' : '',
+      })
       const app = new NamadaApp(sim.getTransport())
 
       const respRequest = app.showAddressAndPubKey(hdpath)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-show_address_reject`, 'REJECT')
+      await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-show_address_reject`)
 
       const resp = await respRequest
       console.log(resp)

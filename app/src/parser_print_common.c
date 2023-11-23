@@ -94,42 +94,6 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
-parser_error_t printCouncilVote(const council_t *council,
-                                char *outVal, uint16_t outValLen,
-                                uint8_t pageIdx, uint8_t *pageCount) {
-    uint8_t offset = 0;
-    char strVote[230] = {0};
-
-    // Print prefix
-    snprintf(strVote, sizeof(strVote) - offset, PREFIX);
-    offset = strlen(strVote);
-
-    // Print council prefix
-    char address[110] = {0};
-    CHECK_ERROR(readAddress(council->council_address, address, sizeof(address)))
-    if (offset + strlen(PREFIX_COUNCIL) + strnlen(address, sizeof(address)) + 2 > sizeof(strVote)) {
-        return parser_unexpected_buffer_end;
-    }
-    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_COUNCIL "%s, ", address);
-    offset = strlen(strVote);
-
-    // Print spending cap
-    char spendingCap[80] = {0};
-    CHECK_ERROR(uint256_to_str(spendingCap, sizeof(spendingCap), &council->amount))
-    if (intstr_to_fpstr_inplace(spendingCap, sizeof(spendingCap), COIN_AMOUNT_DECIMAL_PLACES) == 0) {
-        return parser_unexpected_error;
-    }
-    number_inplace_trimming(spendingCap, 1);
-    if (offset + strlen(PREFIX_SPENDING) + strnlen(spendingCap, sizeof(spendingCap)) > sizeof(strVote)) {
-        return parser_unexpected_buffer_end;
-    }
-    snprintf(strVote + offset, sizeof(strVote) - offset, PREFIX_SPENDING "%s", spendingCap);
-
-    pageString(outVal, outValLen, (const char*) strVote, pageIdx, pageCount);
-    return parser_ok;
-}
-
-
 parser_error_t printCodeHash(bytes_t *codeHash,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
@@ -200,17 +164,6 @@ static parser_error_t printAmount64( uint64_t amount, uint8_t amountDenom, const
     return parser_ok;
 }
 
-parser_error_t printVPTypeHash(bytes_t *codeHash,
-                               char *outVal, uint16_t outValLen,
-                               uint8_t pageIdx, uint8_t *pageCount) {
-
-    char hexString[65] = {0};
-    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
-    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
-
-    return parser_ok;
-}
-
 parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
 
     if (strDec == NULL || bufferSize == 0) {
@@ -272,11 +225,34 @@ parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size
     return parser_ok;
 }
 
+parser_error_t printPublicKey( const bytes_t *pubkey,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount) {
+    char bech32String[79] = {0};
+    const zxerr_t err = bech32EncodeFromBytes(bech32String,
+                        sizeof(bech32String),
+                        "tpknam",
+                        (uint8_t*) pubkey->ptr,
+                        pubkey->len,
+                        1,
+                        BECH32_ENCODING_BECH32M);
+
+    if (err != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    pageString(outVal, outValLen, (const char*) &bech32String, pageIdx, pageCount);
+    return parser_ok;
+}
+
 parser_error_t printExpert( const parser_context_t *ctx,
                                    uint8_t displayIdx,
                                    char *outKey, uint16_t outKeyLen,
                                    char *outVal, uint16_t outValLen,
                                    uint8_t pageIdx, uint8_t *pageCount) {
+
+    if(displayIdx >= 5 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
+        displayIdx++;
+    }
 
     switch (displayIdx) {
         case 0:
@@ -286,10 +262,8 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         case 1: {
             const bytes_t *pubkey = &ctx->tx_obj->transaction.header.pubkey;
-            char hexString[67] = {0};
             snprintf(outKey, outKeyLen, "Pubkey");
-            array_to_hexstr((char*) hexString, sizeof(hexString), pubkey->ptr, pubkey->len);
-            pageString(outVal, outValLen, (const char*) &hexString, pageIdx, pageCount);
+            CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
         case 2:
@@ -305,9 +279,21 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         }
         case 4: {
+            if(ctx->tx_obj->transaction.header.fees.symbol != NULL) {
+                snprintf(outKey, outKeyLen, "Fees/gas unit");
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
+                                    ctx->tx_obj->transaction.header.fees.symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
+            } else {
+                snprintf(outKey, outKeyLen, "Fee token");
+                CHECK_ERROR(printAddress(ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        }
+        case 5: {
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, COIN_AMOUNT_DECIMAL_PLACES,
-                                    ctx->tx_obj->transaction.header.fees.symbol,
+                                    "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         }

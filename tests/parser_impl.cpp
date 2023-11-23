@@ -24,7 +24,7 @@
 #include "leb128.h"
 
 using namespace std;
-struct AddressTestcase {
+struct NamAddress {
         string pubkey;
         string address;
 };
@@ -35,49 +35,41 @@ struct LEB128Testcase {
         uint8_t consumed;
 };
 
-TEST(Address, NamadaEncodingTestnet) {
-        vector<AddressTestcase> testnet_addresses {
-                {"f2ae0543cc0d223dd94d25a480e69d1f8281af1b1d9be5a37948fb6a084952bf", "atest1d9khqw36ggurxwzzxsurxdpkx4q5gdzzg5urvvjxxdpyvd33xv6rwvp5g4znjvpnxazrzvjxf6htp5"},
-                {"d1b7bf436f5be86b1bd4bfeb69d6b89c3e5fb8b5a7fa1960f9444d1f230514a3", "atest1d9khqw36xuunsvzzxgeyvs3cxumyv3j9xgc52s2zgvmry3f5gseygdjygs6nqsfnxcmyywfclfh7pk"},
-                {"b3b2249409de8726a947263e54d71732609c0418faa4a31e9191339ee24a6df3", "atest1d9khqw36gg65gd35xqmnvvphg565ydjxx5mrqdjyxu65ydp5xeprxs6y8ppr2wzp8qerqwzpm8c7c6"},
-                {"65f6d36aaec57a023a27985b29c2ce11b134a1e1b0fda5f92427cc70268a1d92", "atest1d9khqw36xcmnq3jpggcngdzygcerz3fh8qmnydjzg4znwse3gv6nvdf4x3znqdengsunvsf4rddx0k"},
-                {"c10fa512e70013a11caa232827b42ff9ffd7e0b7555af4ed673c823d24a4dc5d", "atest1d9khqw368qc52sjyx9qny3fkg5e5vvfexdq52d6pg3z5xvjzg3pyy3f3xerrj3f5x5enqs2ra8m6n4"},
-                {"6d0accf8db1c7ab9bcc4f402398162ad9cf657c1dfdee6c8dcc498f6434dc9f9", "atest1d9khqw36xqur2w2zgvcnxs29xppn2s2zxpprj32zxppnwwfsxu6rg33jg5mnxw2xgdzrxvzzprkw5t"},
-                {"c030114335f22bc23dba59b2f7f3e7f80f43536514365479db4a13613bb7fac1", "atest1d9khqw368ye5x3zzx3q5xvjx8quyxvpnxge5gv6yxvmnwv3sgc6y2w2ygfz5xvf5xez52d2p8g08r0"},
-                {"8276a5bef2e7f4d1b2a71c0b23dbf9df3bcf2d46155196b30a9ed3b302cbb1ec", "atest1d9khqw36xppr23jyg3ry2ve4g4z5233exg6nqsj9xce5gdz9xaz5zw2yxge5z335g9pnjvpjedjh0n"},
-                {"d72c5f56535aec8a9e87c8b4a2e26b4eccdb76e35c68f09b6ce72072a37dcec3", "atest1d9khqw36g5myxv33g5c52vjzxycyzvp4xfryy32rxg6ngsfexvcrzdfsx5erw32rg5eygs3s37h6t7"},
-                {"95c4389f19cb90cddbbba24188ec147c53f4c9bab26eeddd23ee17697510db9e", "atest1d9khqw36g5unyd2yxppnzsec8qmn2vzxggm5vd6rxyeyzse5xye5xwfjx3zrw3zpxary2dfkkkftt3"},
-                {"1575c42c4a46972fb69624c3c64fa46fa717b3f81fc91a0a793240f462ed1782", "atest1d9khqw36gs6rsdf389rrwvekg9z5gsjxxc6rj3p58qcrxd3exgenz335xcurjsenxeznxwfcdpmvre"},
-                {"06b2b0e7100f26c280cf9081f7bd50d02b21cf9e1af8c746b57aba13462cbe82", "atest1d9khqw36g9p5xvjxxgenjsfk8pq52vphxsenjdpexqc5v3f5xvcyvs3cxqmngdzyxsunswpc2gzakw"},
-                {"3a7da3dda3d27f7d7115bc0cbd9e7ae2ecb819d88d482190d4452d47c8b85e66", "atest1d9khqw36g4zrqvfsgs6ygde3gvmyvs35gsmnyvfngdrrqsecxvuy2dpcxumygs2rg5urqdjxdpfufc"},
-                {"549f986e27d3cbfbd5d9b22adb3d94ccef39a34be552c172347c2e511caf9a23", "atest1d9khqw368prrzvpegccyg3jpxfp5yvps89pnzdjzxs6yzwfhgvmnzdps89qn2s6pgc65gs6zszhqhp"},
-                {"55e7670f076faa9012be60d0fcb2f7091d6a603b70fcc565a6f20b4376c912b0", "atest1d9khqw36gsersvf3g5cyvs2ygfry23p4g4pyg3f38qerq3zr8ppyvvfcxgen2d3kgcmryvjz96pmgv"},
-                {"7349549a321668d67deab2bef9fc3aeedda31b1b3f8a1602db3d01e163d0664e", "atest1d9khqw36xucyyvejxcmnsvp5xaznjwfhxyunsvjpxdqny3zygvenjse3xsm5xdjr8quyy3z9sny6qs"},
-                {"0b70d5d5da0d1f03165daa5463c827a6e0d0fd90736f474410dc98b56eb4a723", "atest1d9khqw36gsm5x3fsxvcnzs6rgyc5zwpsggcrgsjpgfry2v6y8y6nx3zpgvm5xwzpgcey2se5ypzn72"},
-                {"80acb673344e74166831ec7bfc7716ddb832469556540c477ddbfd4d327e48fe", "atest1d9khqw36x3q5yv3sxvmrgv6zxcmygwzrg56rqd3kgv6rx3fkgycrxs6px3rrx32rg56rxs6yvqep3p"},
-                {"f71954a6053d82121c2ae0acabbaaa7aa66c1ae0a1bbce12458bfbaf5c42d1da", "atest1d9khqw36xerrx3p58ppyyvp3gvuyzsehx3z5gs2ygdpnxdp4xver2v3sx5m5xvfjxpz52v3st7yg5s"},
-                {"148d5b752232a584347e3563449f6c91addf284ea280ef7b44cdac4a7c735681", "atest1d9khqw36g4pyy3f5g5unwwfsgve5zdec8qurx3fkx9prydphxymrgvekxpzy2vpexfpnqv2pql96gx"},
-                {"ab1b584e7b41fd272e7110d21e81f2c623cd2e41d29116473c505848729a0caf", "atest1d9khqw36gsurw33sgfprwdj9xseny3p4ggcyg33jgsun2sf5x5cr2333xs6nsvp4g4pnydpex703sg"},
-                {"3f4e6bba486d51444814aa2422e654f401ec18c158c1db10817c4071fea3e04b", "atest1d9khqw36xv6n2sfcg9znqsec8y6yxwzzx3zyyd3exgcy2desxeryv32px9zrwdpjxerryvzx8wl6xk"},
-                {"7c0e7deadb1ab15a5f1d937e279fef7daf174d3b02809806d62e9f233157904c", "atest1d9khqw36xceyzv69g4zrsv3cg5m5zd2pgdzy233jgvunyvf5gezrqd6yg5cnvd3sgv6y23f4q7k3js"},
-                {"f9bc8f13609ce609441fbee7d6e2f15fe2e59c0d120714204372c744d3149130", "atest1d9khqw36xcenjdp5g9pr2df4xyunj3zygyerx3phgse5z3ph89zrjve3gyun2334g56r2s3jmkel8c"},
-                {"d90a7292de4cdc62b05540170d1f02042e3fdc84177799360791293e3049cc7e", "atest1d9khqw36xvurgvf3gs65y3f3x56y2s298pzrjvj9x3pnxv6z8qe5vvphg3zrydpjxvergvpsk6p52e"},
-                {"1f9a685c9d644d8501f12ec69126b74073bdaa9e66b5c54fa1f35369f3edd05b", "atest1d9khqw36x4rrgvf3gfznvsfhxgeyzdpnggmrvdjrgs6ngdp4xgmnwdzygvmnywpcx9p5vwp58p09fc"},
-                {"f2f44a2f95ed3b2024e3b73a803084e1df8caaecd5f39f5f62ebc99d66fd6edf", "atest1d9khqw36gvu5zwpjxppnvvfngverjdf4xaznxdzpxquyzvpsgv6rgvpcxqcyy32ygcmy2wpcysxzwu"},
+TEST(Address, NamadaEncoding) {
+        vector<NamAddress> addresses {
+                {"9634575029ce5ef3b7bb548e7fcacfffdae8897c9732c2bc30376258fd0a1c9f", "tnam1qz3pcwcrra2zw8fsaryh3tuuy3dzfrexcuk3jw7h"},
+                {"c7cdf55184b9456332df165f78fcef4b64dd639a3cf9454bd7112d62aaccbc86", "tnam1qrmnjwdpwmsruk30a35yqsfsh9wgywcamumj8amg"},
+                {"d76b1c5695049825e4022d0650ac8a5a6a3e1ea88fbe30b02e571e0a7f98dade", "tnam1qqc49r9taphkhc25qnwnsgkdz4j5wl8c6yeysjas"},
+                {"b1f9725374a60fe56bf4ee5f9db9666f411b6f64133edb8a96c08e502f41399a", "tnam1qrx5ggscqyfg3zajlztxf2w4pz2q366ahgln4kkj"},
+                {"f5c4448c1b80cd9738a7a123fc81263d498ef453fc5ad6ddd98e73a1012603be", "tnam1qqse36g497m6s5den79wfs9prwwhf29mrqag9ngj"},
+                {"07404767b893c0947ec5e716589737e10079ecefca5804b04369dcf32acfdce0", "tnam1qpvlr52kwyppx6kjuwta48w3rchzm53jn5wx2cr0"},
+                {"5d4320f72937ef7286f719a85c80c5c94b46b701777a8b0c11103b59216130e3", "tnam1qpznuls96xtm073e38xtyqq59ysdf7t2cgecsvck"},
+                {"bd43f2977212b8d190c7f3f8c9f704444baa137fdcecae25caf37003187a6393", "tnam1qpcn9ml2452r9qty6m24xvga9upszgxgusatjd54"},
+                {"63995c4e214ea4aa11bd39d72fafff14fe4863fd1206ce8024d625a6beab25c9", "tnam1qpxsftlhety7q6ud9xqauhys3rs5zn408v45g94g"},
+                {"b774893e3fd3adca09b8ffb09b6e5c0aabe605c17572c0ee0f89e46d7c0e0511", "tnam1qql48y48256lwaxv9kpykjhl4xngd3euwglmceks"},
+                {"5d55414cc6f88216b5f988210d8c6326c3b14bddf39354a3ff482a866cf7a8bd", "tnam1qzmmwmsr89vz8fctq9fznfgeexwrmtammuvty3mp"},
+                {"a5ab6e3d8d6e7f047c6ef42dc99d3b5bff42fbedcbba5c648e45527aafd1d298", "tnam1qqtpy826hf37n7s6n80uwk0qys8cgk3phs8ut7zt"},
+                {"a39f0db14ea98e5f813e9b42083587b2367fa503b1f849ef780de886698c6840", "tnam1qqdue893eeme8l29wllh89mp9pel64zzhuflftqd"},
+                {"43afee356fa2e2da1de56705cd2f16531ef2914abdebdeb57ee0ad7be309a901", "tnam1qz3pv6u2xwxdncjgtwr9fy8h0dwdy078jql5kxf4"},
+                {"836fb47a9c8e971d3060916f4370c40a6ce0be7b4ab35fe113828ed811663b68", "tnam1qzj48de7gdqy4ljzdq5cv7m4mhydjzy0k5ewhn2j"},
+                {"72c81d781092ed6a651cca784d5bee8c3de4a3ff0f4b2af90253784bf69424c3", "tnam1qzqeg78j3ksm6w6cup80uk2kz7nlhe0kn5qwjlv8"},
+                {"9e40f910b19fc53900b1540fb24817e7d5408c0a34189f6eb091fc7873fb3458", "tnam1qr3j02d0fegpp220y620svp4dzjve59rdvtmdx7d"},
+                {"e24cf05d45273fa955915a84a840587a0f64dc9d4332f930bc02bd76ca945bda", "tnam1qp3u2yplk8ng2qag64wdk9ssc7nft8sw4y8pcc0g"},
+                {"6d0e23f95787481ed55415c92a98e72d833ebb2aaf1b8df6dd8e94c583d0e1c7", "tnam1qrhpzl4cry7amt0mgchz73mv2gz6t0cz4smfxt9t"},
+                {"7cf5371c3250b74afc65d67b80bbbb99613823b5d415a74df9677127c8e70c1e", "tnam1qrrrlvxvyexaj3ytzky4dzqnckxgpfyu4qe2r5tn"}
         };
 
-        const uint8_t NAMADA_ADDRESS_SIZE {84};
-        for (const auto& testcase : testnet_addresses) {
+        for (const auto& testcase : addresses) {
                 uint8_t pubkey[100] = {0};
                 auto bufferLen = parseHexString(pubkey,
                                                 sizeof(pubkey),
                                                 testcase.pubkey.c_str());
 
-                uint8_t actualAddress[NAMADA_ADDRESS_SIZE] = {0};
+                uint8_t actualAddress[ADDRESS_LEN_TESTNET] = {0};
                 const uint8_t address_len = crypto_encodePubkey_ed25519(actualAddress, sizeof(actualAddress), pubkey, true);
-                EXPECT_EQ(address_len, NAMADA_ADDRESS_SIZE);
+                EXPECT_EQ(address_len, ADDRESS_LEN_TESTNET);
 
-                const string namada_address(actualAddress, actualAddress + NAMADA_ADDRESS_SIZE);
+                const string namada_address(actualAddress, actualAddress + ADDRESS_LEN_TESTNET);
                 EXPECT_EQ(namada_address, testcase.address);
         }
 }

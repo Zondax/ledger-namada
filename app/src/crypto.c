@@ -40,7 +40,7 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
     uint8_t privateKeyData[2 * SK_LEN_25519] = {0};
 
     // Generate keys
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
                                                      HDPATH_LEN_DEFAULT,
@@ -81,7 +81,7 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
 
     zxerr_t error = zxerr_unknown;
 
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
                                                      HDPATH_LEN_DEFAULT,
@@ -205,7 +205,7 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
             break;
 
         case Address:
-            cx_sha256_update(&sha256, (uint8_t*) &signature_section->address.ptr, signature_section->address.len);
+            cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len);
             break;
 
         default:
@@ -341,11 +341,6 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     section_hashes.hashesLen++;
     signature_section.hashes.hashesLen++;
 
-    /// Hash the header section
-    uint8_t *header_hash = section_hashes.hashes.ptr;
-    CHECK_ZXERR(crypto_hashFeeHeader(&txObj->transaction.header, header_hash, HASH_LEN))
-    section_hashes.indices.ptr[0] = 0;
-
     // Hash the code and data sections
     const section_t *data = &txObj->transaction.sections.data;
     const section_t *code = &txObj->transaction.sections.code;
@@ -392,6 +387,11 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
         section_hashes.hashesLen++;
         signature_section.hashes.hashesLen++;
     }
+
+    /// Hash the header section
+    uint8_t *header_hash = section_hashes.hashes.ptr;
+    CHECK_ZXERR(crypto_hashFeeHeader(&txObj->transaction.header, header_hash, HASH_LEN))
+    section_hashes.indices.ptr[0] = 0;
 
     signature_section.signaturesLen = 0;
     signature_section.pubKeysLen = 0;

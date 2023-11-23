@@ -32,53 +32,25 @@
 #define DISCRIMINANT_MASP_BUILDER 0x06
 
 static const txn_types_t allowed_txn[] = {
-    {{0xbe, 0xc1, 0xef, 0xd3, 0x7d, 0x88, 0x87, 0x6b, 0xe4, 0x17, 0x6d, 0x1a, 0xfc, 0x0b, 0x6f, 0xa7, 0x84, 0x90, 0x1e, 0xfe, 0x18, 0xcf, 0x9e, 0xc3, 0x02, 0x93, 0x31, 0x3b, 0xe8, 0x55, 0xd8, 0x14},
-    Bond},
-
-    {{0x47, 0x30, 0xc6, 0xc3, 0x02, 0xf0, 0xa5, 0x72, 0xc0, 0x9d, 0x2b, 0x67, 0x1a, 0xe4, 0xc4, 0x0d, 0xee, 0xe8, 0xcf, 0x46, 0xfc, 0x16, 0x8c, 0x8e, 0xba, 0x57, 0xfa, 0xde, 0xf8, 0x8b, 0x73, 0xde},
-    Unbond},
-
-    {{0xf0, 0x06, 0x11, 0x57, 0x37, 0x74, 0x54, 0xc3, 0x14, 0xad, 0x7c, 0x9e, 0x38, 0x55, 0x22, 0x1d, 0x49, 0xda, 0x74, 0x25, 0xff, 0xef, 0x6d, 0xb6, 0xb7, 0xd2, 0x8f, 0x52, 0x42, 0x42, 0x32, 0x81},
-    InitAccount},
-
-    {{0x6f, 0x63, 0xdc, 0x0e, 0xe5, 0x34, 0xb7, 0x4c, 0xec, 0x72, 0x8b, 0x9f, 0x76, 0xda, 0xe3, 0x83, 0x38, 0x8f, 0x73, 0x06, 0xdf, 0x66, 0xb8, 0x27, 0xfa, 0x94, 0x0e, 0x21, 0x0a, 0x7c, 0x11, 0xca},
-    InitProposal},
-
-    {{0x92, 0xed, 0x2a, 0x56, 0x80, 0x21, 0xd8, 0xc0, 0x15, 0xe2, 0x75, 0xcc, 0x39, 0x93, 0x67, 0x50, 0xe1, 0x0b, 0x51, 0xa2, 0xee, 0x95, 0x0f, 0x21, 0x3f, 0xb2, 0x1a, 0x76, 0xcc, 0xc7, 0x21, 0x47},
-    VoteProposal},
-
-    {{0xb3, 0xb4, 0x81, 0x66, 0x97, 0x6e, 0x02, 0x59, 0xdb, 0x4e, 0xab, 0x1e, 0x72, 0xac, 0xe4, 0xc9, 0x23, 0x68, 0xb3, 0x4f, 0xd5, 0xa0, 0x6f, 0x7c, 0xcd, 0x41, 0xb4, 0xae, 0x4c, 0x88, 0xca, 0x1d},
-    InitValidator},
-
-    {{0x15, 0x2e, 0xfe, 0xbe, 0x39, 0x54, 0xac, 0x8f, 0x2d, 0x57, 0x60, 0xec, 0x18, 0xfa, 0xe1, 0x19, 0x7c, 0x9e, 0x02, 0xa1, 0x61, 0x49, 0x13, 0x75, 0x51, 0x6c, 0xfc, 0x40, 0xcb, 0xa0, 0xa1, 0xe8},
-    RevealPubkey},
-
-    {{0x11, 0x1a, 0x5b, 0x61, 0xd8, 0x39, 0xf5, 0xb9, 0x74, 0xf7, 0x74, 0x76, 0x2e, 0x74, 0xc9, 0x8d, 0xb8, 0xfc, 0x38, 0x9d, 0x27, 0x95, 0xcb, 0xd6, 0x1a, 0x2c, 0x44, 0xe5, 0xab, 0x46, 0xc5, 0xa1},
-    Transfer},
-
-    {{0xc3, 0xe2, 0x5b, 0x73, 0xb9, 0x4a, 0x22, 0x6c, 0x3e, 0x9a, 0x59, 0x90, 0xfb, 0x91, 0x86, 0x4c, 0x15, 0x15, 0xcf, 0x2b, 0xcb, 0x8e, 0x28, 0xe4, 0xb3, 0xe4, 0x03, 0xc4, 0x1a, 0x37, 0x09, 0x32},
-    UpdateVP},
-
-    {{0x64, 0x93, 0x53, 0xad, 0x4c, 0x9b, 0x5a, 0xce, 0xfe, 0x52, 0xb5, 0xe6, 0x7e, 0xad, 0xa7, 0x8b, 0x6f, 0x83, 0xe2, 0x06, 0xed, 0x71, 0xdc, 0x93, 0x5d, 0xde, 0xc7, 0x04, 0x67, 0xc3, 0x06, 0x3b},
-    Withdraw},
-
-    {{0x6c, 0xf3, 0x29, 0x12, 0x02, 0x04, 0xbf, 0x10, 0xb2, 0x17, 0xb8, 0x11, 0x3f, 0x93, 0x01, 0x1f, 0xc2, 0xea, 0x27, 0xa0, 0x9c, 0x02, 0x46, 0xa8, 0x66, 0x71, 0x0f, 0xa9, 0xf8, 0xb6, 0x8f, 0x79},
-    CommissionChange},
-
-    {{0x0a, 0x76, 0x24, 0xe9, 0x88, 0x4b, 0x68, 0x1e, 0x0a, 0xf8, 0x70, 0x89, 0x61, 0xb4, 0xe0, 0xc9, 0x8a, 0x02, 0x5e, 0xf5, 0x71, 0x67, 0x6c, 0xfb, 0xb4, 0x08, 0xb7, 0x7a, 0x31, 0x95, 0xcd, 0x15},
-    UnjailValidator},
-
-    {{0x58, 0xbd, 0x56, 0x8d, 0xfa, 0x94, 0x97, 0x3c, 0x79, 0x8b, 0x38, 0x68, 0x32, 0x61, 0x97, 0xfa, 0x5d, 0x86, 0x87, 0xa6, 0xf6, 0xae, 0xe7, 0x7c, 0x39, 0x5e, 0xaa, 0xa1, 0xd0, 0x1e, 0x2c, 0x19},
-    IBC},
-
+    {"tx_bond.wasm", Bond},
+    {"tx_unbond.wasm", Unbond},
+    {"tx_init_account.wasm", InitAccount},
+    {"tx_init_proposal.wasm", InitProposal},
+    {"tx_vote_proposal.wasm", VoteProposal},
+    {"tx_init_validator.wasm", InitValidator},
+    {"tx_reveal_pk.wasm", RevealPubkey},
+    {"tx_transfer.wasm", Transfer},
+    {"tx_update_account.wasm", UpdateVP},
+    {"tx_withdraw.wasm", Withdraw},
+    {"tx_change_validator_commission.wasm", CommissionChange},
+    {"tx_unjail_validator.wasm", UnjailValidator},
+    {"tx_ibc.wasm", IBC},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
 // Update VP types
-static const vp_types_t vp_user = {
-        {0x3b, 0x9e, 0x4d, 0x77, 0x7c, 0x94, 0x20, 0xbb, 0xbf, 0x73, 0x0e, 0x15, 0x49, 0x25, 0x2f, 0x1a, 0x09, 0x1b, 0xc0, 0x15, 0x35, 0xeb, 0x1f, 0x37, 0xe7, 0xa7, 0xe3, 0xd1, 0xba, 0xce, 0x75, 0x76},
-        "User"
-};
+static const vp_types_t vp_user = { "vp_user.wasm", "User"};
+static const vp_types_t vp_validator = { "vp_validator.wasm", "Validator"};
 static const char *unknown_vp = "Unknown VP hash";
 
 #define NAM_TOKEN(_address, _symbol) { \
@@ -87,18 +59,18 @@ static const char *unknown_vp = "Unknown VP hash";
     }
 
 static const tokens_t nam_tokens[] = {
-    NAM_TOKEN("atest1v4ehgw36x3prswzxggunzv6pxqmnvdj9xvcyzvpsggeyvs3cg9qnywf589qnwvfsg5erg3fkl09rg5", "NAM "),
-    NAM_TOKEN("atest1v4ehgw36xdzryve5gsc52veeg5cnsv2yx5eygvp38qcrvd29xy6rys6p8yc5xvp4xfpy2v694wgwcp", "BTC "),
-    NAM_TOKEN("atest1v4ehgw36xqmr2d3nx3ryvd2xxgmrq33j8qcns33sxezrgv6zxdzrydjrxveygd2yxumrsdpsf9jc2p", "ETH "),
-    NAM_TOKEN("atest1v4ehgw36gg6nvs2zgfpyxsfjgc65yv6pxy6nwwfsxgungdzrggeyzv35gveyxsjyxymyz335hur2jn", "DOT "),
-    NAM_TOKEN("atest1v4ehgw36xue5xvf5xvuyzvpjx5un2v3k8qeyvd3cxdqns32p89rrxd6xx9zngvpegccnzs699rdnnt", "Schnitzel "),
-    NAM_TOKEN("atest1v4ehgw36gfryydj9g3p5zv3kg9znyd358ycnzsfcggc5gvecgc6ygs2rxv6ry3zpg4zrwdfeumqcz9", "Apfel "),
-    NAM_TOKEN("atest1v4ehgw36gep5ysecxq6nyv3jg3zygv3e89qn2vp48pryxsf4xpznvve5gvmy23fs89pryvf5a6ht90", "Kartoffel "),
+    NAM_TOKEN("tnam1qye0m4890at9r92pfyf3948fpzgryfzweg2v95fs", "NAM "),
+    NAM_TOKEN("tnam1qx3jyxy292rlqu40syq3nfnlgtsusyewkcuyddhp", "BTC "),
+    NAM_TOKEN("tnam1q8dug9yu52tzz3mmn976574fj7yfl4yj0qynxvrk", "ETH "),
+    NAM_TOKEN("tnam1q8d2xskmexg9j9yvfda7cwy48vy8wrmwsuw5lxtv", "DOT "),
+    NAM_TOKEN("tnam1q8qy9puaq5plu2csa4gk3l2fpl5vc4r2ccxqjhqk", "Schnitzel "),
+    NAM_TOKEN("tnam1q9zsxkpuk4sle4lhfcfnu5fdep8fy3n2aqufyc97", "Apfel "),
+    NAM_TOKEN("tnam1qyev25082t47tqxmj4gd4c07d3pm9t6rnc7jgwyq", "Kartoffel "),
 };
 
-static const char* prefix_implicit = "imp::";
-static const char* prefix_established = "est::";
-static const char* prefix_internal = "int::";
+#define PREFIX_IMPLICIT 0
+#define PREFIX_ESTABLISHED 1
+#define PREFIX_INTERNAL 2
 
 parser_error_t readToken(const bytes_t *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
@@ -106,8 +78,10 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
     }
 
     // Convert token to address
-    char address[110] = {0};
+    char address[53] = {0};
     CHECK_ERROR(readAddress(*token, address, sizeof(address)))
+
+    *symbol = NULL;
 
     const uint16_t tokenListLen = sizeof(nam_tokens) / sizeof(nam_tokens[0]);
     for (uint16_t i = 0; i < tokenListLen; i++) {
@@ -117,53 +91,59 @@ parser_error_t readToken(const bytes_t *token, const char **symbol) {
         }
     }
 
-    return parser_unexpected_value;
+    return parser_ok;
 }
 
-parser_error_t readVPType(const bytes_t *vp_type_hash, const char **vp_type_text) {
-    if (vp_type_hash == NULL || vp_type_text == NULL) {
+parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text) {
+    if (vp_type_tag == NULL || vp_type_text == NULL) {
         return parser_unexpected_value;
     }
 
     *vp_type_text = (char*) PIC(unknown_vp);
-    if (!memcmp(vp_type_hash->ptr, vp_user.hash, HASH_LEN)) {
-        *vp_type_text = (char*) PIC(vp_user.text);
+    if (vp_type_tag->ptr == NULL) {
+        return parser_ok;
     }
+
+    if (strnlen(vp_user.tag, sizeof(vp_user.tag)) == vp_type_tag->len &&
+        !memcmp(vp_type_tag->ptr, vp_user.tag, vp_type_tag->len)) {
+        *vp_type_text = (char*) PIC(vp_user.text);
+    } else if (strnlen(vp_validator.tag, sizeof(vp_validator.tag)) == vp_type_tag->len &&
+               memcmp(vp_type_tag->ptr, vp_validator.tag, vp_type_tag->len) == 0) {
+        *vp_type_text = (char*) PIC(vp_validator.text);
+    }
+
     return parser_ok;
 }
 
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen) {
     const uint8_t addressType = *pubkeyHash.ptr++;
-    const char* prefix = NULL;
+    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
 
     switch (addressType) {
         case 0:
-            prefix = PIC(prefix_established);
+            tmpBuffer[0] = PREFIX_ESTABLISHED;
             break;
         case 1:
-            prefix = PIC(prefix_implicit);
+            tmpBuffer[1] = PREFIX_IMPLICIT;
             break;
         case 2:
-            prefix = PIC(prefix_internal);
+            tmpBuffer[2] = PREFIX_INTERNAL;
             break;
 
         default:
             return parser_value_out_of_range;
     }
 
-    char tmpBuffer[FIXED_LEN_STRING_BYTES+1] = {0};
-    snprintf(tmpBuffer, sizeof(tmpBuffer), "%s", prefix);
-    const uint8_t prefixLen = strlen(prefix);
-    array_to_hexstr_uppercase(tmpBuffer + prefixLen, sizeof(tmpBuffer) - prefixLen, pubkeyHash.ptr, PK_HASH_LEN);
+    MEMCPY(tmpBuffer + 1, pubkeyHash.ptr, 20);
 
     // Check HRP for mainnet/testnet
-    const char *hrp = "atest";
+    const char *hrp = "tnam";
     const zxerr_t err = bech32EncodeFromBytes(address,
                                 addressLen,
                                 hrp,
                                 (uint8_t*) tmpBuffer,
-                                FIXED_LEN_STRING_BYTES,
-                                0,
+                                ADDRESS_LEN_BYTES,
+                                1,
                                 BECH32_ENCODING_BECH32M);
 
     if (err != zxerr_ok) {
@@ -172,15 +152,20 @@ parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLe
     return parser_ok;
 }
 
-static parser_error_t readTransactionType(bytes_t codeHash, transaction_type_e *type) {
-    if (type == NULL) {
+static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *type) {
+    if (codeTag == NULL || type == NULL) {
          return parser_unexpected_error;
     }
 
     // Custom txn as default value
     *type = Custom;
+    if (codeTag->ptr == NULL) {
+        return parser_ok;
+    }
+
     for (uint32_t i = 0; i < allowed_txn_len; i++) {
-        if (memcmp(codeHash.ptr, allowed_txn[i].hash, HASH_LEN) == 0) {
+        if (strnlen(allowed_txn[i].tag, sizeof(allowed_txn[i].tag)) == codeTag->len &&
+            memcmp(codeTag->ptr, allowed_txn[i].tag, codeTag->len) == 0) {
             *type = allowed_txn[i].type;
             break;
         }
@@ -216,14 +201,45 @@ static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra
     v->initValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
     CHECK_ERROR(readBytes(&ctx, &v->initValidator.protocol_key.ptr, v->initValidator.protocol_key.len))
 
-    v->initValidator.dkg_key.len = 100; //Check this size. Is fixed?
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.dkg_key.ptr, v->initValidator.dkg_key.len))
-
     // Commission rate
     CHECK_ERROR(readUint256(&ctx, &v->initValidator.commission_rate));
 
     // Max commission rate change
     CHECK_ERROR(readUint256(&ctx, &v->initValidator.max_commission_rate_change));
+
+    // The validator email
+    CHECK_ERROR(readUint32(&ctx, &v->initValidator.email.len))
+    CHECK_ERROR(readBytes(&ctx, &v->initValidator.email.ptr, v->initValidator.email.len))
+
+    /// The validator description
+    v->initValidator.description.ptr = NULL;
+    v->initValidator.description.len = 0;
+    uint8_t has_description = 0;
+    CHECK_ERROR(readByte(&ctx, &has_description))
+    if (has_description) {
+        CHECK_ERROR(readUint32(&ctx, &v->initValidator.description.len))
+        CHECK_ERROR(readBytes(&ctx, &v->initValidator.description.ptr, v->initValidator.description.len))
+    }
+
+    /// The validator website
+    v->initValidator.website.ptr = NULL;
+    v->initValidator.website.len = 0;
+    uint8_t has_website;
+    CHECK_ERROR(readByte(&ctx, &has_website))
+    if (has_website) {
+        CHECK_ERROR(readUint32(&ctx, &v->initValidator.website.len))
+        CHECK_ERROR(readBytes(&ctx, &v->initValidator.website.ptr, v->initValidator.website.len))
+    }
+
+    /// The validator's discord handle
+    v->initValidator.discord_handle.ptr = NULL;
+    v->initValidator.discord_handle.len = 0;
+    uint8_t has_discord_handle;
+    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
+    if (has_discord_handle) {
+        CHECK_ERROR(readUint32(&ctx, &v->initValidator.discord_handle.len))
+        CHECK_ERROR(readBytes(&ctx, &v->initValidator.discord_handle.ptr, v->initValidator.discord_handle.len))
+    }
 
     // VP code hash
     v->initValidator.vp_type_sechash.len = HASH_LEN;
@@ -251,7 +267,7 @@ static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra
             // If this section contains the VP code hash
             v->initValidator.vp_type_secidx = extra_data[i].idx;
             v->initValidator.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->initValidator.vp_type_hash, &v->initValidator.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->initValidator.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -310,7 +326,7 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
             // If this section contains the VP code hash
             v->initAccount.vp_type_secidx = extra_data[i].idx;
             v->initAccount.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->initAccount.vp_type_hash, &v->initAccount.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->initAccount.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -343,11 +359,11 @@ static parser_error_t readPGFPaymentAction(parser_context_t *ctx, bytes_t *buf, 
 
     if (first) {
         buf->len = action_len;
-        CHECK_ERROR(readBytes(ctx, buf->ptr, buf->len))
+        CHECK_ERROR(readBytes(ctx, &buf->ptr, buf->len))
     } else {
         buf->len += action_len;
         uint8_t *tmpPtr = NULL;
-        CHECK_ERROR(readBytes(ctx, tmpPtr, action_len))
+        CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpPtr, action_len))
     }
 
     return parser_ok;
@@ -639,7 +655,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
             // If this section contains the VP code hash
             v->updateVp.vp_type_secidx = extra_data[i].idx;
             v->updateVp.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&v->updateVp.vp_type_hash, &v->updateVp.vp_type_text))
+            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->updateVp.vp_type_text))
             found_vp_code = true;
         }
         if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
@@ -870,17 +886,6 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
         CHECK_ERROR(readBytes(ctx, &v->transaction.header.unshieldSectionHash.ptr, v->transaction.header.unshieldSectionHash.len))
     }
 
-    // Check if a PoW solution is present (should only exist in mainnet)
-    uint8_t num_pow_solution = 0;
-    CHECK_ERROR(readByte(ctx, &num_pow_solution))
-    if (num_pow_solution){
-        // A PoW solution consists of :
-        // - challenge parameters = Difficulty (u8) and a Counter (u64)
-        // - a SolutionValue (u64)
-        // so we skip 17 bytes
-        ctx->offset += num_pow_solution * 17;
-    }
-
     v->transaction.header.extBytes.len = ctx->offset - tmpOffset;
 
     return parser_ok;
@@ -906,11 +911,18 @@ static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *ext
         return parser_unexpected_value;
     }
     CHECK_ERROR(readSalt(ctx, &extraData->salt))
-    // TODO Check this byte
-    uint8_t hashType = 0;
-    CHECK_ERROR(readByte(ctx, &hashType))
+    CHECK_ERROR(checkTag(ctx, 0x00))
     extraData->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &extraData->bytes.ptr, extraData->bytes.len))
+
+    extraData->tag.ptr = NULL;
+    extraData->tag.len = 0;
+    uint8_t has_tag = 0;
+    CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag) {
+        CHECK_ERROR(readUint32(ctx, &extraData->tag.len))
+        CHECK_ERROR(readBytes(ctx, &extraData->tag.ptr, extraData->tag.len))
+    }
 
     return parser_ok;
 }
@@ -928,15 +940,28 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
 
     CHECK_ERROR(readUint32(ctx, &signature->hashes.hashesLen))
     signature->hashes.hashes.len = HASH_LEN * signature->hashes.hashesLen;
-    CHECK_ERROR(readBytes(ctx, &signature->hashes.hashes.ptr, signature->hashes.hashes.len))
-
+    CHECK_ERROR(readBytes(ctx, (const uint8_t **) &signature->hashes.hashes.ptr, signature->hashes.hashes.len))
 
     CHECK_ERROR(readByte(ctx, (uint8_t *) &signature->signerDiscriminant))
     switch (signature->signerDiscriminant) {
         case PubKeys:
         CHECK_ERROR(readUint32(ctx, &signature->pubKeysLen))
-        signature->pubKeys.len = PK_LEN_25519_PLUS_TAG * signature->pubKeysLen;
+        signature->pubKeys.len = 0;
         CHECK_ERROR(readBytes(ctx, &signature->pubKeys.ptr, signature->pubKeys.len))
+        for (uint32_t i = 0; i < signature->pubKeysLen; i++) {
+            // Read the public key's tag
+            uint8_t tag = 0;
+            CHECK_ERROR(readByte(ctx, &tag))
+            signature->pubKeys.len ++;
+            if (tag != key_ed25519 && tag != key_secp256k1) {
+                return parser_unexpected_value;
+            }
+            // Read the public key proper
+            const uint8_t signatureSize = tag == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN;
+            uint8_t *tmpOutput = NULL;
+            CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpOutput, signatureSize));
+            signature->pubKeys.len += signatureSize;
+        }
         break;
 
         case Address:
@@ -949,8 +974,25 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     }
 
     CHECK_ERROR(readUint32(ctx, &signature->signaturesLen))
-    signature->indexedSignatures.len = signature->signaturesLen * (1 + SIG_LEN_25519_PLUS_TAG);
+    signature->indexedSignatures.len = 0;
     CHECK_ERROR(readBytes(ctx, &signature->indexedSignatures.ptr, signature->indexedSignatures.len))
+
+    for (uint32_t i = 0; i < signature->signaturesLen; i++) {
+        // Skip the signatures 1 byte index
+        ctx->offset ++;
+        signature->indexedSignatures.len ++;
+        // Read the signature's tag
+        uint8_t tag = 0;
+        CHECK_ERROR(readByte(ctx, &tag))
+        signature->indexedSignatures.len ++;
+        if (tag != key_ed25519 && tag != key_secp256k1) {
+                return parser_unexpected_value;
+        }
+        const uint8_t signatureSize = tag == key_ed25519 ? ED25519_SIGNATURE_SIZE : SIG_SECP256K1_LEN;
+        uint8_t *tmpOutput = NULL;
+        CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpOutput, signatureSize));
+        signature->indexedSignatures.len += signatureSize;
+    }
 
     return parser_ok;
 }
@@ -990,11 +1032,19 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
         return parser_unexpected_value;
     }
     CHECK_ERROR(readSalt(ctx, &code->salt))
-    // Check this byte
-    uint8_t hashType = 0;
-    CHECK_ERROR(readByte(ctx, &hashType))
+    CHECK_ERROR(checkTag(ctx, 0x00))
+
     code->bytes.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &code->bytes.ptr, code->bytes.len))
+
+    code->tag.ptr = NULL;
+    code->tag.len = 0;
+    uint8_t has_tag = 0;
+    CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag) {
+        CHECK_ERROR(readUint32(ctx, &code->tag.len))
+        CHECK_ERROR(readBytes(ctx, &code->tag.ptr, code->tag.len))
+    }
 
     // Must make sure that header codeHash refers to this section's hash
     uint8_t codeHash[HASH_LEN] = {0};
@@ -1098,7 +1148,7 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         return parser_unexpected_error;
     }
 
-    CHECK_ERROR(readTransactionType(txObj->transaction.sections.code.bytes, &txObj->typeTx))
+    CHECK_ERROR(readTransactionType(&txObj->transaction.sections.code.tag, &txObj->typeTx))
     switch (txObj->typeTx) {
         case Bond:
         case Unbond:

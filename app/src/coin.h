@@ -32,6 +32,7 @@ extern "C" {
 #define HDPATH_4_DEFAULT     (0u)
 
 #define SECP256K1_PK_LEN            65u
+#define COMPRESSED_SECP256K1_PK_LEN 33u
 #define SECP256K1_SK_LEN            32u
 #define SCALAR_LEN_SECP256K1        32u
 
@@ -50,8 +51,8 @@ extern "C" {
 #define SIG_LEN_25519_PLUS_TAG 65u
 
 
-#define ADDRESS_LEN_MAINNET 80u
-#define ADDRESS_LEN_TESTNET 84u
+#define ADDRESS_LEN_MAINNET 42u
+#define ADDRESS_LEN_TESTNET 45u
 
 #define SALT_LEN     8
 #define HASH_LEN    32
@@ -61,9 +62,6 @@ extern "C" {
 #define SIG_SECP256K1_LEN 65
 
 #define MAX_BECH32_HRP_LEN  83u
-
-/// An address string before bech32m encoding must be this size.
-#define FIXED_LEN_STRING_BYTES 45u
 
 /// For payment addresses on the Testnet, the Human-Readable Part is "patest"
 #define SAPLING_PAYMENT_ADDR_HRP "patest"
