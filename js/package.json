@@ -32,12 +32,12 @@
     "url": "https://github.com/zondax/ledger-namada/issues"
   },
   "dependencies": {
-    "@ledgerhq/hw-transport": "^6.29.0"
+    "@ledgerhq/hw-transport": "^6.30.0"
   },
   "devDependencies": {
     "@types/ledgerhq__hw-transport": "^4.21.8",
-    "@typescript-eslint/eslint-plugin": "^6.12.0",
-    "@typescript-eslint/parser": "^6.12.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
     "bip32": "^4.0.0",
     "bip39": "^3.1.0",
     "core-js": "^3.33.3",

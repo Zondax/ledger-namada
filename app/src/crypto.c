@@ -197,13 +197,24 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
     cx_sha256_update(&sha256, (uint8_t*) &signature_section->signerDiscriminant, 1);
 
     switch (signature_section->signerDiscriminant) {
-        case PubKeys:
+        case PubKeys: {
             cx_sha256_update(&sha256, (uint8_t*) &signature_section->pubKeysLen, 4);
-            if (signature_section->pubKeysLen > 0) {
-                cx_sha256_update(&sha256, signature_section->pubKeys.ptr, PK_LEN_25519_PLUS_TAG * signature_section->pubKeysLen);
+            uint32_t pos = 0;
+            for (uint32_t i = 0; i < signature_section->pubKeysLen; i++) {
+                uint8_t tag = signature_section->pubKeys.ptr[pos++];
+                if (tag != key_ed25519 && tag != key_secp256k1) {
+                    return zxerr_unknown;
+                }
+                // Skip the public key's type tag
+                const uint8_t pubKeySize = tag == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN;
+                // Skip the signature proper
+                pos += pubKeySize;
+            }
+            if(pos > 0) {
+                cx_sha256_update(&sha256, signature_section->pubKeys.ptr, pos);
             }
             break;
-
+        }
         case Address:
             cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len);
             break;
@@ -213,8 +224,21 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
     }
 
     cx_sha256_update(&sha256, (const uint8_t*) &signature_section->signaturesLen, 4);
-    if(signature_section->signaturesLen > 0) {
-        cx_sha256_update(&sha256, signature_section->indexedSignatures.ptr, signature_section->indexedSignatures.len);
+    uint32_t pos = 0;
+    for (uint32_t i = 0; i < signature_section->signaturesLen; i++) {
+        // Skip the signature's 1 byte index
+        pos++;
+        uint8_t tag = signature_section->indexedSignatures.ptr[pos++];
+        if (tag != key_ed25519 && tag != key_secp256k1) {
+            return zxerr_unknown;
+        }
+        // Skip the signature's type tag
+        const uint8_t signatureSize = tag == key_ed25519 ? ED25519_SIGNATURE_SIZE : SIG_SECP256K1_LEN;
+        // Skip the signature proper
+        pos += signatureSize;
+    }
+    if(pos > 0) {
+        cx_sha256_update(&sha256, signature_section->indexedSignatures.ptr, pos);
     }
     cx_sha256_final(&sha256, output);
     return zxerr_ok;

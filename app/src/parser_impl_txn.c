@@ -978,7 +978,7 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
     CHECK_ERROR(readBytes(ctx, &signature->indexedSignatures.ptr, signature->indexedSignatures.len))
 
     for (uint32_t i = 0; i < signature->signaturesLen; i++) {
-        // Skip the signatures 1 byte index
+        // Skip the signature's 1 byte index
         ctx->offset ++;
         signature->indexedSignatures.len ++;
         // Read the signature's tag
