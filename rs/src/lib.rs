@@ -255,13 +255,15 @@ where
         section_hashes: HashMap<usize, Vec<u8>>,
         pubkey: &[u8],
     ) -> bool {
-        use ed25519_dalek::{PublicKey, Signature};
+        use ed25519_dalek::{Signature, VerifyingKey};
 
         if pubkey != &signature.pubkey {
             return false;
         }
 
-        let public_key = PublicKey::from_bytes(&signature.pubkey[1..]).unwrap();
+        let mut public_key_bytes = [0u8; 32];
+        public_key_bytes.copy_from_slice(&signature.pubkey[1..33]);
+        let public_key = VerifyingKey::from_bytes(&public_key_bytes).unwrap();
         let unsigned_raw_sig_hash = self.hash_signature_sec(
             vec![],
             &section_hashes,
@@ -269,7 +271,9 @@ where
             None,
             None,
         );
-        let raw_signature = Signature::from_bytes(&signature.raw_signature[1..]).unwrap();
+        let mut raw_signature_bytes = [0u8; 64];
+        raw_signature_bytes.copy_from_slice(&signature.raw_signature[1..65]);
+        let raw_signature = Signature::from_bytes(&raw_signature_bytes);
         let raw_sig = public_key
             .verify(&unsigned_raw_sig_hash, &raw_signature)
             .is_ok();
@@ -295,7 +299,9 @@ where
             None,
         );
 
-        let wrapper_signature = Signature::from_bytes(&signature.wrapper_signature[1..]).unwrap();
+        let mut wrapper_signature_bytes = [0u8; 64];
+        wrapper_signature_bytes.copy_from_slice(&signature.wrapper_signature[1..65]);
+        let wrapper_signature = Signature::from_bytes(&wrapper_signature_bytes);
         let wrapper_sig = public_key
             .verify(&unsigned_wrapper_sig_hash, &wrapper_signature)
             .is_ok();
