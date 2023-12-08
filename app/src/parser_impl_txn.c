@@ -37,7 +37,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_init_account.wasm", InitAccount},
     {"tx_init_proposal.wasm", InitProposal},
     {"tx_vote_proposal.wasm", VoteProposal},
-    {"tx_init_validator.wasm", InitValidator},
+    {"tx_become_validator.wasm", BecomeValidator},
     {"tx_reveal_pk.wasm", RevealPubkey},
     {"tx_transfer.wasm", Transfer},
     {"tx_update_account.wasm", UpdateVP},
@@ -173,111 +173,68 @@ static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *
     return parser_ok;
 }
 
-static parser_error_t readInitValidatorTxn(bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
+static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
     if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
         return parser_unexpected_value;
     }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    v->initValidator.number_of_account_keys = 0;
-    CHECK_ERROR(readUint32(&ctx, &v->initValidator.number_of_account_keys))
-    if (v->initValidator.number_of_account_keys == 0) {
-        return parser_unexpected_number_items;
-    }
-    v->initValidator.account_keys.len = PK_LEN_25519_PLUS_TAG * v->initValidator.number_of_account_keys;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.account_keys.ptr, v->initValidator.account_keys.len))
+    v->becomeValidator.address.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.address.ptr, v->becomeValidator.address.len))
 
-    CHECK_ERROR(readByte(&ctx, &v->initValidator.threshold))
+    v->becomeValidator.consensus_key.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.consensus_key.ptr, v->becomeValidator.consensus_key.len))
 
-    v->initValidator.consensus_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.consensus_key.ptr, v->initValidator.consensus_key.len))
+    v->becomeValidator.eth_cold_key.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_cold_key.ptr, v->becomeValidator.eth_cold_key.len))
 
-    v->initValidator.eth_cold_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.eth_cold_key.ptr, v->initValidator.eth_cold_key.len))
+    v->becomeValidator.eth_hot_key.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_hot_key.ptr, v->becomeValidator.eth_hot_key.len))
 
-    v->initValidator.eth_hot_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.eth_hot_key.ptr, v->initValidator.eth_hot_key.len))
-
-    v->initValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.protocol_key.ptr, v->initValidator.protocol_key.len))
+    v->becomeValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.protocol_key.ptr, v->becomeValidator.protocol_key.len))
 
     // Commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->initValidator.commission_rate));
+    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.commission_rate));
 
     // Max commission rate change
-    CHECK_ERROR(readUint256(&ctx, &v->initValidator.max_commission_rate_change));
+    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.max_commission_rate_change));
 
     // The validator email
-    CHECK_ERROR(readUint32(&ctx, &v->initValidator.email.len))
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.email.ptr, v->initValidator.email.len))
+    CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.email.len))
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.email.ptr, v->becomeValidator.email.len))
 
     /// The validator description
-    v->initValidator.description.ptr = NULL;
-    v->initValidator.description.len = 0;
+    v->becomeValidator.description.ptr = NULL;
+    v->becomeValidator.description.len = 0;
     uint8_t has_description = 0;
     CHECK_ERROR(readByte(&ctx, &has_description))
     if (has_description) {
-        CHECK_ERROR(readUint32(&ctx, &v->initValidator.description.len))
-        CHECK_ERROR(readBytes(&ctx, &v->initValidator.description.ptr, v->initValidator.description.len))
+        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.description.len))
+        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.description.ptr, v->becomeValidator.description.len))
     }
 
     /// The validator website
-    v->initValidator.website.ptr = NULL;
-    v->initValidator.website.len = 0;
+    v->becomeValidator.website.ptr = NULL;
+    v->becomeValidator.website.len = 0;
     uint8_t has_website;
     CHECK_ERROR(readByte(&ctx, &has_website))
     if (has_website) {
-        CHECK_ERROR(readUint32(&ctx, &v->initValidator.website.len))
-        CHECK_ERROR(readBytes(&ctx, &v->initValidator.website.ptr, v->initValidator.website.len))
+        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.website.len))
+        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.website.ptr, v->becomeValidator.website.len))
     }
 
     /// The validator's discord handle
-    v->initValidator.discord_handle.ptr = NULL;
-    v->initValidator.discord_handle.len = 0;
+    v->becomeValidator.discord_handle.ptr = NULL;
+    v->becomeValidator.discord_handle.len = 0;
     uint8_t has_discord_handle;
     CHECK_ERROR(readByte(&ctx, &has_discord_handle))
     if (has_discord_handle) {
-        CHECK_ERROR(readUint32(&ctx, &v->initValidator.discord_handle.len))
-        CHECK_ERROR(readBytes(&ctx, &v->initValidator.discord_handle.ptr, v->initValidator.discord_handle.len))
+        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.discord_handle.len))
+        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.discord_handle.ptr, v->becomeValidator.discord_handle.len))
     }
 
-    // VP code hash
-    v->initValidator.vp_type_sechash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&ctx, &v->initValidator.vp_type_sechash.ptr, v->initValidator.vp_type_sechash.len))
-
-    bool found_vp_code = false;
-    // Load the linked to data from the extra data sections
-    for (uint32_t i = 0; i < extraDataLen; i++) {
-        parser_context_t extra_data_ctx = {
-            .buffer = extra_data[i].bytes.ptr,
-            .bufferLen = extra_data[i].bytes.len,
-            .offset = 0,
-            .tx_obj = NULL};
-
-        // Read the hash inside the extra data section
-        bytes_t commitment = { .ptr = NULL, .len = HASH_LEN };
-        CHECK_ERROR(readBytes(&extra_data_ctx, &commitment.ptr, commitment.len))
-
-        uint8_t extraDataHash[HASH_LEN] = {0};
-        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
-            return parser_unexpected_error;
-        }
-
-        if (!memcmp(extraDataHash, v->initValidator.vp_type_sechash.ptr, HASH_LEN)) {
-            // If this section contains the VP code hash
-            v->initValidator.vp_type_secidx = extra_data[i].idx;
-            v->initValidator.vp_type_hash = commitment;
-            CHECK_ERROR(readVPType(&extra_data[i].tag, &v->initValidator.vp_type_text))
-            found_vp_code = true;
-        }
-        if (extra_data_ctx.offset != extra_data_ctx.bufferLen) {
-            return parser_unexpected_characters;
-        }
-    }
-
-    if (!found_vp_code) {
-        return parser_missing_field;
-    } else if (ctx.offset != ctx.bufferLen) {
+    if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
     return parser_ok;
@@ -1177,8 +1134,8 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         case CommissionChange:
             CHECK_ERROR(readCommissionChangeTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
-        case InitValidator:
-            CHECK_ERROR(readInitValidatorTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+        case BecomeValidator:
+            CHECK_ERROR(readBecomeValidatorTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
             break;
         case UpdateVP:
             CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
