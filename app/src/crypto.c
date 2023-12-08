@@ -257,12 +257,6 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
             hashes->hashesLen++;
             break;
 
-        case InitValidator:
-            MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initValidator.vp_type_sechash.ptr, HASH_LEN);
-            hashes->indices.ptr[hashes->hashesLen] = txObj->initValidator.vp_type_secidx;
-            hashes->hashesLen++;
-            break;
-
         case UpdateVP:
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->updateVp.vp_type_sechash.ptr, HASH_LEN);
             hashes->indices.ptr[hashes->hashesLen] = txObj->updateVp.vp_type_secidx;

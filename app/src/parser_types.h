@@ -36,7 +36,7 @@ typedef enum {
     InitAccount,
     InitProposal,
     VoteProposal,
-    InitValidator,
+    BecomeValidator,
     RevealPubkey,
     UpdateVP,
     Custom,
@@ -170,9 +170,7 @@ typedef struct {
 } tx_commission_change_t;
 
 typedef struct {
-    uint32_t number_of_account_keys;
-    bytes_t account_keys;
-    uint8_t threshold;
+    bytes_t address;
     bytes_t consensus_key;
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
@@ -183,11 +181,7 @@ typedef struct {
     bytes_t description;
     bytes_t website;
     bytes_t discord_handle;
-    uint8_t vp_type_secidx;
-    bytes_t vp_type_sechash;
-    bytes_t vp_type_hash;
-    const char* vp_type_text;
-} tx_init_validator_t;
+} tx_become_validator_t;
 
 typedef struct {
     bytes_t address;

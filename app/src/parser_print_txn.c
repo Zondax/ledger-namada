@@ -548,30 +548,23 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
+static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
-
-    const tx_init_validator_t *initValidator = &ctx->tx_obj->initValidator;
-    const uint32_t account_keys = initValidator->number_of_account_keys;
-
-    uint8_t adjustedDisplayIdx = (displayIdx == 0) ? displayIdx : \
-    (displayIdx < account_keys + 1) ? 1 : displayIdx - account_keys + 1;
-
-    if(adjustedDisplayIdx >= 10 && ctx->tx_obj->initValidator.description.ptr == NULL) {
-        adjustedDisplayIdx++;
+    if(displayIdx >= 9 && ctx->tx_obj->becomeValidator.description.ptr == NULL) {
+        displayIdx++;
     }
-    if(adjustedDisplayIdx >= 11 && ctx->tx_obj->initValidator.website.ptr == NULL) {
-        adjustedDisplayIdx++;
+    if(displayIdx >= 10 && ctx->tx_obj->becomeValidator.website.ptr == NULL) {
+        displayIdx++;
     }
-    if(adjustedDisplayIdx >= 12 && ctx->tx_obj->initValidator.discord_handle.ptr == NULL) {
-        adjustedDisplayIdx++;
+    if(displayIdx >= 11 && ctx->tx_obj->becomeValidator.discord_handle.ptr == NULL) {
+        displayIdx++;
     }
 
-    switch (adjustedDisplayIdx) {
+    switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init Validator");
@@ -581,97 +574,69 @@ static parser_error_t printInitValidatorTxn(  const parser_context_t *ctx,
             }
             break;
         case 1: {
-            snprintf(outKey, outKeyLen, "Account key");
-            const uint8_t key_index = displayIdx - 1;
-            const bytes_t key = {
-                .ptr = initValidator->account_keys.ptr + PK_LEN_25519_PLUS_TAG * key_index,
-                .len = PK_LEN_25519_PLUS_TAG
-            };
-            CHECK_ERROR(printPublicKey(&key, outVal, outValLen, pageIdx, pageCount));
+            snprintf(outKey, outKeyLen, "Address");
+            CHECK_ERROR(printAddress(ctx->tx_obj->becomeValidator.address, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 2: {
-            *pageCount = 1;
-            snprintf(outKey, outKeyLen, "Threshold");
-            snprintf(outVal, outValLen, "%d", initValidator->threshold);
-            break;
-        }
-        case 3: {
             snprintf(outKey, outKeyLen, "Consensus key");
-            const bytes_t *consensusKey = &ctx->tx_obj->initValidator.consensus_key;
+            const bytes_t *consensusKey = &ctx->tx_obj->becomeValidator.consensus_key;
             CHECK_ERROR(printPublicKey(consensusKey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
-        case 4: {
+        case 3: {
             snprintf(outKey, outKeyLen, "Ethereum cold key");
-            const bytes_t *ethColdKey = &ctx->tx_obj->initValidator.eth_cold_key;
+            const bytes_t *ethColdKey = &ctx->tx_obj->becomeValidator.eth_cold_key;
             pageStringHex(outVal, outValLen, (const char*) ethColdKey->ptr, ethColdKey->len, pageIdx, pageCount);
             break;
         }
-        case 5: {
+        case 4: {
             snprintf(outKey, outKeyLen, "Ethereum hot key");
-            const bytes_t *ethHotKey = &ctx->tx_obj->initValidator.eth_hot_key;
+            const bytes_t *ethHotKey = &ctx->tx_obj->becomeValidator.eth_hot_key;
             pageStringHex(outVal, outValLen, (const char*) ethHotKey->ptr, ethHotKey->len, pageIdx, pageCount);
             break;
         }
-        case 6: {
+        case 5: {
             snprintf(outKey, outKeyLen, "Protocol key");
-            const bytes_t *protocolKey = &ctx->tx_obj->initValidator.protocol_key;
+            const bytes_t *protocolKey = &ctx->tx_obj->becomeValidator.protocol_key;
             CHECK_ERROR(printPublicKey(protocolKey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
-        case 7: {
+        case 6: {
             snprintf(outKey, outKeyLen, "Commission rate");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAmount(&ctx->tx_obj->becomeValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            break;
+        }
+        case 7: {
+            snprintf(outKey, outKeyLen, "Maximum commission rate change");
+            CHECK_ERROR(printAmount(&ctx->tx_obj->becomeValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 8: {
-            snprintf(outKey, outKeyLen, "Maximum commission rate change");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->initValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            snprintf(outKey, outKeyLen, "Email");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.email.ptr, ctx->tx_obj->becomeValidator.email.len, pageIdx, pageCount);
             break;
         }
         case 9: {
-            snprintf(outKey, outKeyLen, "Email");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.email.ptr, ctx->tx_obj->initValidator.email.len, pageIdx, pageCount);
+            snprintf(outKey, outKeyLen, "Description");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.description.ptr, ctx->tx_obj->becomeValidator.description.len, pageIdx, pageCount);
             break;
         }
         case 10: {
-            snprintf(outKey, outKeyLen, "Description");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.description.ptr, ctx->tx_obj->initValidator.description.len, pageIdx, pageCount);
+            snprintf(outKey, outKeyLen, "Website");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
             break;
         }
         case 11: {
-            snprintf(outKey, outKeyLen, "Website");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.website.ptr, ctx->tx_obj->initValidator.website.len, pageIdx, pageCount);
-            break;
-        }
-        case 12: {
             snprintf(outKey, outKeyLen, "Discord handle");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.discord_handle.ptr, ctx->tx_obj->initValidator.discord_handle.len, pageIdx, pageCount);
-            break;
-        }
-        case 13: {
-            snprintf(outKey, outKeyLen, "Validator VP type");
-            pageString(outVal, outValLen,ctx->tx_obj->initValidator.vp_type_text, pageIdx, pageCount);
-            if (app_mode_expert()) {
-                pageStringHex(outVal, outValLen, (const char*)ctx->tx_obj->initValidator.vp_type_hash.ptr, ctx->tx_obj->initValidator.vp_type_hash.len, pageIdx, pageCount);
-            }
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
             break;
         }
         default: {
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= INIT_VALIDATOR_NORMAL_PARAMS + account_keys;
-            if (initValidator->description.ptr != NULL) {
-                displayIdx--;
-            }
-            if (initValidator->discord_handle.ptr != NULL) {
-                displayIdx--;
-            }
-            if (initValidator->website.ptr != NULL) {
-                displayIdx--;
-            }
+            displayIdx -= 12;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }
@@ -868,8 +833,8 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
         case CommissionChange:
             return printCommissionChangeTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-        case InitValidator:
-             return printInitValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        case BecomeValidator:
+             return printBecomeValidatorTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case UpdateVP:
             return printUpdateVPTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);

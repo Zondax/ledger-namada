@@ -184,7 +184,7 @@ typedef struct{
         tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
         tx_commission_change_t commissionChange;
-        tx_init_validator_t initValidator;
+        tx_become_validator_t becomeValidator;
         tx_update_vp_t updateVp;
         tx_ibc_t ibc;
     };
