@@ -66,7 +66,7 @@ TEST(Address, NamadaEncoding) {
                                                 testcase.pubkey.c_str());
 
                 uint8_t actualAddress[ADDRESS_LEN_TESTNET] = {0};
-                const uint8_t address_len = crypto_encodePubkey_ed25519(actualAddress, sizeof(actualAddress), pubkey, true);
+                const uint8_t address_len = crypto_encodePubkey_ed25519(actualAddress, sizeof(actualAddress), pubkey);
                 EXPECT_EQ(address_len, ADDRESS_LEN_TESTNET);
 
                 const string namada_address(actualAddress, actualAddress + ADDRESS_LEN_TESTNET);

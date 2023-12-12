@@ -127,8 +127,7 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
     }
     CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey + 1, PK_LEN_25519));
 
-    const bool isTestnet = hdPath[1] == HDPATH_1_TESTNET;
-    outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey + 1, isTestnet);
+    outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey + 1);
 
     if (outLen == 0) {
         MEMZERO(buffer, bufferLen);

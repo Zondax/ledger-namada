@@ -71,16 +71,14 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     return zxerr_ok;
 }
 
-uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const uint8_t *pubkey, bool isTestnet) {
+uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const uint8_t *pubkey) {
     if (buffer == NULL || pubkey == NULL) {
         return 0;
     }
 
-    if ((bufferLen < ADDRESS_LEN_TESTNET && isTestnet) || bufferLen < ADDRESS_LEN_MAINNET) {
+    if (bufferLen < ADDRESS_LEN_TESTNET) {
         return 0;
     }
-
-    const char *hrp = isTestnet ? "tnam" : "a";
 
     // Step 1:  Compute the hash of the Ed25519 public key
     uint8_t publicKeyHash[21] = {0};
@@ -90,7 +88,7 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
     char addr_out[79] = {0};
     zxerr_t err = bech32EncodeFromBytes(addr_out,
                                         sizeof(addr_out),
-                                        hrp,
+                                        "tnam",
                                         publicKeyHash,
                                         sizeof(publicKeyHash),
                                         1,
@@ -100,9 +98,8 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
         return 0;
     }
 
-    const uint8_t addressLen = isTestnet ? ADDRESS_LEN_TESTNET : ADDRESS_LEN_MAINNET;
-    memcpy(buffer, addr_out, addressLen);
-    return addressLen;
+    memcpy(buffer, addr_out, ADDRESS_LEN_TESTNET);
+    return ADDRESS_LEN_TESTNET;
 }
 
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, uint16_t outputLen) {
