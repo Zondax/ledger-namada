@@ -79,16 +79,15 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? COMMISSION_CHANGE_EXPERT_PARAMS : COMMISSION_CHANGE_NORMAL_PARAMS);
             break;
 
-        case InitValidator: {
-            const uint32_t accounts = ctx->tx_obj->initValidator.number_of_account_keys;
-            *numItems = (uint8_t) ((app_mode_expert() ? INIT_VALIDATOR_EXPERT_PARAMS : INIT_VALIDATOR_NORMAL_PARAMS) + accounts);
-            if(ctx->tx_obj->initValidator.description.ptr) {
+        case BecomeValidator: {
+            *numItems = (app_mode_expert() ? BECOME_VALIDATOR_EXPERT_PARAMS : BECOME_VALIDATOR_NORMAL_PARAMS);
+            if(ctx->tx_obj->becomeValidator.description.ptr) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->initValidator.discord_handle.ptr) {
+            if(ctx->tx_obj->becomeValidator.discord_handle.ptr) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->initValidator.website.ptr) {
+            if(ctx->tx_obj->becomeValidator.website.ptr) {
                 (*numItems)++;
             }
             break;

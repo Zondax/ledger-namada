@@ -14,6 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 #include "leb128.h"
+#include <stddef.h>
 
 zxerr_t encodeLEB128(uint64_t number, uint8_t *encoded, uint8_t encodedLen, uint8_t *encodedBytes) {
     if (encoded == NULL || encodedBytes == NULL) {

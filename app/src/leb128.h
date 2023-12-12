@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include <zxerror.h>
+#include <stdint.h>
 
 #define MAX_LEB128_OUTPUT 10
 
