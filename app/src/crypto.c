@@ -47,11 +47,11 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
-                                                     0))
+                                                     0));
 
-    CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, privateKeyData, SK_LEN_25519, &cx_privateKey))
-    CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_Ed25519, NULL, 0, &cx_publicKey))
-    CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_Ed25519, &cx_publicKey, &cx_privateKey, 1))
+    CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, privateKeyData, SK_LEN_25519, &cx_privateKey));
+    CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_Ed25519, NULL, 0, &cx_publicKey));
+    CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_Ed25519, &cx_publicKey, &cx_privateKey, 1));
     for (unsigned int i = 0; i < PK_LEN_25519; i++) {
         pubKey[i] = cx_publicKey.W[64 - i];
     }
@@ -88,15 +88,15 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
-                                                     0))
+                                                     0));
 
-    CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, privateKeyData, SK_LEN_25519, &cx_privateKey))
+    CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, privateKeyData, SK_LEN_25519, &cx_privateKey));
     CATCH_CXERROR(cx_eddsa_sign_no_throw(&cx_privateKey,
                                          CX_SHA512,
                                          message,
                                          messageLen,
                                          output,
-                                         outputLen))
+                                         outputLen));
     error = zxerr_ok;
 
 catch_cx_error:
@@ -125,7 +125,7 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
     if (bufferLen < PK_LEN_25519_PLUS_TAG + ADDRESS_LEN_TESTNET) {
         return zxerr_unknown;
     }
-    CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey + 1, PK_LEN_25519))
+    CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey + 1, PK_LEN_25519));
 
     const bool isTestnet = hdPath[1] == HDPATH_1_TESTNET;
     outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey + 1, isTestnet);
@@ -160,9 +160,9 @@ static zxerr_t crypto_hashFeeHeader(const header_t *header, uint8_t *output, uin
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     const uint8_t discriminant = 0x07;
-    cx_sha256_update(&sha256, &discriminant, sizeof(discriminant));
-    cx_sha256_update(&sha256, header->extBytes.ptr, header->extBytes.len);
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
+    CHECK_CX_OK(cx_sha256_update(&sha256, header->extBytes.ptr, header->extBytes.len));
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
     return zxerr_ok;
 }
 
@@ -174,11 +174,11 @@ static zxerr_t crypto_hashRawHeader(const header_t *header, uint8_t *output, uin
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     const uint8_t discriminant = 0x07;
-    cx_sha256_update(&sha256, &discriminant, sizeof(discriminant));
-    cx_sha256_update(&sha256, header->bytes.ptr, header->bytes.len);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
+    CHECK_CX_OK(cx_sha256_update(&sha256, header->bytes.ptr, header->bytes.len));
     const uint8_t header_discriminant = 0x00;
-    cx_sha256_update(&sha256, &header_discriminant, sizeof(header_discriminant));
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &header_discriminant, sizeof(header_discriminant)));
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
     return zxerr_ok;
 }
 
@@ -190,15 +190,15 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     if (prefix != NULL) {
-        cx_sha256_update(&sha256, prefix, prefixLen);
+        CHECK_CX_OK(cx_sha256_update(&sha256, prefix, prefixLen));
     }
-    cx_sha256_update(&sha256, (uint8_t*) &signature_section->hashes.hashesLen, 4);
-    cx_sha256_update(&sha256, signature_section->hashes.hashes.ptr, HASH_LEN * signature_section->hashes.hashesLen);
-    cx_sha256_update(&sha256, (uint8_t*) &signature_section->signerDiscriminant, 1);
+    CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &signature_section->hashes.hashesLen, 4));
+    CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->hashes.hashes.ptr, HASH_LEN * signature_section->hashes.hashesLen));
+    CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &signature_section->signerDiscriminant, 1));
 
     switch (signature_section->signerDiscriminant) {
         case PubKeys: {
-            cx_sha256_update(&sha256, (uint8_t*) &signature_section->pubKeysLen, 4);
+            CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &signature_section->pubKeysLen, 4));
             uint32_t pos = 0;
             for (uint32_t i = 0; i < signature_section->pubKeysLen; i++) {
                 uint8_t tag = signature_section->pubKeys.ptr[pos++];
@@ -211,19 +211,19 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
                 pos += pubKeySize;
             }
             if(pos > 0) {
-                cx_sha256_update(&sha256, signature_section->pubKeys.ptr, pos);
+                CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->pubKeys.ptr, pos));
             }
             break;
         }
         case Address:
-            cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len);
+            CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len));
             break;
 
         default:
             return zxerr_invalid_crypto_settings;
     }
 
-    cx_sha256_update(&sha256, (const uint8_t*) &signature_section->signaturesLen, 4);
+    CHECK_CX_OK(cx_sha256_update(&sha256, (const uint8_t*) &signature_section->signaturesLen, 4));
     uint32_t pos = 0;
     for (uint32_t i = 0; i < signature_section->signaturesLen; i++) {
         // Skip the signature's 1 byte index
@@ -238,9 +238,9 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
         pos += signatureSize;
     }
     if(pos > 0) {
-        cx_sha256_update(&sha256, signature_section->indexedSignatures.ptr, pos);
+        CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->indexedSignatures.ptr, pos));
     }
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
     return zxerr_ok;
 }
 

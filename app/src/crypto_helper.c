@@ -18,6 +18,7 @@
 #include "bech32.h"
 #include "zxformat.h"
 #include "leb128.h"
+#include "zxmacros.h"
 
 #ifdef LEDGER_SPECIFIC
 #include "bolos_target.h"
@@ -130,14 +131,14 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    cx_sha256_update(&sha256, &extraData->discriminant, 1);
-    cx_sha256_update(&sha256, extraData->salt.ptr, extraData->salt.len);
-    cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &extraData->discriminant, 1));
+    CHECK_CX_OK(cx_sha256_update(&sha256, extraData->salt.ptr, extraData->salt.len));
+    CHECK_CX_OK(cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len));
     uint8_t has_tag = (extraData->tag.ptr == NULL) ? 0 : 1;
-    cx_sha256_update(&sha256, &has_tag, 1);
-    cx_sha256_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len));
-    cx_sha256_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len);
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &has_tag, 1));
+    CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &extraData->tag.len, has_tag*sizeof(extraData->tag.len)));
+    CHECK_CX_OK(cx_sha256_update(&sha256, extraData->tag.ptr, has_tag*extraData->tag.len));
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
 #else
     picohash_ctx_t sha256 = {0};
     picohash_init_sha256(&sha256);
@@ -162,11 +163,11 @@ zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    cx_sha256_update(&sha256, &data->discriminant, 1);
-    cx_sha256_update(&sha256, data->salt.ptr, data->salt.len);
-    cx_sha256_update(&sha256, (uint8_t*) &data->bytes.len, sizeof(data->bytes.len));
-    cx_sha256_update(&sha256, data->bytes.ptr, data->bytes.len);
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &data->discriminant, 1));
+    CHECK_CX_OK(cx_sha256_update(&sha256, data->salt.ptr, data->salt.len));
+    CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &data->bytes.len, sizeof(data->bytes.len)));
+    CHECK_CX_OK(cx_sha256_update(&sha256, data->bytes.ptr, data->bytes.len));
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
 #else
     picohash_ctx_t sha256 = {0};
     picohash_init_sha256(&sha256);
@@ -188,14 +189,14 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    cx_sha256_update(&sha256, &code->discriminant, 1);
-    cx_sha256_update(&sha256, code->salt.ptr, code->salt.len);
-    cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &code->discriminant, 1));
+    CHECK_CX_OK(cx_sha256_update(&sha256, code->salt.ptr, code->salt.len));
+    CHECK_CX_OK(cx_sha256_update(&sha256, code->bytes.ptr, code->bytes.len));
     uint8_t has_tag = (code->tag.ptr == NULL) ? 0 : 1;
-    cx_sha256_update(&sha256, &has_tag, 1);
-    cx_sha256_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len));
-    cx_sha256_update(&sha256, code->tag.ptr, has_tag*code->tag.len);
-    cx_sha256_final(&sha256, output);
+    CHECK_CX_OK(cx_sha256_update(&sha256, &has_tag, 1));
+    CHECK_CX_OK(cx_sha256_update(&sha256, (uint8_t*) &code->tag.len, has_tag*sizeof(code->tag.len)));
+    CHECK_CX_OK(cx_sha256_update(&sha256, code->tag.ptr, has_tag*code->tag.len));
+    CHECK_CX_OK(cx_sha256_final(&sha256, output));
 #else
     picohash_ctx_t sha256 = {0};
     picohash_init_sha256(&sha256);
