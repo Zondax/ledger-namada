@@ -93,7 +93,7 @@ TEST(LEB128, LEB128Encoding) {
         for (const auto& testcase : leb128_encoding) {
                 uint8_t encoded[MAX_LEB128_OUTPUT] = {0};
                 uint8_t bytes = 0;
-                zxerr_t err = encodeLEB128(testcase.input, (uint8_t*) &encoded, MAX_LEB128_OUTPUT, &bytes);
+                const zxerr_t err = encodeLEB128(testcase.input, (uint8_t*) &encoded, MAX_LEB128_OUTPUT, &bytes);
 
                 ASSERT_EQ(err, zxerr_ok);
                 ASSERT_EQ(testcase.consumed, bytes);

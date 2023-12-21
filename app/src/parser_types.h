@@ -65,7 +65,7 @@ typedef struct {
 
 typedef struct {
     const uint8_t *ptr;
-    uint32_t len;
+    uint16_t len;
 } bytes_t;
 
 typedef struct {
