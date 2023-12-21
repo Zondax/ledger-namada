@@ -200,8 +200,13 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
     // Max commission rate change
     CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.max_commission_rate_change));
 
+    uint32_t tmpValue = 0;
     // The validator email
-    CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.email.len))
+    CHECK_ERROR(readUint32(&ctx, &tmpValue));
+    if (tmpValue > UINT16_MAX) {
+        return parser_value_out_of_range;
+    }
+    v->becomeValidator.email.len = (uint16_t)tmpValue;
     CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.email.ptr, v->becomeValidator.email.len))
 
     /// The validator description
@@ -209,8 +214,16 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
     v->becomeValidator.description.len = 0;
     uint8_t has_description = 0;
     CHECK_ERROR(readByte(&ctx, &has_description))
+    if (has_description != 0 && has_description != 1) {
+        return parser_value_out_of_range;
+    }
+
     if (has_description) {
-        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.description.len))
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->becomeValidator.description.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.description.ptr, v->becomeValidator.description.len))
     }
 
@@ -220,7 +233,11 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
     uint8_t has_website;
     CHECK_ERROR(readByte(&ctx, &has_website))
     if (has_website) {
-        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.website.len))
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->becomeValidator.website.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.website.ptr, v->becomeValidator.website.len))
     }
 
@@ -230,7 +247,11 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
     uint8_t has_discord_handle;
     CHECK_ERROR(readByte(&ctx, &has_discord_handle))
     if (has_discord_handle) {
-        CHECK_ERROR(readUint32(&ctx, &v->becomeValidator.discord_handle.len))
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->becomeValidator.discord_handle.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.discord_handle.ptr, v->becomeValidator.discord_handle.len))
     }
 
@@ -652,10 +673,15 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // Amount denomination
     CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
 
+    uint32_t tmpValue = 0;
     // Key, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_key))
     if (v->transfer.has_key){
-        CHECK_ERROR(readUint32(&ctx, &v->transfer.key.len))
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->transfer.key.len = (uint16_t)tmpValue;
         // we are not displaying these bytes
         ctx.offset += v->transfer.key.len;
     }
@@ -701,7 +727,6 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
 }
 
 __Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *timestamp) {
-    // uint64_t timestampSize = 0;
     uint8_t consumed = 0;
     uint64_t tmp = 0;
 
@@ -780,7 +805,6 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
-// WrapperTx header
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
@@ -804,8 +828,14 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
         CHECK_ERROR(readUint32(ctx, &expiration_len))
         ctx->offset += expiration_len;
     }
+
+    uint32_t tmpValue = 0;
     // Timestamp
-    CHECK_ERROR(readUint32(ctx, &v->transaction.timestamp.len))
+    CHECK_ERROR(readUint32(ctx, &tmpValue));
+    if (tmpValue > UINT16_MAX) {
+        return parser_value_out_of_range;
+    }
+    v->transaction.timestamp.len = (uint16_t)tmpValue;
     CHECK_ERROR(readBytes(ctx, &v->transaction.timestamp.ptr, v->transaction.timestamp.len))
 
     // Code hash
@@ -876,8 +906,17 @@ static parser_error_t readExtraDataSection(parser_context_t *ctx, section_t *ext
     extraData->tag.len = 0;
     uint8_t has_tag = 0;
     CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag != 0 && has_tag != 1) {
+        return parser_value_out_of_range;
+    }
+
+    uint32_t tmpValue = 0;
     if (has_tag) {
-        CHECK_ERROR(readUint32(ctx, &extraData->tag.len))
+        CHECK_ERROR(readUint32(ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        extraData->tag.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(ctx, &extraData->tag.ptr, extraData->tag.len))
     }
 
@@ -964,7 +1003,12 @@ static parser_error_t readDataSection(parser_context_t *ctx, section_t *data) {
         return parser_unexpected_value;
     }
     CHECK_ERROR(readSalt(ctx, &data->salt))
-    CHECK_ERROR(readUint32(ctx, &data->bytes.len))
+    uint32_t tmpValue = 0;
+    CHECK_ERROR(readUint32(ctx, &tmpValue));
+    if (tmpValue > UINT16_MAX) {
+        return parser_value_out_of_range;
+    }
+    data->bytes.len = (uint16_t)tmpValue;
     CHECK_ERROR(readBytes(ctx, &data->bytes.ptr, data->bytes.len))
 
     // Must make sure that header dataHash refers to this section's hash
@@ -998,8 +1042,17 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     code->tag.len = 0;
     uint8_t has_tag = 0;
     CHECK_ERROR(readByte(ctx, &has_tag))
+    if (has_tag != 0 && has_tag != 1) {
+        return parser_value_out_of_range;
+    }
+
     if (has_tag) {
-        CHECK_ERROR(readUint32(ctx, &code->tag.len))
+        uint32_t tmpValue = 0;
+        CHECK_ERROR(readUint32(ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        code->tag.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(ctx, &code->tag.ptr, code->tag.len))
     }
 
@@ -1049,6 +1102,9 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.sections.signaturesLen = 0;
 
     for (uint32_t i = 0; i < v->transaction.sections.sectionLen; i++) {
+        if (ctx->offset >= ctx->bufferLen) {
+            return parser_unexpected_error;
+        }
         const uint8_t discriminant = *(ctx->buffer + ctx->offset);
         switch (discriminant) {
             case DISCRIMINANT_DATA: {

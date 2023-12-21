@@ -164,67 +164,6 @@ static parser_error_t printAmount64( uint64_t amount, uint8_t amountDenom, const
     return parser_ok;
 }
 
-parser_error_t decimal_to_string(int64_t num, uint32_t scale, char* strDec, size_t bufferSize) {
-
-    if (strDec == NULL || bufferSize == 0) {
-        return parser_invalid_output_buffer; // Invalid output buffer
-    }
-
-    // Initialize the output buffer
-    MEMZERO(strDec, bufferSize);
-
-    // Handle negative value
-    if (num < 0) {
-        strDec[0] = '-';
-        num = -num;
-    }
-
-    // Convert the integer part to string
-    size_t index = (num < 0) ? 1 : 0;
-    int64_t divisor = 1;
-    for (uint32_t i = 0; i < scale; i++) {
-        divisor *= 10;
-    }
-
-    int64_t integerPart = num / divisor;
-    int64_t fractionalPart = num % divisor;
-
-    if (integerPart == 0) {
-        CHECK_PTR_BOUNDS(index, bufferSize);
-        strDec[index++] = '0';
-    } else {
-        int64_t tmp_int = integerPart;
-        while (tmp_int > 0 && index < bufferSize - 1) {
-            CHECK_PTR_BOUNDS(index, bufferSize);
-            strDec[index++] = '0' + (tmp_int % 10);
-            tmp_int /= 10;
-        }
-
-        // Reverse the integer part
-        for (size_t i = (num < 0) ? 1 : 0, j = index - 1; i < j; i++, j--) {
-            char tmp_char = strDec[i];
-            strDec[i] = strDec[j];
-            strDec[j] = tmp_char;
-        }
-    }
-
-    // Append the decimal point
-    if (scale > 0 && index < bufferSize - 1) {
-        CHECK_PTR_BOUNDS(index, bufferSize);
-        strDec[index++] = '.';
-    }
-
-    // Convert the fractional part to string with leading zeros
-    while (scale > 0 && index < bufferSize - 1) {
-        divisor /= 10;
-        CHECK_PTR_BOUNDS(index, bufferSize);
-        strDec[index++] = '0' + (fractionalPart / divisor);
-        fractionalPart %= divisor;
-        scale--;
-    }
-    return parser_ok;
-}
-
 parser_error_t printPublicKey( const bytes_t *pubkey,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount) {
