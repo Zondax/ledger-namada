@@ -27,7 +27,7 @@ The general structure of commands and responses is as follows:
 | Return code | Description             |
 | ----------- | ----------------------- |
 | 0x6400      | Execution Error         |
-| 0x6400      | Wrong buffer length     |
+| 0x6700      | Wrong buffer length     |
 | 0x6982      | Empty buffer            |
 | 0x6983      | Output buffer too small |
 | 0x6984      | Data is invalid         |
@@ -107,11 +107,13 @@ Gets the ED25519 public key and corresponding address
 | P2            | byte (1) | Parameter ignored         |                  |
 | L             | byte (1) | Bytes in payload          | 21 bytes         |
 | PathLength    | byte (1) | Path length               | 5                |
-| Path[0]       | byte (4) | Derivation Path Data      | 0x80000000 | 44  |
-| Path[1]       | byte (4) | Derivation Path Data      | 0x80000000 | 877 |
+| Path[0]       | byte (4) | Derivation Path Data      | 0x80000000 \| 44  |
+| Path[1]       | byte (4) | Derivation Path Data      | 0x80000000 \| 877* |
 | Path[2]       | byte (4) | Derivation Path Data      | ?                |
 | Path[3]       | byte (4) | Derivation Path Data      | ?                |
 | Path[4]       | byte (4) | Derivation Path Data      | ?                |
+
+*Use 877 for Mainnet and 1 for Testnet
 
 #### Response
 
@@ -153,11 +155,13 @@ All other packets/chunks contain data chunks that are described below
 | Field         | Type     | Content                    | Expected          |
 | ------------- | -------- | -------------------------  | ----------------  |
 | PathLength    | byte (1) | Path length                | 5                 |
-| Path[0]       | byte (4) | Derivation Path Data       | 0x80000000 | 44   |
-| Path[1]       | byte (4) | Derivation Path Data       | 0x80000000 | 877  |
+| Path[0]       | byte (4) | Derivation Path Data       | 0x80000000 \| 44   |
+| Path[1]       | byte (4) | Derivation Path Data       | 0x80000000 \| 877* |
 | Path[2]       | byte (4) | Derivation Path Data       | ?                 |
 | Path[3]       | byte (4) | Derivation Path Data       | ?                 |
 | Path[4]       | byte (4) | Derivation Path Data       | ?                 |
+
+*Use 877 for Mainnet and 1 for Testnet
 
 ##### Other Chunks/Packets
 
