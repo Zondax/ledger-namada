@@ -42,7 +42,7 @@ ifeq ($(COIN),NAM)
 # Main app configuration
 DEFINES += APP_STANDARD
 APPNAME = "Namada"
-APPPATH = "44'/877'"
+APPPATH = "44'/877'" --path "44'/1'"
 
 else
 define error_message
