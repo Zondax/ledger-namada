@@ -24,6 +24,12 @@
 #include "bolos_target.h"
 #endif
 
+#define MAINNET_ADDRESS_T_HRP "tnam"
+#define MAINNET_PUBKEY_T_HRP "tpknam"
+
+#define TESTNET_ADDRESS_T_HRP "testtnam"
+#define TESTNET_PUBKEY_T_HRP "testtpknam"
+
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     #include "cx.h"
     #include "cx_sha256.h"
@@ -71,35 +77,57 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     return zxerr_ok;
 }
 
-uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const uint8_t *pubkey) {
-    if (buffer == NULL || pubkey == NULL) {
-        return 0;
+zxerr_t crypto_encodeRawPubkey(const uint8_t* rawPubkey, uint16_t rawPubkeyLen, uint8_t *output, uint16_t outputLen) {
+    if (rawPubkey == NULL || rawPubkeyLen != PK_LEN_25519_PLUS_TAG || output == NULL) {
+        return zxerr_encoding_failed;
+    }
+    MEMZERO(output, outputLen);
+    // Response [len(1) | pubkey(?)]
+
+    char HRP[15] = MAINNET_PUBKEY_T_HRP;
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_PUBKEY_T_HRP);
     }
 
-    if (bufferLen < ADDRESS_LEN_TESTNET) {
-        return 0;
+    char pubkey[100] = {0};
+    CHECK_ZXERR(bech32EncodeFromBytes(pubkey, sizeof(pubkey), HRP,
+                                      rawPubkey, PK_LEN_25519_PLUS_TAG, 1, BECH32_ENCODING_BECH32M));
+
+    const uint16_t pubkeyLen = strnlen(pubkey, sizeof(pubkey));
+    if (pubkeyLen > 255 || pubkeyLen >= outputLen) {
+        return zxerr_out_of_bounds;
+    }
+    *output = (uint8_t)pubkeyLen;
+    memcpy(output + 1, pubkey, pubkeyLen);
+    return zxerr_ok;
+}
+
+zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t *output, uint16_t outputLen) {
+    if (output == NULL || pubkey == NULL || pubkeyLen != PK_LEN_25519) {
+        return zxerr_encoding_failed;
     }
 
     // Step 1:  Compute the hash of the Ed25519 public key
     uint8_t publicKeyHash[21] = {0};
-    crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
+    CHECK_ZXERR(crypto_publicKeyHash_ed25519(publicKeyHash, pubkey));
 
-    // Step 2. Encode the public key hash with bech32m
-    char addr_out[79] = {0};
-    zxerr_t err = bech32EncodeFromBytes(addr_out,
-                                        sizeof(addr_out),
-                                        "tnam",
-                                        publicKeyHash,
-                                        sizeof(publicKeyHash),
-                                        1,
-                                        BECH32_ENCODING_BECH32M);
-
-    if (err != zxerr_ok){
-        return 0;
+    char HRP[10] = MAINNET_ADDRESS_T_HRP;
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_ADDRESS_T_HRP);
     }
 
-    memcpy(buffer, addr_out, ADDRESS_LEN_TESTNET);
-    return ADDRESS_LEN_TESTNET;
+    // Step 2. Encode the public key hash with bech32m
+    char address[100] = {0};
+    CHECK_ZXERR(bech32EncodeFromBytes(address, sizeof(address), HRP,
+                                      publicKeyHash, sizeof(publicKeyHash), 1, BECH32_ENCODING_BECH32M));
+
+    const uint16_t addressLen = strnlen(address, sizeof(address));
+    if (addressLen > 255 || addressLen >= outputLen) {
+        return zxerr_out_of_bounds;
+    }
+    *output = (uint8_t)addressLen;
+    memcpy(output + 1, address, addressLen);
+    return zxerr_ok;
 }
 
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, uint16_t outputLen) {

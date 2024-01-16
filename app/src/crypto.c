@@ -110,31 +110,31 @@ catch_cx_error:
     return error;
 }
 
-typedef struct {
-    uint8_t publicKey[PK_LEN_25519_PLUS_TAG];
-    uint8_t address[ADDRESS_LEN_TESTNET];
-} __attribute__((packed)) ed25519_answer_t;
-
-zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen)
-{
-    zemu_log("crypto_fillAddress_ed25519");
-    MEMZERO(buffer, bufferLen);
-    uint8_t outLen = 0;
-    ed25519_answer_t *const answer = (ed25519_answer_t *) buffer;
-
-    if (bufferLen < PK_LEN_25519_PLUS_TAG + ADDRESS_LEN_TESTNET) {
+zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t *addrResponseLen) {
+    if (buffer == NULL || addrResponseLen == NULL) {
         return zxerr_unknown;
     }
-    CHECK_ZXERR(crypto_extractPublicKey_ed25519(answer->publicKey + 1, PK_LEN_25519));
 
-    outLen = crypto_encodePubkey_ed25519(answer->address, sizeof(answer->address), answer->publicKey + 1);
-
-    if (outLen == 0) {
-        MEMZERO(buffer, bufferLen);
-        return zxerr_encoding_failed;
+    MEMZERO(buffer, bufferLen);
+    // Testnet pubkeys and addresses are larger than those on the mainnet. Consider the worst-case scenario
+    if (bufferLen < PK_LEN_25519_PLUS_TAG + PUBKEY_LEN_TESTNET + ADDRESS_LEN_TESTNET + 2) {
+        return zxerr_unknown;
     }
 
-    *addrResponseLen = PK_LEN_25519_PLUS_TAG + outLen;
+    // getAddress response[rawPubkey(33) | pubkey len(1) | pubkey(?) | address len(1) | address(?)]
+    uint8_t *rawPubkey = buffer;
+    CHECK_ZXERR(crypto_extractPublicKey_ed25519(rawPubkey+1, PK_LEN_25519));
+
+    // Encode and copy in output buffer pubkey
+    uint8_t *pubkey = buffer + PK_LEN_25519_PLUS_TAG;
+    CHECK_ZXERR(crypto_encodeRawPubkey(rawPubkey, PK_LEN_25519_PLUS_TAG, pubkey, bufferLen - PK_LEN_25519_PLUS_TAG));
+
+    // Encode and copy in output buffer address
+    uint8_t *address = pubkey + *pubkey + 1;
+    const uint16_t remainingBufferSpace = bufferLen - PK_LEN_25519_PLUS_TAG - *pubkey - 1;
+    CHECK_ZXERR(crypto_encodeAddress(rawPubkey + 1, PK_LEN_25519, address, remainingBufferSpace));
+
+    *addrResponseLen = PK_LEN_25519_PLUS_TAG + *pubkey + *address + 2;
     return zxerr_ok;
 }
 

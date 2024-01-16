@@ -24,9 +24,9 @@
 
 zxerr_t addr_getNumItems(uint8_t *num_items) {
     zemu_log_stack("addr_getNumItems");
-    *num_items = 1;
+    *num_items = 2;
     if (app_mode_expert()) {
-        *num_items = 2;
+        *num_items = 3;
     }
     return zxerr_ok;
 }
@@ -37,12 +37,18 @@ zxerr_t addr_getItem(int8_t displayIdx,
                      uint8_t pageIdx, uint8_t *pageCount) {
     ZEMU_LOGF(200, "[addr_getItem] %d/%d\n", displayIdx, pageIdx)
 
+    const uint8_t pubkeyLen = *(G_io_apdu_buffer + PK_LEN_25519_PLUS_TAG);
+    ZEMU_LOGF(50, "PUBKEYLEN: %d\n", pubkeyLen);
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Address");
-            pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + PK_LEN_25519_PLUS_TAG), pageIdx, pageCount);
+            pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + PK_LEN_25519_PLUS_TAG + pubkeyLen + 2), pageIdx, pageCount);
             return zxerr_ok;
-        case 1: {
+        case 1:
+            snprintf(outKey, outKeyLen, "Pubkey");
+            pageStringExt(outVal, outValLen, (char *) (G_io_apdu_buffer + PK_LEN_25519_PLUS_TAG + 1), pubkeyLen, pageIdx, pageCount);
+            return zxerr_ok;
+        case 2: {
             if (!app_mode_expert()) {
                 return zxerr_no_data;
             }
