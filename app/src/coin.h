@@ -53,8 +53,11 @@ extern "C" {
 
 #define ADDRESS_LEN_BYTES   21
 
-#define ADDRESS_LEN_MAINNET 42u
-#define ADDRESS_LEN_TESTNET 45u
+#define ADDRESS_LEN_MAINNET 45u
+#define PUBKEY_LEN_MAINNET 66u
+
+#define ADDRESS_LEN_TESTNET 49u
+#define PUBKEY_LEN_TESTNET 70u
 
 #define SALT_LEN     8
 #define HASH_LEN    32
