@@ -136,14 +136,14 @@ export class NamadaApp {
   async getAddressAndPubKey(path: string): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
     return this.transport
-      .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [LedgerError.NoErrors])
+      .send(CLA, INS.GET_TRANSPARENT_ADDRESS, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [LedgerError.NoErrors])
       .then(processGetAddrResponse, processErrorResponse)
   }
 
   async showAddressAndPubKey(path: string): Promise<ResponseAddress> {
     const serializedPath = serializePath(path)
     return this.transport
-      .send(CLA, INS.GET_PUBLIC_KEY, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [LedgerError.NoErrors])
+      .send(CLA, INS.GET_TRANSPARENT_ADDRESS, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [LedgerError.NoErrors])
       .then(processGetAddrResponse, processErrorResponse)
   }
 
