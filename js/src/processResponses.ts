@@ -19,11 +19,11 @@ import { PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
 import { ISignature } from './types'
 
 export function getSignatureResponse(response: Buffer): ISignature {
-  // App sign response: [ pubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
+  // App sign response: [ rawPubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
   // raw_indices_len(1) | wrapper_indices_len(1) | indices(wrapper_indices_len) ]
 
   let offset = 0;
-  const pubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
+  const rawPubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
 
   offset += PK_LEN_PLUS_TAG;
   const raw_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
@@ -47,7 +47,7 @@ export function getSignatureResponse(response: Buffer): ISignature {
   offset += wrapper_indices_len;
 
   return {
-    pubkey,
+    rawPubkey,
     raw_salt,
     raw_signature,
     wrapper_salt,
@@ -61,11 +61,22 @@ export function processGetAddrResponse(response: Buffer) {
   const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  const publicKey = Buffer.from(response.subarray(0, PK_LEN_PLUS_TAG))
-  const address = Buffer.from(response.subarray(PK_LEN_PLUS_TAG, -2))
+  const rawPubkey = response.subarray(0, PK_LEN_PLUS_TAG);
+  response = response.subarray(PK_LEN_PLUS_TAG);
+
+  const pubkeyLen = response[0];
+  const pubkey = response.subarray(1, pubkeyLen + 1);
+  response = response.subarray(pubkeyLen + 1);
+
+  const addressLen = response[0];
+  const address = response.subarray(1, addressLen + 1);
+
+  console.log(pubkey.toString())
+  console.log(address.toString())
 
   return {
-    publicKey,
+    rawPubkey,
+    pubkey,
     address,
     returnCode,
     errorMessage: errorCodeToString(returnCode),

@@ -16,7 +16,7 @@
 export const CLA = 0x57
 export const INS = {
   GET_VERSION: 0x00,
-  GET_PUBLIC_KEY: 0x01,
+  GET_TRANSPARENT_ADDRESS: 0x01,
   SIGN: 0x02,
 
   GET_MASP_ADDRESS: 0x03,

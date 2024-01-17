@@ -6,7 +6,8 @@ export interface ResponseBase {
 }
 
 export interface ResponseAddress extends ResponseBase {
-  publicKey: Buffer
+  rawPubkey: Buffer
+  pubkey: Buffer
   address: Buffer
 }
 
@@ -56,7 +57,7 @@ export interface ResponseNullifier extends ResponseBase {
 }
 
 export interface ISignature {
-  pubkey: Buffer
+  rawPubkey: Buffer
   raw_salt: Buffer
   raw_signature: Buffer
   wrapper_salt: Buffer
@@ -65,7 +66,7 @@ export interface ISignature {
   wrapper_indices: Buffer
 }
 export class Signature implements ISignature {
-  pubkey: Buffer
+  rawPubkey: Buffer
   raw_salt: Buffer
   raw_signature: Buffer
   wrapper_salt: Buffer
@@ -77,7 +78,7 @@ export class Signature implements ISignature {
   constructor(signature?: ISignature) {
     if (signature == null) {
       this.isFilled = false
-      this.pubkey = Buffer.from([])
+      this.rawPubkey = Buffer.from([])
       this.raw_salt = Buffer.from([])
       this.raw_signature = Buffer.from([])
       this.wrapper_salt = Buffer.from([])
@@ -86,7 +87,7 @@ export class Signature implements ISignature {
       this.wrapper_indices = Buffer.from([])
     } else {
       this.isFilled = true
-      this.pubkey = signature.pubkey
+      this.rawPubkey = signature.rawPubkey
       this.raw_salt = signature.raw_salt
       this.raw_signature = signature.raw_signature
       this.wrapper_salt = signature.wrapper_salt
