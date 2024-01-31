@@ -139,6 +139,7 @@ typedef struct {
     bytes_t unshieldSectionHash;
     bytes_t dataHash;
     bytes_t codeHash;
+    bytes_t memoHash;
 } header_t;
 
 typedef struct {

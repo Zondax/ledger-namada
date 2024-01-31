@@ -195,10 +195,12 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
     CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.protocol_key.ptr, v->becomeValidator.protocol_key.len))
 
     // Commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.commission_rate));
+    v->becomeValidator.commission_rate.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.commission_rate.ptr, v->becomeValidator.commission_rate.len))
 
     // Max commission rate change
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.max_commission_rate_change));
+    v->becomeValidator.max_commission_rate_change.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.max_commission_rate_change.ptr, v->becomeValidator.max_commission_rate_change.len))
 
     uint32_t tmpValue = 0;
     // The validator email
@@ -566,7 +568,8 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->commissionChange.validator.ptr, v->commissionChange.validator.len))
 
     // Read new commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->commissionChange.new_rate));
+    v->commissionChange.new_rate.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->commissionChange.new_rate.ptr, v->commissionChange.new_rate.len))
 
 
     if (ctx.offset != ctx.bufferLen) {
@@ -668,7 +671,8 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
 
     // Amount
-    CHECK_ERROR(readUint256(&ctx, &v->transfer.amount))
+    v->transfer.amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
 
     // Amount denomination
     CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
@@ -709,8 +713,8 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->bond.validator.ptr, v->bond.validator.len))
 
     // Amount
-    MEMCPY(&v->bond.amount, ctx.buffer + ctx.offset, sizeof(uint256_t));
-    ctx.offset += sizeof(uint256_t);
+    v->bond.amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->bond.amount.ptr, v->bond.amount.len))
     ctx.offset++;   // Skip last byte --> Check this
 
     // Source
@@ -846,24 +850,39 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.header.dataHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
 
+    // Memo hash
+    v->transaction.header.memoHash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.memoHash.ptr, v->transaction.header.memoHash.len))
+
     v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
-    CHECK_ERROR(readUint256(ctx, &v->transaction.header.fees.amount))
+    v->transaction.header.fees.amount.len = 32;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.amount.ptr, v->transaction.header.fees.amount.len))
+    // Fee.denom
+    CHECK_ERROR(readByte(ctx, &v->transaction.header.fees.denom))
 
     // Fee.address
     v->transaction.header.fees.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.address.ptr, v->transaction.header.fees.address.len))
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transaction.header.fees.address, &v->transaction.header.fees.symbol))
+
     // Pubkey
-    v->transaction.header.pubkey.len = PK_LEN_25519_PLUS_TAG;   // Check tag (first byte: 0x00 | 0x01)
+    if (ctx->offset >= ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+    const uint8_t pkType = *(ctx->buffer + ctx->offset);
+    //Pubkey must include pkType (needed for encoding)
+    v->transaction.header.pubkey.len = 1 + (pkType == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN);
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
+
     // Epoch
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
+
 
     // Unshielded section hash
     uint8_t has_unshield_section_hash = 0;

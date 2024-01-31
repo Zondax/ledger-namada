@@ -103,9 +103,6 @@ typedef struct {
     uint8_t proposal_code_secidx;
 } tx_init_proposal_t;
 
-typedef struct {
-  uint64_t b[4];
-} uint256_t;
 
 typedef struct {
     uint64_t millis;
@@ -114,7 +111,7 @@ typedef struct {
 
 typedef struct {
     bytes_t council_address;
-    uint256_t amount;
+    bytes_t amount;
 } council_t;
 
 typedef struct {
@@ -143,7 +140,7 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
-    uint256_t amount;
+    bytes_t amount;
     uint8_t has_source;
     bytes_t source;
 } tx_bond_t;
@@ -166,7 +163,7 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
-    uint256_t new_rate;
+    bytes_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
@@ -175,8 +172,8 @@ typedef struct {
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
     bytes_t protocol_key;
-    uint256_t commission_rate;
-    uint256_t max_commission_rate_change;
+    bytes_t commission_rate;
+    bytes_t max_commission_rate_change;
     bytes_t email;
     bytes_t description;
     bytes_t website;
@@ -203,7 +200,7 @@ typedef struct {
     bytes_t token;
     uint8_t has_sub_prefix;
     bytes_t sub_prefix;
-    uint256_t amount;
+    bytes_t amount;
     uint8_t amount_denom;
     const char* symbol;
     uint8_t has_key;
@@ -225,7 +222,8 @@ typedef struct {
 
 typedef struct {
     bytes_t address;
-    uint256_t amount;
+    bytes_t amount;
+    uint8_t denom;
     const char *symbol;
 } fees_t;
 
