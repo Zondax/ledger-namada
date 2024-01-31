@@ -69,6 +69,16 @@ parser_error_t readUint256(parser_context_t *ctx, uint256_t *value) {
     return parser_ok;
 }
 
+parser_error_t readInt256(parser_context_t *ctx, int256_t *value) {
+    if (value == NULL || ctx->offset + sizeof(int256_t) > ctx->bufferLen) {
+        return parser_unexpected_error;
+    }
+
+    MEMCPY(value, ctx->buffer + ctx->offset, sizeof(int256_t));
+    ctx->offset += sizeof(int256_t);
+    return parser_ok;
+}
+
 zxerr_t recover_decimal(const uint8_t* bytes, int64_t* num, uint32_t* scale) {
     if (bytes == NULL) {
         return zxerr_unknown; // Invalid byte sequence

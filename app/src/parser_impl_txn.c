@@ -99,7 +99,7 @@ parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text)
         return parser_unexpected_value;
     }
 
-    *vp_type_text = (char*) PIC(unknown_vp);
+    *vp_type_text = NULL;
     if (vp_type_tag->ptr == NULL) {
         return parser_ok;
     }
@@ -173,6 +173,27 @@ static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *
     return parser_ok;
 }
 
+static parser_error_t readPublicKey(parser_context_t *ctx, bytes_t *pubKey, bool init) {
+    if (init) {
+        pubKey->ptr = ctx->buffer + ctx->offset;
+        pubKey->len = 0;
+    }
+    // Read the public key's tag
+    uint8_t tag = 0;
+    CHECK_ERROR(readByte(ctx, &tag))
+    pubKey->len += 1;
+    if (tag != key_ed25519 && tag != key_secp256k1) {
+        return parser_unexpected_value;
+    }
+    // Read the public key proper
+    const uint8_t keySize = tag == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN;
+    uint8_t *tmpOutput = NULL;
+    CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpOutput, keySize));
+    pubKey->len += keySize;
+    
+    return parser_ok;
+}
+
 static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
     if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
         return parser_unexpected_value;
@@ -181,24 +202,17 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
 
     v->becomeValidator.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.address.ptr, v->becomeValidator.address.len))
-
-    v->becomeValidator.consensus_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.consensus_key.ptr, v->becomeValidator.consensus_key.len))
-
-    v->becomeValidator.eth_cold_key.len = PK_LEN_25519_PLUS_TAG;
+    CHECK_ERROR(readPublicKey(&ctx, &v->becomeValidator.consensus_key, true))
+    v->becomeValidator.eth_cold_key.len = COMPRESSED_SECP256K1_PK_LEN;
     CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_cold_key.ptr, v->becomeValidator.eth_cold_key.len))
-
-    v->becomeValidator.eth_hot_key.len = PK_LEN_25519_PLUS_TAG;
+    v->becomeValidator.eth_hot_key.len = COMPRESSED_SECP256K1_PK_LEN;
     CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_hot_key.ptr, v->becomeValidator.eth_hot_key.len))
-
-    v->becomeValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.protocol_key.ptr, v->becomeValidator.protocol_key.len))
-
+    CHECK_ERROR(readPublicKey(&ctx, &v->becomeValidator.protocol_key, true))
     // Commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.commission_rate));
+    CHECK_ERROR(readInt256(&ctx, &v->becomeValidator.commission_rate));
 
     // Max commission rate change
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.max_commission_rate_change));
+    CHECK_ERROR(readInt256(&ctx, &v->becomeValidator.max_commission_rate_change));
 
     uint32_t tmpValue = 0;
     // The validator email
@@ -255,6 +269,20 @@ static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *ext
         CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.discord_handle.ptr, v->becomeValidator.discord_handle.len))
     }
 
+    /// The validator's discord handle
+    v->becomeValidator.avatar.ptr = NULL;
+    v->becomeValidator.avatar.len = 0;
+    uint8_t has_avatar;
+    CHECK_ERROR(readByte(&ctx, &has_avatar))
+    if (has_avatar) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->becomeValidator.avatar.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.avatar.ptr, v->becomeValidator.avatar.len))
+    }
+
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -270,9 +298,8 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
     v->initAccount.number_of_pubkeys = 0;
     CHECK_ERROR(readUint32(&ctx, &v->initAccount.number_of_pubkeys))
     v->initAccount.pubkeys.len = 0;
-    if (v->initAccount.number_of_pubkeys > 0) {
-        v->initAccount.pubkeys.len = PK_LEN_25519_PLUS_TAG * v->initAccount.number_of_pubkeys;
-        CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkeys.ptr, v->initAccount.pubkeys.len))
+    for (uint32_t i = 0; i < v->initAccount.number_of_pubkeys; i++) {
+      CHECK_ERROR(readPublicKey(&ctx, &v->initAccount.pubkeys, !i))
     }
 
     // VP code hash
@@ -508,12 +535,7 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Pubkey
-    if (ctx.bufferLen != 33) {
-        return parser_unexpected_value;
-    }
-    v->revealPubkey.pubkey.len = 33;
-    CHECK_ERROR(readBytes(&ctx, &v->revealPubkey.pubkey.ptr, v->revealPubkey.pubkey.len))
-
+    CHECK_ERROR(readPublicKey(&ctx, &v->revealPubkey.pubkey, true))
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -566,7 +588,7 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->commissionChange.validator.ptr, v->commissionChange.validator.len))
 
     // Read new commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->commissionChange.new_rate));
+    CHECK_ERROR(readInt256(&ctx, &v->commissionChange.new_rate));
 
 
     if (ctx.offset != ctx.bufferLen) {
@@ -581,28 +603,26 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
         return parser_unexpected_value;
     }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
-
+    
     // Address
     v->updateVp.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->updateVp.address.ptr, v->updateVp.address.len))
 
     // VP code hash (optional)
     CHECK_ERROR(readByte(&ctx, &v->updateVp.has_vp_code));
-    if (v->updateVp.has_vp_code == 0) {
-        // Not so optional
-        return parser_unexpected_value;
+    if (v->updateVp.has_vp_code) {
+        v->updateVp.vp_type_sechash.len = HASH_LEN;
+        CHECK_ERROR(readBytes(&ctx, &v->updateVp.vp_type_sechash.ptr, v->updateVp.vp_type_sechash.len))
     }
-
-    v->updateVp.vp_type_sechash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&ctx, &v->updateVp.vp_type_sechash.ptr, v->updateVp.vp_type_sechash.len))
+    
 
     // Pubkeys
     v->updateVp.number_of_pubkeys = 0;
     CHECK_ERROR(readUint32(&ctx, &v->updateVp.number_of_pubkeys))
     v->updateVp.pubkeys.len = 0;
-    if (v->updateVp.number_of_pubkeys > 0) {
-        v->updateVp.pubkeys.len = PK_LEN_25519_PLUS_TAG * v->updateVp.number_of_pubkeys;
-        CHECK_ERROR(readBytes(&ctx, &v->updateVp.pubkeys.ptr, v->updateVp.pubkeys.len))
+    
+    for (uint32_t i = 0; i < v->updateVp.number_of_pubkeys; i++) {
+        readPublicKey(&ctx, &v->updateVp.pubkeys, !i);
     }
 
     // Threshold (optional)
@@ -613,7 +633,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
 
     bool found_vp_code = false;
     // Load the linked to data from the extra data sections
-    for (uint32_t i = 0; i < extraDataLen; i++) {
+    for (uint32_t i = 0; i < extraDataLen * v->updateVp.has_vp_code; i++) {
         parser_context_t extra_data_ctx = {
             .buffer = extra_data[i].bytes.ptr,
             .bufferLen = extra_data[i].bytes.len,
@@ -641,7 +661,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
         }
     }
 
-    if (!found_vp_code) {
+    if (v->updateVp.has_vp_code && !found_vp_code) {
         return parser_missing_field;
     } else if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -652,7 +672,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
-
+    
     // Source
     v->transfer.source_address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->transfer.source_address.ptr, v->transfer.source_address.len))
@@ -711,13 +731,12 @@ static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     // Amount
     MEMCPY(&v->bond.amount, ctx.buffer + ctx.offset, sizeof(uint256_t));
     ctx.offset += sizeof(uint256_t);
-    ctx.offset++;   // Skip last byte --> Check this
+    readByte(&ctx, &v->bond.has_source);
 
     // Source
-    if (ctx.offset < ctx.bufferLen) {
+    if (v->bond.has_source) {
         v->bond.source.len = ADDRESS_LEN_BYTES;
         CHECK_ERROR(readBytes(&ctx, &v->bond.source.ptr, v->bond.source.len))
-        v->bond.has_source = 1;
     }
 
     if (ctx.offset != ctx.bufferLen) {
@@ -846,11 +865,16 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.header.dataHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
 
+    // Memo hash
+    v->transaction.header.memoHash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.memoHash.ptr, v->transaction.header.memoHash.len))
+
     v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
     CHECK_ERROR(readUint256(ctx, &v->transaction.header.fees.amount))
+    CHECK_ERROR(readByte(ctx, &v->transaction.header.fees.amount_denom))
 
     // Fee.address
     v->transaction.header.fees.address.len = ADDRESS_LEN_BYTES;
@@ -858,13 +882,14 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transaction.header.fees.address, &v->transaction.header.fees.symbol))
     // Pubkey
-    v->transaction.header.pubkey.len = PK_LEN_25519_PLUS_TAG;   // Check tag (first byte: 0x00 | 0x01)
-    CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
+    readPublicKey(ctx, &v->transaction.header.pubkey, true);
+    //v->transaction.header.pubkey.len = PK_LEN_25519_PLUS_TAG;   // Check tag (first byte: 0x00 | 0x01)
+    //CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
     // Epoch
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
-
+    
     // Unshielded section hash
     uint8_t has_unshield_section_hash = 0;
     CHECK_ERROR(readByte(ctx, &has_unshield_section_hash))
@@ -1093,7 +1118,6 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
         return parser_unexpected_value;
     }
     CHECK_ERROR(readUint32(ctx, &v->transaction.sections.sectionLen))
-
     if (v->transaction.sections.sectionLen > 7) {
         return parser_invalid_output_buffer;
     }

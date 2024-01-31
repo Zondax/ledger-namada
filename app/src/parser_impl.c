@@ -39,7 +39,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
     switch (ctx->tx_obj->typeTx) {
         case Unbond:
         case Bond:
-            *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
+          *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
             break;
 
         case Custom:
@@ -95,7 +95,8 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case UpdateVP: {
             const uint32_t pubkeys_num = ctx->tx_obj->updateVp.number_of_pubkeys;
             const uint8_t has_threshold = ctx->tx_obj->updateVp.has_threshold;
-            *numItems = (uint8_t) ((app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS) + pubkeys_num + has_threshold);
+            const uint8_t has_vp_code = ctx->tx_obj->updateVp.has_vp_code;
+            *numItems = (uint8_t) ((app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS) + pubkeys_num + has_threshold + has_vp_code);
             break;
         }
 

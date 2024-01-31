@@ -45,10 +45,16 @@ parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const char* symbol,
+parser_error_t print_uint256( const uint256_t *amount, uint8_t amountDenom, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t print_int256( const int256_t *amount, uint8_t amountDenom, const char* symbol,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount);
+
+parser_error_t popPublicKey( bytes_t *pubkeys, bytes_t *pubkey );
+  
 parser_error_t printPublicKey(const bytes_t *pubkey,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount);

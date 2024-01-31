@@ -48,8 +48,8 @@ extern "C" {
 #define TRANSFER_NORMAL_PARAMS  4
 #define TRANSFER_EXPERT_PARAMS  9
 
-#define UPDATE_VP_NORMAL_PARAMS  3
-#define UPDATE_VP_EXPERT_PARAMS  8
+#define UPDATE_VP_NORMAL_PARAMS  2
+#define UPDATE_VP_EXPERT_PARAMS  7
 
 #define WITHDRAW_NORMAL_PARAMS  2
 #define WITHDRAW_EXPERT_PARAMS  7
@@ -69,6 +69,7 @@ parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
 parser_error_t readUint256(parser_context_t *ctx, uint256_t *value);
+parser_error_t readInt256(parser_context_t *ctx, int256_t *value);
 parser_error_t readDecimal(parser_context_t *ctx, serialized_decimal *value);
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
 parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);

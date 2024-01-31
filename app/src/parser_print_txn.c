@@ -58,7 +58,7 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
             break;
         case 3: {
             snprintf(outKey, outKeyLen, "Amount");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->bond.amount, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
+            CHECK_ERROR(print_uint256(&ctx->tx_obj->bond.amount, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         } default:
@@ -77,7 +77,6 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
-
     if(displayIdx >= 4 && ctx->tx_obj->transfer.symbol) {
         displayIdx++;
     }
@@ -102,7 +101,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
         case 3:
             if(ctx->tx_obj->transfer.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Amount");
-                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
+                CHECK_ERROR(print_uint256(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
                                     ctx->tx_obj->transfer.symbol,
                                     outVal, outValLen, pageIdx, pageCount))
             } else {
@@ -112,7 +111,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 4:
             snprintf(outKey, outKeyLen, "Amount");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
+            CHECK_ERROR(print_uint256(&ctx->tx_obj->transfer.amount, ctx->tx_obj->transfer.amount_denom,
                                     "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
@@ -186,10 +185,11 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             }
             snprintf(outKey, outKeyLen, "Public key");
             const uint8_t keyIndex = displayIdx - pubkeys_first_field_idx;
-            const bytes_t pubkey = {
-              .ptr = ctx->tx_obj->initAccount.pubkeys.ptr + PK_LEN_25519_PLUS_TAG * keyIndex,
-              .len = PK_LEN_25519_PLUS_TAG,
-            };
+            bytes_t pubkey;
+            bytes_t pub_keys = ctx->tx_obj->initAccount.pubkeys;
+            for (uint32_t i = 0; i <= keyIndex; i++) {
+              popPublicKey(&pub_keys, &pubkey);
+            }
             CHECK_ERROR(printPublicKey(&pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         case 2: {
@@ -205,9 +205,10 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
 
         case 3:
             snprintf(outKey, outKeyLen, "VP type");
-            pageString(outVal, outValLen,ctx->tx_obj->initAccount.vp_type_text, pageIdx, pageCount);
-            if (app_mode_expert()) {
-                pageStringHex(outVal, outValLen, (const char*)ctx->tx_obj->initAccount.vp_type_hash.ptr, ctx->tx_obj->initAccount.vp_type_hash.len, pageIdx, pageCount);
+            if (ctx->tx_obj->initAccount.vp_type_text != NULL && !app_mode_expert()) {
+                pageString(outVal, outValLen,ctx->tx_obj->initAccount.vp_type_text, pageIdx, pageCount);
+            } else {
+              pageStringHex(outVal, outValLen, (const char*)ctx->tx_obj->initAccount.vp_type_hash.ptr, ctx->tx_obj->initAccount.vp_type_hash.len, pageIdx, pageCount);
             }
             break;
         default:
@@ -491,11 +492,14 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
     if (adjustedDisplayIdx >= 3 && !updateVp->has_threshold) {
         adjustedDisplayIdx++;
     }
+    if (adjustedDisplayIdx >= 4 && !updateVp->has_vp_code) {
+        adjustedDisplayIdx++;
+    }
 
     switch (adjustedDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
-            snprintf(outVal, outValLen, "Update VP");
+            snprintf(outVal, outValLen, "Update Account");
             if (app_mode_expert()) {
                 CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
@@ -510,10 +514,11 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             if (pubkeys_num != 0) {
                 snprintf(outKey, outKeyLen, "Public key");
                 const uint8_t key_index = displayIdx - pubkeys_first_field_idx;
-                const bytes_t key = {
-                    .ptr = updateVp->pubkeys.ptr + PK_LEN_25519_PLUS_TAG * key_index,
-                    .len = PK_LEN_25519_PLUS_TAG,
-                };
+                bytes_t pub_keys = updateVp->pubkeys;
+                bytes_t key;
+                for (uint32_t i = 0; i <= key_index; i++) {
+                  popPublicKey(&pub_keys, &key);
+                }
                 CHECK_ERROR(printPublicKey(&key, outVal, outValLen, pageIdx, pageCount));
             } else {
                 return parser_unexpected_error;
@@ -531,10 +536,10 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
         }
         case 4:
             snprintf(outKey, outKeyLen, "VP type");
-            if (app_mode_expert()) {
-                pageStringHex(outVal, outValLen, (const char *) updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount);
+            if (app_mode_expert() || ctx->tx_obj->updateVp.vp_type_text == NULL) {
+              pageStringHex(outVal, outValLen, (const char *) updateVp->vp_type_hash.ptr, updateVp->vp_type_hash.len, pageIdx, pageCount);
             } else {
-                pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
+              pageString(outVal, outValLen,ctx->tx_obj->updateVp.vp_type_text, pageIdx, pageCount);
             }
             break;
         default:
@@ -604,12 +609,12 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 6: {
             snprintf(outKey, outKeyLen, "Commission rate");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->becomeValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(print_int256(&ctx->tx_obj->becomeValidator.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 7: {
             snprintf(outKey, outKeyLen, "Maximum commission rate change");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->becomeValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(print_int256(&ctx->tx_obj->becomeValidator.max_commission_rate_change, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 8: {
@@ -704,7 +709,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "New rate");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->commissionChange.new_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(print_int256(&ctx->tx_obj->commissionChange.new_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");

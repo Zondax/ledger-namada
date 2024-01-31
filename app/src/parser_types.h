@@ -108,6 +108,10 @@ typedef struct {
 } uint256_t;
 
 typedef struct {
+  uint64_t b[4];
+} int256_t;
+
+typedef struct {
     uint64_t millis;
     uint32_t nanos;
 } timestamp_t;
@@ -166,7 +170,7 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
-    uint256_t new_rate;
+    int256_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
@@ -175,12 +179,13 @@ typedef struct {
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
     bytes_t protocol_key;
-    uint256_t commission_rate;
-    uint256_t max_commission_rate_change;
+    int256_t commission_rate;
+    int256_t max_commission_rate_change;
     bytes_t email;
     bytes_t description;
     bytes_t website;
     bytes_t discord_handle;
+    bytes_t avatar;
 } tx_become_validator_t;
 
 typedef struct {
@@ -226,6 +231,7 @@ typedef struct {
 typedef struct {
     bytes_t address;
     uint256_t amount;
+    uint8_t amount_denom;
     const char *symbol;
 } fees_t;
 
