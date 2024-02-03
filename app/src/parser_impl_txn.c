@@ -45,6 +45,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_change_validator_commission.wasm", CommissionChange},
     {"tx_unjail_validator.wasm", UnjailValidator},
     {"tx_redelegate.wasm", Redelegate},
+    {"tx_reactivate_validator.wasm", ReactivateValidator},
     {"tx_ibc.wasm", IBC},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
@@ -537,6 +538,18 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
 
     // Pubkey
     CHECK_ERROR(readPublicKey(&ctx, &v->revealPubkey.pubkey, true))
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readReactivateValidatorTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    v->reactivateValidator.validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->reactivateValidator.validator.ptr, v->reactivateValidator.validator.len))
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -1252,6 +1265,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case Redelegate:
             CHECK_ERROR(readRedelegateTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ReactivateValidator:
+            CHECK_ERROR(readReactivateValidatorTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))

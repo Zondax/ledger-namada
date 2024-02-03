@@ -45,6 +45,7 @@ typedef enum {
     IBC,
     UnjailValidator,
     Redelegate,
+    ReactivateValidator,
 } transaction_type_e;
 
 typedef enum {
@@ -224,6 +225,10 @@ typedef struct {
     bytes_t owner;
     uint256_t amount;
 } tx_redelegation_t;
+
+typedef struct {
+    bytes_t validator;
+} tx_reactivate_validator_t;
 
 typedef struct {
     bytes_t port_id;
