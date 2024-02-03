@@ -44,6 +44,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_withdraw.wasm", Withdraw},
     {"tx_change_validator_commission.wasm", CommissionChange},
     {"tx_unjail_validator.wasm", UnjailValidator},
+    {"tx_redelegate.wasm", Redelegate},
     {"tx_ibc.wasm", IBC},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
@@ -720,6 +721,32 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
+static parser_error_t readRedelegateTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    
+    // Source validator
+    v->redelegation.src_validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->redelegation.src_validator.ptr, v->redelegation.src_validator.len))
+
+    // Destination validator
+    v->redelegation.dest_validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->redelegation.dest_validator.ptr, v->redelegation.dest_validator.len))
+
+    // Owner
+    v->redelegation.owner.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->redelegation.owner.ptr, v->redelegation.owner.len))
+
+    // Amount
+    CHECK_ERROR(readUint256(&ctx, &v->redelegation.amount))
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+
+    return parser_ok;
+}
+
 static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/transaction/pos.rs#L24-L35
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
@@ -1222,6 +1249,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case UnjailValidator:
             CHECK_ERROR(readUnjailValidatorTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case Redelegate:
+            CHECK_ERROR(readRedelegateTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))

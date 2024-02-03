@@ -163,7 +163,7 @@ parser_error_t print_uint256( const uint256_t *amount, uint8_t amountDenom, cons
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount) {
 
-    char strAmount[258] = {0};
+  char strAmount[258] = {0};
     CHECK_ERROR(uint256_to_str(strAmount, sizeof(strAmount), amount))
     uint8_t res = intstr_to_fpstr_inplace(strAmount, sizeof(strAmount), amountDenom);
     if (res == 0 && strnlen(strAmount, sizeof(strAmount)) <= UINT8_MAX) {

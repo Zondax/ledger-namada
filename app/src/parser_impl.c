@@ -70,6 +70,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case RevealPubkey:
             *numItems = (app_mode_expert() ? REVEAL_PUBKEY_EXPERT_PARAMS : REVEAL_PUBKEY_NORMAL_PARAMS);
             break;
+        case Redelegate:
+            *numItems = (app_mode_expert() ? REDELEGATE_EXPERT_PARAMS : REDELEGATE_NORMAL_PARAMS);
+            break;
 
         case Withdraw:
             *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;

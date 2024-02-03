@@ -44,6 +44,7 @@ typedef enum {
     CommissionChange,
     IBC,
     UnjailValidator,
+    Redelegate,
 } transaction_type_e;
 
 typedef enum {
@@ -216,6 +217,13 @@ typedef struct {
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;
+
+typedef struct {
+    bytes_t src_validator;
+    bytes_t dest_validator;
+    bytes_t owner;
+    uint256_t amount;
+} tx_redelegation_t;
 
 typedef struct {
     bytes_t port_id;

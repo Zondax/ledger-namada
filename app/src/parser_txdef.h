@@ -184,6 +184,7 @@ typedef struct{
         tx_reveal_pubkey_t revealPubkey;
         tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
+        tx_redelegation_t redelegation;
         tx_commission_change_t commissionChange;
         tx_become_validator_t becomeValidator;
         tx_update_vp_t updateVp;
