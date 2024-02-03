@@ -46,6 +46,7 @@ typedef enum {
     UnjailValidator,
     Redelegate,
     ReactivateValidator,
+    ChangeValidatorMetadata,
 } transaction_type_e;
 
 typedef enum {
@@ -189,6 +190,17 @@ typedef struct {
     bytes_t discord_handle;
     bytes_t avatar;
 } tx_become_validator_t;
+
+  typedef struct {
+    bytes_t validator;
+    bytes_t email;
+    bytes_t description;
+    bytes_t website;
+    bytes_t discord_handle;
+    bytes_t avatar;
+    uint8_t has_commission_rate;
+    int256_t commission_rate;
+  } tx_metadata_change_t;
 
 typedef struct {
     bytes_t address;

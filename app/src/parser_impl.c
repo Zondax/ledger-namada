@@ -42,6 +42,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
           *numItems = (app_mode_expert() ? BOND_EXPERT_PARAMS : BOND_NORMAL_PARAMS) + ctx->tx_obj->bond.has_source;
             break;
 
+    case ChangeValidatorMetadata:
+      *numItems = (app_mode_expert() ? CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS : CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS) + (ctx->tx_obj->metadataChange.email.ptr != NULL) + (ctx->tx_obj->metadataChange.description.ptr != NULL) + (ctx->tx_obj->metadataChange.website.ptr != NULL) + (ctx->tx_obj->metadataChange.discord_handle.ptr != NULL) + (ctx->tx_obj->metadataChange.avatar.ptr != NULL) + ctx->tx_obj->metadataChange.has_commission_rate;
+            break;
+
         case Custom:
             *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS);
             break;

@@ -721,6 +721,86 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printChangeValidatorMetadataTxn(  const parser_context_t *ctx,
+                                              uint8_t displayIdx,
+                                              char *outKey, uint16_t outKeyLen,
+                                              char *outVal, uint16_t outValLen,
+                                              uint8_t pageIdx, uint8_t *pageCount) {
+    if(displayIdx >= 2 && ctx->tx_obj->metadataChange.email.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 3 && ctx->tx_obj->metadataChange.description.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 4 && ctx->tx_obj->metadataChange.website.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 5 && ctx->tx_obj->metadataChange.discord_handle.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 6 && ctx->tx_obj->metadataChange.avatar.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 7 && !ctx->tx_obj->metadataChange.has_commission_rate) {
+        displayIdx++;
+    }
+
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Change metadata");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1: {
+            snprintf(outKey, outKeyLen, "Validator");
+            printAddress(ctx->tx_obj->metadataChange.validator, outVal, outValLen, pageIdx, pageCount);
+            break;
+        }
+        case 2: {
+            snprintf(outKey, outKeyLen, "Email");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->metadataChange.email.ptr, ctx->tx_obj->metadataChange.email.len, pageIdx, pageCount);
+            break;
+        }
+        case 3: {
+            snprintf(outKey, outKeyLen, "Description");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->metadataChange.description.ptr, ctx->tx_obj->metadataChange.description.len, pageIdx, pageCount);
+            break;
+        }
+        case 4: {
+            snprintf(outKey, outKeyLen, "Website");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->metadataChange.website.ptr, ctx->tx_obj->metadataChange.website.len, pageIdx, pageCount);
+            break;
+        }
+        case 5: {
+            snprintf(outKey, outKeyLen, "Discord handle");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->metadataChange.discord_handle.ptr, ctx->tx_obj->metadataChange.discord_handle.len, pageIdx, pageCount);
+            break;
+        }
+          case 6: {
+            snprintf(outKey, outKeyLen, "Avatar");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->metadataChange.avatar.ptr, ctx->tx_obj->metadataChange.avatar.len, pageIdx, pageCount);
+            break;
+        }
+        case 7: {
+            snprintf(outKey, outKeyLen, "Commission rate");
+            CHECK_ERROR(print_int256(&ctx->tx_obj->metadataChange.commission_rate, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+            break;
+        }
+        default: {
+            if (!app_mode_expert()) {
+                return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 8;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        }
+    }
+
+    return parser_ok;
+}
+
 
 static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
@@ -927,6 +1007,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case IBC:
             return printIBCTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+    case ChangeValidatorMetadata:
+      return printChangeValidatorMetadataTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         default:
             break;

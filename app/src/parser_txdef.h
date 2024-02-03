@@ -190,6 +190,7 @@ typedef struct{
         tx_become_validator_t becomeValidator;
         tx_update_vp_t updateVp;
         tx_ibc_t ibc;
+        tx_metadata_change_t metadataChange;
     };
 
     transaction_t transaction;

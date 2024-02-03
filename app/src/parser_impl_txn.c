@@ -47,6 +47,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_redelegate.wasm", Redelegate},
     {"tx_reactivate_validator.wasm", ReactivateValidator},
     {"tx_ibc.wasm", IBC},
+    {"tx_change_validator_metadata.wasm", ChangeValidatorMetadata},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -586,6 +587,102 @@ static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
     if (v->withdraw.has_source != 0) {
         v->withdraw.source.len = ADDRESS_LEN_BYTES;
         CHECK_ERROR(readBytes(&ctx, &v->withdraw.source.ptr, v->withdraw.source.len))
+    }
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readChangeValidatorMetadataTxn(bytes_t *buffer, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    v->metadataChange.validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->metadataChange.validator.ptr, v->metadataChange.validator.len))
+
+    uint32_t tmpValue = 0;
+    // The validator email
+    v->metadataChange.email.ptr = NULL;
+    v->metadataChange.email.len = 0;
+    uint8_t has_email = 0;
+    CHECK_ERROR(readByte(&ctx, &has_email))
+    if (has_email != 0 && has_email != 1) {
+        return parser_value_out_of_range;
+    }
+    if (has_email) {
+      CHECK_ERROR(readUint32(&ctx, &tmpValue));
+      if (tmpValue > UINT16_MAX) {
+        return parser_value_out_of_range;
+      }
+      v->metadataChange.email.len = (uint16_t)tmpValue;
+      CHECK_ERROR(readBytes(&ctx, &v->metadataChange.email.ptr, v->metadataChange.email.len))
+    }
+
+    /// The validator description
+    v->metadataChange.description.ptr = NULL;
+    v->metadataChange.description.len = 0;
+    uint8_t has_description = 0;
+    CHECK_ERROR(readByte(&ctx, &has_description))
+    if (has_description != 0 && has_description != 1) {
+        return parser_value_out_of_range;
+    }
+    if (has_description) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->metadataChange.description.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->metadataChange.description.ptr, v->metadataChange.description.len))
+    }
+
+    /// The validator website
+    v->metadataChange.website.ptr = NULL;
+    v->metadataChange.website.len = 0;
+    uint8_t has_website;
+    CHECK_ERROR(readByte(&ctx, &has_website))
+    if (has_website) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->metadataChange.website.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->metadataChange.website.ptr, v->metadataChange.website.len))
+    }
+
+    /// The validator's discord handle
+    v->metadataChange.discord_handle.ptr = NULL;
+    v->metadataChange.discord_handle.len = 0;
+    uint8_t has_discord_handle;
+    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
+    if (has_discord_handle) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->metadataChange.discord_handle.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->metadataChange.discord_handle.ptr, v->metadataChange.discord_handle.len))
+    }
+
+    /// The validator's avatar
+    v->metadataChange.avatar.ptr = NULL;
+    v->metadataChange.avatar.len = 0;
+    uint8_t has_avatar;
+    CHECK_ERROR(readByte(&ctx, &has_avatar))
+    if (has_avatar) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->metadataChange.avatar.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->metadataChange.avatar.ptr, v->metadataChange.avatar.len))
+    }
+
+    // Commission rate
+    CHECK_ERROR(readByte(&ctx, &v->metadataChange.has_commission_rate))
+    if (v->metadataChange.has_commission_rate) {
+        CHECK_ERROR(readInt256(&ctx, &v->metadataChange.commission_rate));
     }
 
     if (ctx.offset != ctx.bufferLen) {
@@ -1268,6 +1365,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case ReactivateValidator:
             CHECK_ERROR(readReactivateValidatorTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ChangeValidatorMetadata:
+            CHECK_ERROR(readChangeValidatorMetadataTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))
