@@ -83,6 +83,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case DeactivateValidator:
             *numItems = (app_mode_expert() ? DEACTIVATE_VALIDATOR_EXPERT_PARAMS : DEACTIVATE_VALIDATOR_NORMAL_PARAMS);
             break;
+        case ResignSteward:
+            *numItems = (app_mode_expert() ? RESIGN_STEWARD_EXPERT_PARAMS : RESIGN_STEWARD_NORMAL_PARAMS);
+            break;
         case ChangeConsensusKey:
             *numItems = (app_mode_expert() ? CHANGE_CONSENSUS_KEY_EXPERT_PARAMS : CHANGE_CONSENSUS_KEY_NORMAL_PARAMS);
             break;

@@ -50,6 +50,7 @@ typedef enum {
     ClaimRewards,
     DeactivateValidator,
     ChangeConsensusKey,
+    ResignSteward,
 } transaction_type_e;
 
 typedef enum {
@@ -253,6 +254,10 @@ typedef struct {
     bytes_t validator;
     bytes_t consensus_key;
 } tx_consensus_key_change_t;
+
+typedef struct {
+    bytes_t steward;
+} tx_resign_steward_t;
   
 typedef struct {
     bytes_t port_id;

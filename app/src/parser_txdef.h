@@ -193,6 +193,7 @@ typedef struct{
         tx_metadata_change_t metadataChange;
         tx_deactivate_validator_t deactivateValidator;
         tx_consensus_key_change_t consensusKeyChange;
+        tx_resign_steward_t resignSteward;
     };
 
     transaction_t transaction;

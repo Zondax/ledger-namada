@@ -227,6 +227,35 @@ static parser_error_t printDeactivateValidatorTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printResignStewardTxn( const parser_context_t *ctx,
+                                        uint8_t displayIdx,
+                                        char *outKey, uint16_t outKeyLen,
+                                        char *outVal, uint16_t outValLen,
+                                        uint8_t pageIdx, uint8_t *pageCount) {
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Resign Steward");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Steward");
+            CHECK_ERROR(printAddress(ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
+            break;
+        default:
+            if (!app_mode_expert()) {
+               return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 2;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
 static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
@@ -1123,6 +1152,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case ChangeConsensusKey:
             return printChangeConsensusKeyTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case ResignSteward:
+            return printResignStewardTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         default:
             break;
