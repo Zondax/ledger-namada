@@ -711,8 +711,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 4 + pubkeys_num - (updateVp->has_threshold ? 0 : 1);
-            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            return printExpert(ctx, adjustedDisplayIdx - 5, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
     return parser_ok;
