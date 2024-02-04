@@ -48,6 +48,7 @@ typedef enum {
     ReactivateValidator,
     ChangeValidatorMetadata,
     ClaimRewards,
+    DeactivateValidator,
 } transaction_type_e;
 
 typedef enum {
@@ -242,6 +243,10 @@ typedef struct {
 typedef struct {
     bytes_t validator;
 } tx_reactivate_validator_t;
+
+typedef struct {
+    bytes_t validator;
+} tx_deactivate_validator_t;
 
 typedef struct {
     bytes_t port_id;

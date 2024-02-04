@@ -80,6 +80,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case ReactivateValidator:
             *numItems = (app_mode_expert() ? REACTIVATE_VALIDATOR_EXPERT_PARAMS : REACTIVATE_VALIDATOR_NORMAL_PARAMS);
             break;
+        case DeactivateValidator:
+            *numItems = (app_mode_expert() ? DEACTIVATE_VALIDATOR_EXPERT_PARAMS : DEACTIVATE_VALIDATOR_NORMAL_PARAMS);
+            break;
 
         case Withdraw:
             *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;

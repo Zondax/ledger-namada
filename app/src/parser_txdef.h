@@ -191,6 +191,7 @@ typedef struct{
         tx_update_vp_t updateVp;
         tx_ibc_t ibc;
         tx_metadata_change_t metadataChange;
+        tx_deactivate_validator_t deactivateValidator;
     };
 
     transaction_t transaction;
