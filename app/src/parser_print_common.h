@@ -54,6 +54,8 @@ parser_error_t print_int256( const int256_t *amount, uint8_t amountDenom, const 
                             uint8_t pageIdx, uint8_t *pageCount);
 
 parser_error_t popPublicKey( bytes_t *pubkeys, bytes_t *pubkey );
+
+parser_error_t popAddress( bytes_t *pubkeys, bytes_t *pubkey );
   
 parser_error_t printPublicKey(const bytes_t *pubkey,
                               char *outVal, uint16_t outValLen,

@@ -21,8 +21,6 @@
 #include "stdbool.h"
 #include <zxformat.h>
 
-#define ADDRESS_LEN_BYTES   21
-
 #define DISCRIMINANT_DATA 0x00
 #define DISCRIMINANT_EXTRA_DATA 0x01
 #define DISCRIMINANT_CODE 0x02
@@ -500,24 +498,8 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
 
     // Proposal ID
     CHECK_ERROR(readUint64(&ctx, &v->voteProposal.proposal_id))
-
     // Proposal vote
     CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.proposal_vote))
-
-    if (v->voteProposal.proposal_vote == Yay) {
-        CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.vote_type))
-        switch (v->voteProposal.vote_type) {
-            case Default:
-            case PGFSteward:
-            case PGFPayment:
-                break;
-
-            default:
-                return parser_unexpected_value;
-        }
-    } else if (v->voteProposal.proposal_vote != Nay) {
-        return parser_unexpected_value;
-    }
 
     // Voter, should be of length ADDRESS_LEN_BYTES
     v->voteProposal.voter.len = ADDRESS_LEN_BYTES;
@@ -530,7 +512,7 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     if (v->voteProposal.number_of_delegations > 0 ){
         v->voteProposal.delegations.len = ADDRESS_LEN_BYTES*v->voteProposal.number_of_delegations;
         CHECK_ERROR(readBytes(&ctx, &v->voteProposal.delegations.ptr, v->voteProposal.delegations.len))
-    }
+          }
 
     if ((ctx.offset != ctx.bufferLen)) {
         return parser_unexpected_characters;

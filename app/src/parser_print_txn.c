@@ -520,33 +520,27 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
         case 1:
             snprintf(outKey, outKeyLen, "ID");
             // Less than 20 characters as proposal_id is an Option<u64>
-            char strId[20] = {0};
+            char strId[21] = {0};
             if (uint64_to_str(strId, sizeof(strId), voteProposal->proposal_id) != NULL ) {
-                return parser_unexpected_error;
+              return parser_unexpected_error;
             }
             pageString(outVal, outValLen, strId, pageIdx, pageCount);
             break;
         case 2:
-            snprintf(outKey, outKeyLen, "Vote");
-            if (voteProposal->proposal_vote == Yay) {
-                switch (voteProposal->vote_type) {
-                    case Default:
-                        snprintf(outVal, outValLen, "yay");
-                        break;
-                    case PGFSteward:
-                        snprintf(outVal, outValLen, "yay for PGF steward");
-                        break;
-                    case PGFPayment:
-                        snprintf(outVal, outValLen, "yay for PGF payment");
-                        break;
-
-                    default:
-                        return parser_unexpected_value;
-                }
-
-            } else {
-                snprintf(outVal, outValLen, "nay");
-            }
+          snprintf(outKey, outKeyLen, "Vote");
+          switch (voteProposal->proposal_vote) {
+          case Yay:
+            snprintf(outVal, outValLen, "yay");
+            break;
+          case Nay:
+            snprintf(outVal, outValLen, "nay");
+            break;
+          case Abstain:
+            snprintf(outVal, outValLen, "abstain");
+            break;
+          default:
+            return parser_unexpected_value;
+          }
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voter");
@@ -557,9 +551,13 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Delegation");
-            for (uint32_t i = 0; i < voteProposal->number_of_delegations; ++i) {
-                CHECK_ERROR(printAddress(voteProposal->delegations, outVal, outValLen, pageIdx, pageCount))
+            uint8_t delegate_idx = displayIdx - delegations_first_field_idx;
+            bytes_t delegations = voteProposal->delegations;
+            bytes_t delegation;
+            for (uint32_t i = 0; i < delegate_idx+1; ++i) {
+              popAddress(&delegations, &delegation);
             }
+            CHECK_ERROR(printAddress(delegation, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
             if (!app_mode_expert()) {

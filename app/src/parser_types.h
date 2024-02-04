@@ -55,7 +55,8 @@ typedef enum {
 
 typedef enum {
     Yay = 0,
-    Nay = 1
+    Nay = 1,
+    Abstain = 2,
 } proposal_vote_e;
 
 typedef enum {

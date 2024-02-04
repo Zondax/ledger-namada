@@ -217,7 +217,7 @@ static parser_error_t print_uint64( uint64_t amount, uint8_t amountDenom, const 
 
 parser_error_t popPublicKey( bytes_t *pubkeys, bytes_t *pubkey ) {
   if (pubkeys->len == 0) {
-    pubkey = NULL;
+    pubkey->ptr = NULL;
     return parser_ok;
   } else {
     const uint8_t keySize = *pubkeys->ptr == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN;
@@ -226,6 +226,23 @@ parser_error_t popPublicKey( bytes_t *pubkeys, bytes_t *pubkey ) {
       pubkey->len = keySize + 1;
       pubkeys->ptr += keySize + 1;
       pubkeys->len -= keySize + 1;
+      return parser_ok;
+    } else {
+      return parser_unexpected_error;
+    }
+  }
+}
+
+parser_error_t popAddress( bytes_t *addresses, bytes_t *address ) {
+  if (addresses->len == 0) {
+    address->ptr = NULL;
+    return parser_ok;
+  } else {
+    if (addresses->len >= ADDRESS_LEN_BYTES) {
+      address->ptr = addresses->ptr;
+      address->len = ADDRESS_LEN_BYTES;
+      addresses->ptr += ADDRESS_LEN_BYTES;
+      addresses->len -= ADDRESS_LEN_BYTES;
       return parser_ok;
     } else {
       return parser_unexpected_error;

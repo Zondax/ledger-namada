@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define ADDRESS_LEN_BYTES   21
+
 #define BOND_NORMAL_PARAMS  3
 #define BOND_EXPERT_PARAMS  8
 
