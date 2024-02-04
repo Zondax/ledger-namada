@@ -47,6 +47,7 @@ typedef enum {
     Redelegate,
     ReactivateValidator,
     ChangeValidatorMetadata,
+    ClaimRewards,
 } transaction_type_e;
 
 typedef enum {

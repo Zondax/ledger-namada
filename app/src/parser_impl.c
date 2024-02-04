@@ -85,6 +85,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? WITHDRAW_EXPERT_PARAMS : WITHDRAW_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
             break;
 
+        case ClaimRewards:
+            *numItems = (app_mode_expert() ? CLAIM_REWARDS_EXPERT_PARAMS : CLAIM_REWARDS_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
+            break;
+
         case CommissionChange:
             *numItems = (app_mode_expert() ? COMMISSION_CHANGE_EXPERT_PARAMS : COMMISSION_CHANGE_NORMAL_PARAMS);
             break;

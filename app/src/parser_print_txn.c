@@ -844,6 +844,48 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printClaimRewardsTxn( const parser_context_t *ctx,
+                                        uint8_t displayIdx,
+                                        char *outKey, uint16_t outKeyLen,
+                                        char *outVal, uint16_t outValLen,
+                                        uint8_t pageIdx, uint8_t *pageCount) {
+
+    // Bump itemIdx if source is not present
+    if (ctx->tx_obj->withdraw.has_source == 0 && displayIdx >= 1) {
+        displayIdx++;
+    }
+
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Claim Rewards");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            if (ctx->tx_obj->withdraw.has_source == 0) {
+                return parser_unexpected_value;
+            }
+            snprintf(outKey, outKeyLen, "Source");
+            CHECK_ERROR(printAddress(ctx->tx_obj->withdraw.source, outVal, outValLen, pageIdx, pageCount))
+            break;
+        case 2:
+            snprintf(outKey, outKeyLen, "Validator");
+            CHECK_ERROR(printAddress(ctx->tx_obj->withdraw.validator, outVal, outValLen, pageIdx, pageCount))
+            break;
+        default:
+            if (!app_mode_expert()) {
+               return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 3;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
 static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
                                                 uint8_t displayIdx,
                                                 char *outKey, uint16_t outKeyLen,
@@ -986,6 +1028,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case Withdraw:
              return printWithdrawTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case ClaimRewards:
+             return printClaimRewardsTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case CommissionChange:
             return printCommissionChangeTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);

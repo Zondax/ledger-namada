@@ -48,6 +48,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_reactivate_validator.wasm", ReactivateValidator},
     {"tx_ibc.wasm", IBC},
     {"tx_change_validator_metadata.wasm", ChangeValidatorMetadata},
+    {"tx_claim_rewards.wasm", ClaimRewards},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -574,6 +575,28 @@ static parser_error_t readUnjailValidatorTxn(const bytes_t *data, parser_tx_t *v
 }
 
 static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    v->withdraw.validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->withdraw.validator.ptr, v->withdraw.validator.len))
+
+    // Does this tx specify the source
+    CHECK_ERROR(readByte(&ctx, &v->withdraw.has_source))
+
+    // Source
+    if (v->withdraw.has_source != 0) {
+        v->withdraw.source.len = ADDRESS_LEN_BYTES;
+        CHECK_ERROR(readBytes(&ctx, &v->withdraw.source.ptr, v->withdraw.source.len))
+    }
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readClaimRewardsTxn(bytes_t *buffer, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
@@ -1346,6 +1369,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             CHECK_ERROR(readRevealPubkeyTxn(&txObj->transaction.sections.data.bytes,  txObj))
             break;
         case Withdraw:
+            CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ClaimRewards:
             CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case CommissionChange:
