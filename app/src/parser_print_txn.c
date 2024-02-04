@@ -1022,7 +1022,8 @@ static parser_error_t printUpdateStewardCommissionTxn( const parser_context_t *c
   uint8_t commissionIdx = (adjustedDisplayIdx - 2) / 2;
   uint8_t commissionPart = (adjustedDisplayIdx - 2) % 2;
   if (2 <= adjustedDisplayIdx) {
-    adjustedDisplayIdx -= MIN(2*commissionIdx + commissionPart, ctx->tx_obj->updateStewardCommission.commissionLen*2 - 1);
+    adjustedDisplayIdx -= MIN(2*commissionIdx + commissionPart + 1, ctx->tx_obj->updateStewardCommission.commissionLen*2);
+    adjustedDisplayIdx += 1;
   }
     switch (adjustedDisplayIdx) {
         case 0:
@@ -1062,8 +1063,8 @@ static parser_error_t printUpdateStewardCommissionTxn( const parser_context_t *c
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 3;
-            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            adjustedDisplayIdx -= 3;
+            return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
     return parser_ok;
