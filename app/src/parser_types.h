@@ -49,6 +49,7 @@ typedef enum {
     ChangeValidatorMetadata,
     ClaimRewards,
     DeactivateValidator,
+    ChangeConsensusKey,
 } transaction_type_e;
 
 typedef enum {
@@ -248,6 +249,11 @@ typedef struct {
     bytes_t validator;
 } tx_deactivate_validator_t;
 
+typedef struct {
+    bytes_t validator;
+    bytes_t consensus_key;
+} tx_consensus_key_change_t;
+  
 typedef struct {
     bytes_t port_id;
     bytes_t channel_id;

@@ -192,6 +192,7 @@ typedef struct{
         tx_ibc_t ibc;
         tx_metadata_change_t metadataChange;
         tx_deactivate_validator_t deactivateValidator;
+        tx_consensus_key_change_t consensusKeyChange;
     };
 
     transaction_t transaction;

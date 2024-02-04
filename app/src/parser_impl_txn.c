@@ -50,6 +50,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_change_validator_metadata.wasm", ChangeValidatorMetadata},
     {"tx_claim_rewards.wasm", ClaimRewards},
     {"tx_deactivate_validator.wasm", DeactivateValidator},
+    {"tx_change_consensus_key.wasm", ChangeConsensusKey},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -565,6 +566,20 @@ static parser_error_t readDeactivateValidatorTxn(const bytes_t *data, parser_tx_
     // Validator
     v->deactivateValidator.validator.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->deactivateValidator.validator.ptr, v->deactivateValidator.validator.len))
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readChangeConsensusKeyTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    v->consensusKeyChange.validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->consensusKeyChange.validator.ptr, v->consensusKeyChange.validator.len))
+    // Consensus key
+    CHECK_ERROR(readPublicKey(&ctx, &v->consensusKeyChange.consensus_key, true))
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -1413,6 +1428,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ChangeConsensusKey:
+            CHECK_ERROR(readChangeConsensusKeyTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         default:
             return parser_unexpected_method;
