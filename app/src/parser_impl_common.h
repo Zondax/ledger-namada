@@ -32,6 +32,9 @@ extern "C" {
 #define CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS  2
 #define CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS  7
 
+#define UPDATE_STEWARD_COMMISSION_NORMAL_PARAMS  2
+#define UPDATE_STEWARD_COMMISSION_EXPERT_PARAMS  7
+
 #define REACTIVATE_VALIDATOR_NORMAL_PARAMS  2
 #define REACTIVATE_VALIDATOR_EXPERT_PARAMS  7
 
@@ -99,6 +102,7 @@ parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
 
 parser_error_t readToken(const bytes_t *token, const char **symbol);
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
+parser_error_t readAddressBytes(parser_context_t *ctx, bytes_t *address);
 parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint16_t strVoteLen);
 
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);

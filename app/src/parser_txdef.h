@@ -194,6 +194,7 @@ typedef struct{
         tx_deactivate_validator_t deactivateValidator;
         tx_consensus_key_change_t consensusKeyChange;
         tx_resign_steward_t resignSteward;
+        tx_update_steward_commission_t updateStewardCommission;
     };
 
     transaction_t transaction;

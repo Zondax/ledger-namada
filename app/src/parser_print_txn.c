@@ -22,6 +22,10 @@
 #include "timeutils.h"
 #include "bech32.h"
 
+#ifndef MIN
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#endif
+
 static parser_error_t printBondTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
@@ -1009,6 +1013,63 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
+static parser_error_t printUpdateStewardCommissionTxn( const parser_context_t *ctx,
+                                                uint8_t displayIdx,
+                                                char *outKey, uint16_t outKeyLen,
+                                                char *outVal, uint16_t outValLen,
+                                                uint8_t pageIdx, uint8_t *pageCount) {
+
+  uint8_t adjustedDisplayIdx = displayIdx;
+  uint8_t commissionIdx = (adjustedDisplayIdx - 2) / 2;
+  uint8_t commissionPart = (adjustedDisplayIdx - 2) % 2;
+  if (2 <= adjustedDisplayIdx) {
+    adjustedDisplayIdx -= MIN(2*commissionIdx + commissionPart, ctx->tx_obj->updateStewardCommission.commissionLen*2 - 1);
+  }
+    switch (adjustedDisplayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Update Steward Commission");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Steward");
+            CHECK_ERROR(printAddress(ctx->tx_obj->updateStewardCommission.steward, outVal, outValLen, pageIdx, pageCount))
+            break;
+    case 2: {
+      parser_context_t inner_ctx = {
+        .buffer = ctx->tx_obj->updateStewardCommission.commission.ptr,
+        .bufferLen = ctx->tx_obj->updateStewardCommission.commission.len,
+        .offset = 0,
+        .tx_obj = NULL,
+      };
+      bytes_t address;
+      int256_t dec;
+      for (uint8_t i = 0; i <= commissionIdx; i++) {
+        CHECK_ERROR(readAddressBytes(&inner_ctx, &address))
+        CHECK_ERROR(readInt256(&inner_ctx, &dec))
+      }
+      if (commissionPart == 0) {
+        snprintf(outKey, outKeyLen, "Validator");
+        CHECK_ERROR(printAddress(address, outVal, outValLen, pageIdx, pageCount))
+          } else if (commissionPart == 1) {
+        snprintf(outKey, outKeyLen, "Commission Rate");
+        CHECK_ERROR(print_int256(&dec, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
+          }
+      break;
+    } default:
+            if (!app_mode_expert()) {
+                return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 3;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
 static parser_error_t printIBCTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
@@ -1153,6 +1214,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
 
         case ResignSteward:
             return printResignStewardTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+
+        case UpdateStewardCommission:
+            return printUpdateStewardCommissionTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         default:
             break;

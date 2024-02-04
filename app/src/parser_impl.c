@@ -57,6 +57,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             }
             break;
 
+    case UpdateStewardCommission:
+      *numItems = (app_mode_expert() ? UPDATE_STEWARD_COMMISSION_EXPERT_PARAMS : UPDATE_STEWARD_COMMISSION_NORMAL_PARAMS) + 2*ctx->tx_obj->updateStewardCommission.commissionLen;
+      break;
+
         case InitAccount: {
             const uint32_t pubkeys_num = ctx->tx_obj->initAccount.number_of_pubkeys;
             *numItems = (uint8_t)((app_mode_expert() ? INIT_ACCOUNT_EXPERT_PARAMS : INIT_ACCOUNT_NORMAL_PARAMS) + pubkeys_num);

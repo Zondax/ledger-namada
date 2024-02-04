@@ -50,6 +50,7 @@ static const txn_types_t allowed_txn[] = {
     {"tx_deactivate_validator.wasm", DeactivateValidator},
     {"tx_change_consensus_key.wasm", ChangeConsensusKey},
     {"tx_resign_steward.wasm", ResignSteward},
+    {"tx_update_steward_commission.wasm", UpdateStewardCommission},
 };
 static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
 
@@ -525,6 +526,37 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
 
     // Pubkey
     CHECK_ERROR(readPublicKey(&ctx, &v->revealPubkey.pubkey, true))
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+parser_error_t readAddressBytes(parser_context_t *ctx, bytes_t *address) {
+  address->len = ADDRESS_LEN_BYTES;
+  CHECK_ERROR(readBytes(ctx, &address->ptr, address->len))
+  return parser_ok;
+}
+
+static parser_error_t readUpdateStewardCommissionTxn(const bytes_t *data, parser_tx_t *v) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    
+    // Address
+    v->updateStewardCommission.steward.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &v->updateStewardCommission.steward.ptr, v->updateStewardCommission.steward.len))
+
+    v->updateStewardCommission.commissionLen = 0;
+    CHECK_ERROR(readUint32(&ctx, &v->updateStewardCommission.commissionLen))
+      
+      v->updateStewardCommission.commission.ptr = ctx.buffer + ctx.offset;
+      for (uint32_t i = 0; i < v->updateStewardCommission.commissionLen; i++) {
+        bytes_t address;
+        CHECK_ERROR(readAddressBytes(&ctx, &address))
+          int256_t dec;
+        CHECK_ERROR(readInt256(&ctx, &dec))
+      }
+      v->updateStewardCommission.commission.len = ctx.buffer + ctx.offset - v->updateStewardCommission.commission.ptr;
+      
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -1429,6 +1461,9 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case ResignSteward:
             CHECK_ERROR(readResignStewardTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case UpdateStewardCommission:
+            CHECK_ERROR(readUpdateStewardCommissionTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         default:
             return parser_unexpected_method;

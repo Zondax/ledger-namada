@@ -51,6 +51,7 @@ typedef enum {
     DeactivateValidator,
     ChangeConsensusKey,
     ResignSteward,
+    UpdateStewardCommission,
 } transaction_type_e;
 
 typedef enum {
@@ -259,6 +260,12 @@ typedef struct {
 typedef struct {
     bytes_t steward;
 } tx_resign_steward_t;
+
+typedef struct {
+    bytes_t steward;
+    uint32_t commissionLen;
+    bytes_t commission;
+} tx_update_steward_commission_t;
   
 typedef struct {
     bytes_t port_id;
