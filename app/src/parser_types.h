@@ -28,6 +28,7 @@ extern "C" {
 #define TAG_S       0x08
 #define TAG_N       0x10
 #define TAG_INNER_TX_HASH    0x22
+#define CX_SHA256_SIZE 32
 
 typedef enum {
     Bond = 0,
@@ -85,7 +86,7 @@ typedef struct {
 typedef struct {
     uint8_t has_id;
     uint64_t proposal_id;
-    bytes_t content_hash;
+    uint8_t content_hash[CX_SHA256_SIZE];
     bytes_t content_sechash;
     bytes_t author;
     uint64_t voting_start_epoch;
@@ -96,7 +97,7 @@ typedef struct {
         struct {
             uint8_t has_proposal_code;
             bytes_t proposal_code_sechash;
-            bytes_t proposal_code_hash;
+            uint8_t proposal_code_hash[CX_SHA256_SIZE];
         };
         struct {
             uint32_t pgf_steward_actions_num;
@@ -149,7 +150,7 @@ typedef struct {
     bytes_t pubkeys;
     uint8_t threshold;
     bytes_t vp_type_sechash;
-    bytes_t vp_type_hash;
+    uint8_t vp_type_hash[CX_SHA256_SIZE];
     uint8_t vp_type_secidx;
     const char* vp_type_text;
 } tx_init_account_t;
@@ -216,7 +217,7 @@ typedef struct {
     uint8_t threshold;
     uint8_t has_vp_code;
     bytes_t vp_type_sechash;
-    bytes_t vp_type_hash;
+    uint8_t vp_type_hash[CX_SHA256_SIZE];
     uint8_t vp_type_secidx;
     const char* vp_type_text;
 } tx_update_vp_t;

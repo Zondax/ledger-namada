@@ -36,7 +36,7 @@ parser_error_t printExpert(const parser_context_t *ctx,
                            char *outVal, uint16_t outValLen,
                            uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printCodeHash(bytes_t *codeHash,
+parser_error_t printCodeHash(uint8_t *codeHash,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount);

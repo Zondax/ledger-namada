@@ -142,10 +142,14 @@ typedef struct {
     bytes_t memoHash;
 } header_t;
 
+#define CX_SHA256_SIZE 32
+
 typedef struct {
     uint8_t discriminant;
     bytes_t salt;
+    uint8_t commitmentDiscriminant;
     bytes_t bytes;
+    uint8_t bytes_hash[CX_SHA256_SIZE];
     bytes_t tag;
     uint8_t idx;
 } section_t;

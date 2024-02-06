@@ -121,14 +121,14 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
-parser_error_t printCodeHash(bytes_t *codeHash,
+parser_error_t printCodeHash(uint8_t *codeHash,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
 
     char hexString[65] = {0};
     snprintf(outKey, outKeyLen, "Code hash");
-    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
+    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash, CX_SHA256_SIZE);
     pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
 
     return parser_ok;
