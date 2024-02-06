@@ -35,6 +35,7 @@ extern "C" {
 #define COMPRESSED_SECP256K1_PK_LEN 33u
 #define SECP256K1_SK_LEN            32u
 #define SCALAR_LEN_SECP256K1        32u
+#define ETH_ADDRESS_LEN             20u
 
 #define SK_LEN_25519 32u
 #define SCALAR_LEN_ED25519 32u
@@ -50,6 +51,7 @@ extern "C" {
 #define PK_LEN_25519_PLUS_TAG 33u
 #define SIG_LEN_25519_PLUS_TAG 65u
 
+#define ADDRESS_LEN_BYTES   21
 
 #define ADDRESS_LEN_MAINNET 42u
 #define ADDRESS_LEN_TESTNET 45u

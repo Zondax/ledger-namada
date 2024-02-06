@@ -44,11 +44,21 @@ typedef enum {
     CommissionChange,
     IBC,
     UnjailValidator,
+    DeactivateValidator,
+    ReactivateValidator,
+    Redelegate,
+    ClaimRewards,
+    ResignSteward,
+    ChangeConsensusKey,
+    UpdateStewardCommission,
+    ChangeValidatorMetadata,
+    BridgePoolTransfer,
 } transaction_type_e;
 
 typedef enum {
     Yay = 0,
-    Nay = 1
+    Nay = 1,
+    Abstain = 2
 } proposal_vote_e;
 
 typedef enum {
@@ -56,6 +66,26 @@ typedef enum {
     PGFSteward = 1,
     PGFPayment = 2,
 } yay_vote_type_e;
+
+typedef enum {
+    Continuous = 0,
+    Retro = 1,
+} pgf_action_e;
+
+typedef enum {
+    Add = 0,
+    Remove = 1,
+} pgf_continuous_type_e;
+
+typedef enum {
+    PGFTargetInternal = 0,
+    PGFTargetIBC = 1,
+} pgf_target_type_e;
+
+typedef enum {
+    Erc20 = 0,
+    Nut = 1,
+} transfer_to_ethereum_kind_e;
 
 // Structure to match the Rust serialized Decimal format
 typedef struct {
@@ -74,7 +104,6 @@ typedef struct {
 } mut_bytes_t;
 
 typedef struct {
-    uint8_t has_id;
     uint64_t proposal_id;
     bytes_t content_hash;
     bytes_t content_sechash;
@@ -103,9 +132,6 @@ typedef struct {
     uint8_t proposal_code_secidx;
 } tx_init_proposal_t;
 
-typedef struct {
-  uint64_t b[4];
-} uint256_t;
 
 typedef struct {
     uint64_t millis;
@@ -114,7 +140,7 @@ typedef struct {
 
 typedef struct {
     bytes_t council_address;
-    uint256_t amount;
+    bytes_t amount;
 } council_t;
 
 typedef struct {
@@ -143,10 +169,17 @@ typedef struct {
 
 typedef struct {
     bytes_t validator;
-    uint256_t amount;
+    bytes_t amount;
     uint8_t has_source;
     bytes_t source;
 } tx_bond_t;
+
+typedef struct {
+    bytes_t src_validator;
+    bytes_t dest_validator;
+    bytes_t owner;
+    bytes_t amount;
+} tx_redelegation_t;
 
 typedef struct {} tx_custom_t;
 
@@ -164,9 +197,11 @@ typedef struct {
     bytes_t validator;
 } tx_unjail_validator_t;
 
+typedef tx_unjail_validator_t tx_activate_validator_t;
+
 typedef struct {
     bytes_t validator;
-    uint256_t new_rate;
+    bytes_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
@@ -175,12 +210,13 @@ typedef struct {
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
     bytes_t protocol_key;
-    uint256_t commission_rate;
-    uint256_t max_commission_rate_change;
+    bytes_t commission_rate;
+    bytes_t max_commission_rate_change;
     bytes_t email;
     bytes_t description;
     bytes_t website;
     bytes_t discord_handle;
+    bytes_t avatar;
 } tx_become_validator_t;
 
 typedef struct {
@@ -203,7 +239,7 @@ typedef struct {
     bytes_t token;
     uint8_t has_sub_prefix;
     bytes_t sub_prefix;
-    uint256_t amount;
+    bytes_t amount;
     uint8_t amount_denom;
     const char* symbol;
     uint8_t has_key;
@@ -219,13 +255,54 @@ typedef struct {
     bytes_t token_amount;
     bytes_t sender_address;
     bytes_t receiver;
-    uint8_t timeout_height;
+    uint8_t timeout_height_type;
+    uint64_t revision_number;
+    uint64_t revision_height;
     timestamp_t timeout_timestamp;
 } tx_ibc_t;
 
 typedef struct {
+    bytes_t steward;
+} tx_resign_steward_t;
+
+typedef struct {
+    bytes_t validator;
+    bytes_t consensus_key;
+} tx_consensus_key_change_t;
+
+typedef struct {
+    bytes_t steward;
+    uint32_t commissionLen;
+    bytes_t commission;
+} tx_update_steward_commission_t;
+
+typedef struct {
+    uint8_t kind;
+    bytes_t asset;
+    bytes_t recipient;
+    bytes_t sender;
+    bytes_t amount;
+
+    bytes_t gasToken;
+    bytes_t gasAmount;
+    bytes_t gasPayer;
+} tx_bridge_pool_transfer_t;
+
+  typedef struct {
+    bytes_t validator;
+    bytes_t email;
+    bytes_t description;
+    bytes_t website;
+    bytes_t discord_handle;
+    bytes_t avatar;
+    uint8_t has_commission_rate;
+    bytes_t commission_rate;
+  } tx_metadata_change_t;
+
+typedef struct {
     bytes_t address;
-    uint256_t amount;
+    bytes_t amount;
+    uint8_t denom;
     const char *symbol;
 } fees_t;
 

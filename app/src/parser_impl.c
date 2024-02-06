@@ -59,7 +59,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         }
         case InitProposal: {
-            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.has_id;
+            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS);
             break;
         }
         case VoteProposal: {
@@ -95,16 +95,68 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case UpdateVP: {
             const uint32_t pubkeys_num = ctx->tx_obj->updateVp.number_of_pubkeys;
             const uint8_t has_threshold = ctx->tx_obj->updateVp.has_threshold;
-            *numItems = (uint8_t) ((app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS) + pubkeys_num + has_threshold);
+            const uint8_t has_vp_code = ctx->tx_obj->updateVp.has_vp_code;
+            *numItems = (uint8_t) ((app_mode_expert() ? UPDATE_VP_EXPERT_PARAMS : UPDATE_VP_NORMAL_PARAMS) + pubkeys_num + has_threshold + has_vp_code);
             break;
         }
 
+        case ReactivateValidator:
+        case DeactivateValidator:
         case UnjailValidator:
             *numItems = (app_mode_expert() ? UNJAIL_VALIDATOR_EXPERT_PARAMS : UNJAIL_VALIDATOR_NORMAL_PARAMS);
             break;
 
         case IBC:
             *numItems = (app_mode_expert() ? IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);
+            break;
+
+        case Redelegate:
+            *numItems = (app_mode_expert() ? REDELEGATE_EXPERT_PARAMS : REDELEGATE_NORMAL_PARAMS);
+            break;
+
+        case ClaimRewards:
+            *numItems = (app_mode_expert() ? CLAIM_REWARDS_EXPERT_PARAMS : CLAIM_REWARDS_NORMAL_PARAMS) + ctx->tx_obj->withdraw.has_source;
+            break;
+
+        case ResignSteward:
+            *numItems = (app_mode_expert() ? RESIGN_STEWARD_EXPERT_PARAMS : RESIGN_STEWARD_NORMAL_PARAMS);
+            break;
+
+        case ChangeConsensusKey:
+            *numItems = (app_mode_expert() ? CHANGE_CONSENSUS_KEY_EXPERT_PARAMS : CHANGE_CONSENSUS_KEY_NORMAL_PARAMS);
+            break;
+
+        case UpdateStewardCommission:
+            *numItems = (app_mode_expert() ? UPDATE_STEWARD_COMMISSION_EXPERT_PARAMS : UPDATE_STEWARD_COMMISSION_NORMAL_PARAMS) + 2 * ctx->tx_obj->updateStewardCommission.commissionLen;
+            break;
+
+        case ChangeValidatorMetadata: {
+            *numItems = app_mode_expert() ? CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS : CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS;
+
+            if (ctx->tx_obj->metadataChange.email.ptr != NULL) {
+                (*numItems)++;
+            }
+            if (ctx->tx_obj->metadataChange.description.ptr != NULL) {
+                (*numItems)++;
+            }
+            if (ctx->tx_obj->metadataChange.website.ptr != NULL) {
+                (*numItems)++;
+            }
+            if (ctx->tx_obj->metadataChange.discord_handle.ptr != NULL) {
+                (*numItems)++;
+            }
+            if (ctx->tx_obj->metadataChange.avatar.ptr != NULL) {
+                (*numItems)++;
+            }
+            if (ctx->tx_obj->metadataChange.has_commission_rate) {
+                (*numItems)++;
+            }
+
+            break;
+        }
+
+        case BridgePoolTransfer:
+            *numItems = app_mode_expert() ? BRIDGE_POOL_TRANSFER_EXPERT_PARAMS : BRIDGE_POOL_TRANSFER_NORMAL_PARAMS;
             break;
 
         default:

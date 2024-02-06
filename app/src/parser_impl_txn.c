@@ -18,10 +18,11 @@
 #include "crypto_helper.h"
 #include "leb128.h"
 #include "bech32.h"
+#include "allowed_transactions.h"
+#include "txn_validator.h"
+#include "txn_delegation.h"
 #include "stdbool.h"
 #include <zxformat.h>
-
-#define ADDRESS_LEN_BYTES   21
 
 #define DISCRIMINANT_DATA 0x00
 #define DISCRIMINANT_EXTRA_DATA 0x01
@@ -31,27 +32,9 @@
 #define DISCRIMINANT_MASP_TX 0x05
 #define DISCRIMINANT_MASP_BUILDER 0x06
 
-static const txn_types_t allowed_txn[] = {
-    {"tx_bond.wasm", Bond},
-    {"tx_unbond.wasm", Unbond},
-    {"tx_init_account.wasm", InitAccount},
-    {"tx_init_proposal.wasm", InitProposal},
-    {"tx_vote_proposal.wasm", VoteProposal},
-    {"tx_become_validator.wasm", BecomeValidator},
-    {"tx_reveal_pk.wasm", RevealPubkey},
-    {"tx_transfer.wasm", Transfer},
-    {"tx_update_account.wasm", UpdateVP},
-    {"tx_withdraw.wasm", Withdraw},
-    {"tx_change_validator_commission.wasm", CommissionChange},
-    {"tx_unjail_validator.wasm", UnjailValidator},
-    {"tx_ibc.wasm", IBC},
-};
-static const uint32_t allowed_txn_len = sizeof(allowed_txn) / sizeof(allowed_txn[0]);
-
 // Update VP types
 static const vp_types_t vp_user = { "vp_user.wasm", "User"};
 static const vp_types_t vp_validator = { "vp_validator.wasm", "Validator"};
-static const char *unknown_vp = "Unknown VP hash";
 
 #define NAM_TOKEN(_address, _symbol) { \
         .address  = _address, \
@@ -99,7 +82,7 @@ parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text)
         return parser_unexpected_value;
     }
 
-    *vp_type_text = (char*) PIC(unknown_vp);
+    *vp_type_text = NULL;
     if (vp_type_tag->ptr == NULL) {
         return parser_ok;
     }
@@ -173,94 +156,6 @@ static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *
     return parser_ok;
 }
 
-static parser_error_t readBecomeValidatorTxn(bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
-    if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
-        return parser_unexpected_value;
-    }
-    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
-
-    v->becomeValidator.address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.address.ptr, v->becomeValidator.address.len))
-
-    v->becomeValidator.consensus_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.consensus_key.ptr, v->becomeValidator.consensus_key.len))
-
-    v->becomeValidator.eth_cold_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_cold_key.ptr, v->becomeValidator.eth_cold_key.len))
-
-    v->becomeValidator.eth_hot_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.eth_hot_key.ptr, v->becomeValidator.eth_hot_key.len))
-
-    v->becomeValidator.protocol_key.len = PK_LEN_25519_PLUS_TAG;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.protocol_key.ptr, v->becomeValidator.protocol_key.len))
-
-    // Commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.commission_rate));
-
-    // Max commission rate change
-    CHECK_ERROR(readUint256(&ctx, &v->becomeValidator.max_commission_rate_change));
-
-    uint32_t tmpValue = 0;
-    // The validator email
-    CHECK_ERROR(readUint32(&ctx, &tmpValue));
-    if (tmpValue > UINT16_MAX) {
-        return parser_value_out_of_range;
-    }
-    v->becomeValidator.email.len = (uint16_t)tmpValue;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.email.ptr, v->becomeValidator.email.len))
-
-    /// The validator description
-    v->becomeValidator.description.ptr = NULL;
-    v->becomeValidator.description.len = 0;
-    uint8_t has_description = 0;
-    CHECK_ERROR(readByte(&ctx, &has_description))
-    if (has_description != 0 && has_description != 1) {
-        return parser_value_out_of_range;
-    }
-
-    if (has_description) {
-        CHECK_ERROR(readUint32(&ctx, &tmpValue));
-        if (tmpValue > UINT16_MAX) {
-            return parser_value_out_of_range;
-        }
-        v->becomeValidator.description.len = (uint16_t)tmpValue;
-        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.description.ptr, v->becomeValidator.description.len))
-    }
-
-    /// The validator website
-    v->becomeValidator.website.ptr = NULL;
-    v->becomeValidator.website.len = 0;
-    uint8_t has_website;
-    CHECK_ERROR(readByte(&ctx, &has_website))
-    if (has_website) {
-        CHECK_ERROR(readUint32(&ctx, &tmpValue));
-        if (tmpValue > UINT16_MAX) {
-            return parser_value_out_of_range;
-        }
-        v->becomeValidator.website.len = (uint16_t)tmpValue;
-        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.website.ptr, v->becomeValidator.website.len))
-    }
-
-    /// The validator's discord handle
-    v->becomeValidator.discord_handle.ptr = NULL;
-    v->becomeValidator.discord_handle.len = 0;
-    uint8_t has_discord_handle;
-    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
-    if (has_discord_handle) {
-        CHECK_ERROR(readUint32(&ctx, &tmpValue));
-        if (tmpValue > UINT16_MAX) {
-            return parser_value_out_of_range;
-        }
-        v->becomeValidator.discord_handle.len = (uint16_t)tmpValue;
-        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.discord_handle.ptr, v->becomeValidator.discord_handle.len))
-    }
-
-    if (ctx.offset != ctx.bufferLen) {
-        return parser_unexpected_characters;
-    }
-    return parser_ok;
-}
-
 static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *extra_data,const uint32_t extraDataLen, parser_tx_t *v) {
     if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
         return parser_unexpected_value;
@@ -269,10 +164,13 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
     // Pubkey
     v->initAccount.number_of_pubkeys = 0;
     CHECK_ERROR(readUint32(&ctx, &v->initAccount.number_of_pubkeys))
+
+    v->initAccount.pubkeys.ptr = ctx.buffer + ctx.offset;
     v->initAccount.pubkeys.len = 0;
-    if (v->initAccount.number_of_pubkeys > 0) {
-        v->initAccount.pubkeys.len = PK_LEN_25519_PLUS_TAG * v->initAccount.number_of_pubkeys;
-        CHECK_ERROR(readBytes(&ctx, &v->initAccount.pubkeys.ptr, v->initAccount.pubkeys.len))
+    bytes_t tmpPubkey = {0};
+    for (uint32_t i = 0; i < v->initAccount.number_of_pubkeys; i++) {
+        CHECK_ERROR(readPubkey(&ctx, &tmpPubkey))
+        v->initAccount.pubkeys.len += tmpPubkey.len;
     }
 
     // VP code hash
@@ -321,29 +219,36 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
     return parser_ok;
 }
 
-static parser_error_t readPGFPaymentAction(parser_context_t *ctx, bytes_t *buf, const bool first) {
-    const uint8_t tag = *(ctx->buffer + ctx->offset);
-    uint32_t action_len = 1 + ADDRESS_LEN_BYTES + 32;
-    switch (tag) {
-        case 0: // continuous payment
-            action_len += 1;
-            break;
-        case 1: // retro payment
-            // do nothing
-            break;
-        default:
-            return parser_unexpected_value;
+static parser_error_t readPGFPaymentAction(parser_context_t *ctx, bytes_t *buf) {
+    if (ctx == NULL || buf == NULL || ctx->offset >= ctx->bufferLen) {
+        return parser_unexpected_error;
     }
 
-    if (first) {
-        buf->len = action_len;
-        CHECK_ERROR(readBytes(ctx, &buf->ptr, buf->len))
-    } else {
-        buf->len += action_len;
-        uint8_t *tmpPtr = NULL;
-        CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpPtr, action_len))
+    const uint16_t startOffset = ctx->offset;
+
+    uint8_t pgfAction = 0;
+    CHECK_ERROR(readByte(ctx, &pgfAction));
+
+    if (pgfAction > Retro) {
+        return parser_value_out_of_range;
     }
 
+    if (pgfAction == Continuous) {
+        uint8_t addRemove = 0;
+        CHECK_ERROR(readByte(ctx, &addRemove));
+    }
+
+    uint8_t targetType = 0;
+    CHECK_ERROR(readByte(ctx, &targetType));
+
+    if (targetType != PGFTargetInternal) {
+        return parser_value_out_of_range;
+    }
+    // Read target and amount
+    buf->len = ADDRESS_LEN_BYTES + 32;
+    CHECK_ERROR(readBytes(ctx, &buf->ptr, buf->len))
+
+    buf->len = ctx->offset - startOffset;
     return parser_ok;
 }
 
@@ -355,10 +260,7 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     MEMZERO(&v->initProposal, sizeof(v->initProposal));
 
     // Check if the proposal has an ID
-    CHECK_ERROR(readByte(&ctx, &v->initProposal.has_id))
-    if (v->initProposal.has_id){
-        CHECK_ERROR(readUint64(&ctx, &v->initProposal.proposal_id));
-    }
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.proposal_id));
 
     // Read content section hash
     v->initProposal.content_sechash.len = HASH_LEN;
@@ -394,9 +296,12 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
         case PGFPayment: {
             CHECK_ERROR(readUint32(&ctx, &v->initProposal.pgf_payment_actions_num))
             if (v->initProposal.pgf_payment_actions_num > 0) {
-                CHECK_ERROR(readPGFPaymentAction(&ctx, &v->initProposal.pgf_payment_actions, true))
-                for (uint32_t i = 1; i < v->initProposal.pgf_payment_actions_num; ++i) {
-                    CHECK_ERROR(readPGFPaymentAction(&ctx, &v->initProposal.pgf_payment_actions, false))
+                v->initProposal.pgf_payment_actions.ptr = ctx.buffer + ctx.offset;
+                v->initProposal.pgf_payment_actions.len = 0;
+                bytes_t tmpPGFPayment = {0};
+                for (uint32_t i = 0; i < v->initProposal.pgf_payment_actions_num; i++) {
+                    CHECK_ERROR(readPGFPaymentAction(&ctx, &tmpPGFPayment))
+                    v->initProposal.pgf_payment_actions.len += tmpPGFPayment.len;
                 }
             }
             break;
@@ -470,18 +375,7 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     // Proposal vote
     CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.proposal_vote))
 
-    if (v->voteProposal.proposal_vote == Yay) {
-        CHECK_ERROR(readByte(&ctx, (uint8_t*) &v->voteProposal.vote_type))
-        switch (v->voteProposal.vote_type) {
-            case Default:
-            case PGFSteward:
-            case PGFPayment:
-                break;
-
-            default:
-                return parser_unexpected_value;
-        }
-    } else if (v->voteProposal.proposal_vote != Nay) {
+    if (v->voteProposal.proposal_vote > Abstain) {
         return parser_unexpected_value;
     }
 
@@ -508,11 +402,7 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Pubkey
-    if (ctx.bufferLen != 33) {
-        return parser_unexpected_value;
-    }
-    v->revealPubkey.pubkey.len = 33;
-    CHECK_ERROR(readBytes(&ctx, &v->revealPubkey.pubkey.ptr, v->revealPubkey.pubkey.len))
+    CHECK_ERROR(readPubkey(&ctx, &v->revealPubkey.pubkey))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -520,21 +410,7 @@ static parser_error_t readRevealPubkeyTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
-static parser_error_t readUnjailValidatorTxn(const bytes_t *data, parser_tx_t *v) {
-    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    // Address
-    if (ctx.bufferLen != ADDRESS_LEN_BYTES) {
-        return parser_unexpected_value;
-    }
-    v->revealPubkey.pubkey.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->unjailValidator.validator.ptr, v->unjailValidator.validator.len))
-
-    if (ctx.offset != ctx.bufferLen) {
-        return parser_unexpected_characters;
-    }
-    return parser_ok;
-}
 
 static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
@@ -566,7 +442,8 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->commissionChange.validator.ptr, v->commissionChange.validator.len))
 
     // Read new commission rate
-    CHECK_ERROR(readUint256(&ctx, &v->commissionChange.new_rate));
+    v->commissionChange.new_rate.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->commissionChange.new_rate.ptr, v->commissionChange.new_rate.len))
 
 
     if (ctx.offset != ctx.bufferLen) {
@@ -588,21 +465,20 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
 
     // VP code hash (optional)
     CHECK_ERROR(readByte(&ctx, &v->updateVp.has_vp_code));
-    if (v->updateVp.has_vp_code == 0) {
-        // Not so optional
-        return parser_unexpected_value;
+    if (v->updateVp.has_vp_code) {
+        v->updateVp.vp_type_sechash.len = HASH_LEN;
+        CHECK_ERROR(readBytes(&ctx, &v->updateVp.vp_type_sechash.ptr, v->updateVp.vp_type_sechash.len))
     }
-
-    v->updateVp.vp_type_sechash.len = HASH_LEN;
-    CHECK_ERROR(readBytes(&ctx, &v->updateVp.vp_type_sechash.ptr, v->updateVp.vp_type_sechash.len))
 
     // Pubkeys
     v->updateVp.number_of_pubkeys = 0;
     CHECK_ERROR(readUint32(&ctx, &v->updateVp.number_of_pubkeys))
     v->updateVp.pubkeys.len = 0;
-    if (v->updateVp.number_of_pubkeys > 0) {
-        v->updateVp.pubkeys.len = PK_LEN_25519_PLUS_TAG * v->updateVp.number_of_pubkeys;
-        CHECK_ERROR(readBytes(&ctx, &v->updateVp.pubkeys.ptr, v->updateVp.pubkeys.len))
+    v->updateVp.pubkeys.ptr = ctx.buffer + ctx.offset;
+    for (uint32_t i = 0; i < v->updateVp.number_of_pubkeys; i++) {
+        bytes_t tmpPubkey = {0};
+        CHECK_ERROR(readPubkey(&ctx, &tmpPubkey))
+        v->updateVp.pubkeys.len += tmpPubkey.len;
     }
 
     // Threshold (optional)
@@ -613,7 +489,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
 
     bool found_vp_code = false;
     // Load the linked to data from the extra data sections
-    for (uint32_t i = 0; i < extraDataLen; i++) {
+    for (uint32_t i = 0; i < extraDataLen * v->updateVp.has_vp_code; i++) {
         parser_context_t extra_data_ctx = {
             .buffer = extra_data[i].bytes.ptr,
             .bufferLen = extra_data[i].bytes.len,
@@ -641,7 +517,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
         }
     }
 
-    if (!found_vp_code) {
+    if (v->updateVp.has_vp_code && !found_vp_code) {
         return parser_missing_field;
     } else if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -668,7 +544,8 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
 
     // Amount
-    CHECK_ERROR(readUint256(&ctx, &v->transfer.amount))
+    v->transfer.amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
 
     // Amount denomination
     CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
@@ -700,25 +577,184 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     return parser_ok;
 }
 
-static parser_error_t readBondUnbondTxn(const bytes_t *data, parser_tx_t *v) {
-    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/transaction/pos.rs#L24-L35
+static parser_error_t readResignSteward(const bytes_t *data, tx_resign_steward_t *resignSteward) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    v->bond.validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->bond.validator.ptr, v->bond.validator.len))
-
-    // Amount
-    MEMCPY(&v->bond.amount, ctx.buffer + ctx.offset, sizeof(uint256_t));
-    ctx.offset += sizeof(uint256_t);
-    ctx.offset++;   // Skip last byte --> Check this
-
-    // Source
-    if (ctx.offset < ctx.bufferLen) {
-        v->bond.source.len = ADDRESS_LEN_BYTES;
-        CHECK_ERROR(readBytes(&ctx, &v->bond.source.ptr, v->bond.source.len))
-        v->bond.has_source = 1;
+    resignSteward->steward.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &resignSteward->steward.ptr, resignSteward->steward.len))
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
     }
+    return parser_ok;
+}
+
+static parser_error_t readChangeConsensusKey(const bytes_t *data, tx_consensus_key_change_t *consensusKeyChange) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    consensusKeyChange->validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &consensusKeyChange->validator.ptr, consensusKeyChange->validator.len))
+    // Consensus key
+    CHECK_ERROR(readPubkey(&ctx, &consensusKeyChange->consensus_key))
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readUpdateStewardCommission(const bytes_t *data, tx_update_steward_commission_t *updateStewardCommission) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Address
+    updateStewardCommission->steward.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &updateStewardCommission->steward.ptr, updateStewardCommission->steward.len))
+
+    updateStewardCommission->commissionLen = 0;
+    CHECK_ERROR(readUint32(&ctx, &updateStewardCommission->commissionLen))
+
+    updateStewardCommission->commission.ptr = ctx.buffer + ctx.offset;
+    const uint16_t startOffset = ctx.offset;
+    bytes_t address = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+    bytes_t amount = {.ptr = NULL, .len = 32};
+    for (uint32_t i = 0; i < updateStewardCommission->commissionLen; i++) {
+        CHECK_ERROR(readBytes(&ctx, &address.ptr, address.len))
+        CHECK_ERROR(readBytes(&ctx, &amount.ptr, amount.len))
+    }
+    updateStewardCommission->commission.len = ctx.offset - startOffset;
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metadata_change_t *metadataChange) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Validator
+    metadataChange->validator.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &metadataChange->validator.ptr, metadataChange->validator.len))
+
+    uint32_t tmpValue = 0;
+    // The validator email
+    metadataChange->email.ptr = NULL;
+    metadataChange->email.len = 0;
+    uint8_t has_email = 0;
+    CHECK_ERROR(readByte(&ctx, &has_email))
+    if (has_email != 0 && has_email != 1) {
+        return parser_value_out_of_range;
+    }
+    if (has_email) {
+      CHECK_ERROR(readUint32(&ctx, &tmpValue));
+      if (tmpValue > UINT16_MAX) {
+        return parser_value_out_of_range;
+      }
+      metadataChange->email.len = (uint16_t)tmpValue;
+      CHECK_ERROR(readBytes(&ctx, &metadataChange->email.ptr, metadataChange->email.len))
+    }
+
+    /// The validator description
+    metadataChange->description.ptr = NULL;
+    metadataChange->description.len = 0;
+    uint8_t has_description = 0;
+    CHECK_ERROR(readByte(&ctx, &has_description))
+    if (has_description != 0 && has_description != 1) {
+        return parser_value_out_of_range;
+    }
+    if (has_description) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        metadataChange->description.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->description.ptr, metadataChange->description.len))
+    }
+
+    /// The validator website
+    metadataChange->website.ptr = NULL;
+    metadataChange->website.len = 0;
+    uint8_t has_website;
+    CHECK_ERROR(readByte(&ctx, &has_website))
+    if (has_website) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        metadataChange->website.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->website.ptr, metadataChange->website.len))
+    }
+
+    /// The validator's discord handle
+    metadataChange->discord_handle.ptr = NULL;
+    metadataChange->discord_handle.len = 0;
+    uint8_t has_discord_handle;
+    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
+    if (has_discord_handle) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        metadataChange->discord_handle.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->discord_handle.ptr, metadataChange->discord_handle.len))
+    }
+
+    /// The validator's avatar
+    metadataChange->avatar.ptr = NULL;
+    metadataChange->avatar.len = 0;
+    uint8_t has_avatar;
+    CHECK_ERROR(readByte(&ctx, &has_avatar))
+    if (has_avatar) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        metadataChange->avatar.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->avatar.ptr, metadataChange->avatar.len))
+    }
+
+    // Commission rate
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_commission_rate))
+    if (metadataChange->has_commission_rate) {
+        metadataChange->commission_rate.len = 32;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->commission_rate.ptr, metadataChange->commission_rate.len))
+    }
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+    return parser_ok;
+}
+
+static parser_error_t readBridgePoolTransfer(const bytes_t *data, tx_bridge_pool_transfer_t *bridgePoolTransfer) {
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    CHECK_ERROR(readByte(&ctx, &bridgePoolTransfer->kind))
+    if (bridgePoolTransfer->kind > Nut) {
+         return parser_value_out_of_range;
+    }
+
+    bridgePoolTransfer->asset.len = ETH_ADDRESS_LEN;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->asset.ptr, bridgePoolTransfer->asset.len))
+
+    bridgePoolTransfer->recipient.len = ETH_ADDRESS_LEN;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->recipient.ptr, bridgePoolTransfer->recipient.len))
+
+    bridgePoolTransfer->sender.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->sender.ptr, bridgePoolTransfer->sender.len))
+
+    bridgePoolTransfer->amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->amount.ptr, bridgePoolTransfer->amount.len))
+
+    bridgePoolTransfer->gasAmount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasAmount.ptr, bridgePoolTransfer->gasAmount.len))
+
+    bridgePoolTransfer->gasPayer.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasPayer.ptr, bridgePoolTransfer->gasPayer.len))
+
+    bridgePoolTransfer->gasToken.len = ADDRESS_LEN_BYTES;
+    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasToken.ptr, bridgePoolTransfer->gasToken.len))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -748,60 +784,88 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     // Read tag
     CHECK_ERROR(checkTag(&ctx, 0x0A))
     // Skip URL: /ibc.applications.transfer.v1.MsgTransfer
-    uint8_t tmp = 0;
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    ctx.offset += tmp;
+    uint16_t tmpFieldLen = 0;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
+    bytes_t tmpUrl = {.ptr = NULL, .len = (uint16_t)tmpFieldLen};
+    CHECK_ERROR(readBytes(&ctx, &tmpUrl.ptr, tmpUrl.len))
 
+    // Check value field (expect vector and check size)
     CHECK_ERROR(checkTag(&ctx, 0x12))
-    // Missing bytes
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
+
+    if (tmpFieldLen != ctx.bufferLen - ctx.offset) {
+        return parser_unexpected_buffer_end;
+    }
 
     // Read port id
     CHECK_ERROR(checkTag(&ctx, 0x0A))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.port_id.len = tmp;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.port_id.len))
     CHECK_ERROR(readBytes(&ctx, &v->ibc.port_id.ptr, v->ibc.port_id.len))
 
     // Read channel id
     CHECK_ERROR(checkTag(&ctx, 0x12))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.channel_id.len = tmp;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.channel_id.len))
     CHECK_ERROR(readBytes(&ctx, &v->ibc.channel_id.ptr, v->ibc.channel_id.len))
 
+    ////// Packed data
     // Read token address
     CHECK_ERROR(checkTag(&ctx, 0x1A))
-    CHECK_ERROR(readByte(&ctx, &tmp))
+    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
+
     CHECK_ERROR(checkTag(&ctx, 0x0A))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.token_address.len = tmp;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_address.len))
     CHECK_ERROR(readBytes(&ctx, &v->ibc.token_address.ptr, v->ibc.token_address.len))
 
     // Read token amount
     CHECK_ERROR(checkTag(&ctx, 0x12))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.token_amount.len = tmp;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_amount.len))
     CHECK_ERROR(readBytes(&ctx, &v->ibc.token_amount.ptr, v->ibc.token_amount.len))
 
     // Read sender
-    CHECK_ERROR(checkTag(&ctx, 0x22))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.sender_address.len = tmp;
-    CHECK_ERROR(readBytes(&ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+    if (*(ctx.buffer + ctx.offset) == 0x22) {
+        CHECK_ERROR(checkTag(&ctx, 0x22))
+        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.sender_address.len))
+        CHECK_ERROR(readBytes(&ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+    }
 
     // Read receiver
     CHECK_ERROR(checkTag(&ctx, 0x2A))
-    CHECK_ERROR(readByte(&ctx, &tmp))
-    v->ibc.receiver.len = tmp;
+    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.receiver.len))
     CHECK_ERROR(readBytes(&ctx, &v->ibc.receiver.ptr, v->ibc.receiver.len))
+    ////////////////
 
     // Read timeout height
     CHECK_ERROR(checkTag(&ctx, 0x32))
-    CHECK_ERROR(readByte(&ctx, &v->ibc.timeout_height))
+    CHECK_ERROR(readByte(&ctx, &v->ibc.timeout_height_type))
 
+    if (v->ibc.timeout_height_type > 0) {
+        uint8_t consumed = 0;
+        uint64_t tmp = 0;
+
+        // Read 0x08
+        CHECK_ERROR(checkTag(&ctx, 0x08))
+        const uint64_t remainingBytes = ctx.bufferLen - ctx.offset;
+        decodeLEB128(ctx.buffer + ctx.offset, remainingBytes, &consumed, &tmp);
+        v->ibc.revision_number = tmp;
+        ctx.offset += consumed;
+
+        CHECK_ERROR(checkTag(&ctx, 0x10))
+        const uint64_t remainingBytes2 = ctx.bufferLen - ctx.offset;
+        decodeLEB128(ctx.buffer + ctx.offset, remainingBytes2, &consumed, &tmp);
+        v->ibc.revision_height = tmp;
+        ctx.offset += consumed;
+    }
     // Read timeout timestamp
     CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
 
+    CHECK_ERROR(checkTag(&ctx, 0x42))
+    bytes_t  tmpBytes = {0};
+    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpBytes.len))
+    CHECK_ERROR(readBytes(&ctx, &tmpBytes.ptr, tmpBytes.len))
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
     return parser_ok;
 }
 
@@ -846,24 +910,39 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.header.dataHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.dataHash.ptr, v->transaction.header.dataHash.len))
 
+    // Memo hash
+    v->transaction.header.memoHash.len = HASH_LEN;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.memoHash.ptr, v->transaction.header.memoHash.len))
+
     v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
     CHECK_ERROR(checkTag(ctx, 0x01))
     // Fee.amount
-    CHECK_ERROR(readUint256(ctx, &v->transaction.header.fees.amount))
+    v->transaction.header.fees.amount.len = 32;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.amount.ptr, v->transaction.header.fees.amount.len))
+    // Fee.denom
+    CHECK_ERROR(readByte(ctx, &v->transaction.header.fees.denom))
 
     // Fee.address
     v->transaction.header.fees.address.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.address.ptr, v->transaction.header.fees.address.len))
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transaction.header.fees.address, &v->transaction.header.fees.symbol))
+
     // Pubkey
-    v->transaction.header.pubkey.len = PK_LEN_25519_PLUS_TAG;   // Check tag (first byte: 0x00 | 0x01)
+    if (ctx->offset >= ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+    const uint8_t pkType = *(ctx->buffer + ctx->offset);
+    //Pubkey must include pkType (needed for encoding)
+    v->transaction.header.pubkey.len = 1 + (pkType == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN);
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
+
     // Epoch
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
+
 
     // Unshielded section hash
     uint8_t has_unshield_section_hash = 0;
@@ -1162,10 +1241,12 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
     }
 
     CHECK_ERROR(readTransactionType(&txObj->transaction.sections.code.tag, &txObj->typeTx))
+
+    const section_t *data = &txObj->transaction.sections.data;
     switch (txObj->typeTx) {
         case Bond:
         case Unbond:
-            CHECK_ERROR(readBondUnbondTxn(&txObj->transaction.sections.data.bytes, txObj))
+            CHECK_ERROR(readBondUnbond(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case Custom:
             break;
@@ -1184,6 +1265,7 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         case RevealPubkey:
             CHECK_ERROR(readRevealPubkeyTxn(&txObj->transaction.sections.data.bytes,  txObj))
             break;
+        case ClaimRewards:
         case Withdraw:
             CHECK_ERROR(readWithdrawTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
@@ -1191,17 +1273,45 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             CHECK_ERROR(readCommissionChangeTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case BecomeValidator:
-            CHECK_ERROR(readBecomeValidatorTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
+            CHECK_ERROR(readBecomeValidator(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
             break;
         case UpdateVP:
             CHECK_ERROR(readUpdateVPTxn(&txObj->transaction.sections.data.bytes, txObj->transaction.sections.extraData, txObj->transaction.sections.extraDataLen, txObj))
             break;
         case UnjailValidator:
-            CHECK_ERROR(readUnjailValidatorTxn(&txObj->transaction.sections.data.bytes, txObj))
+            CHECK_ERROR(readUnjailValidator(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case IBC:
             CHECK_ERROR(readIBCTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
+        case ReactivateValidator:
+        case DeactivateValidator:
+            CHECK_ERROR(readActivateValidator(&data->bytes, &txObj->activateValidator))
+            break;
+        case Redelegate:
+            CHECK_ERROR(readRedelegate(&data->bytes, &txObj->redelegation))
+            break;
+
+        case ResignSteward:
+            CHECK_ERROR(readResignSteward(&data->bytes, &txObj->resignSteward))
+            break;
+
+        case ChangeConsensusKey:
+            CHECK_ERROR(readChangeConsensusKey(&data->bytes, &txObj->consensusKeyChange))
+            break;
+
+        case UpdateStewardCommission:
+            CHECK_ERROR(readUpdateStewardCommission(&data->bytes, &txObj->updateStewardCommission))
+            break;
+
+        case ChangeValidatorMetadata:
+            CHECK_ERROR(readChangeValidatorMetadata(&data->bytes, &txObj->metadataChange))
+            break;
+
+        case BridgePoolTransfer:
+            CHECK_ERROR(readBridgePoolTransfer(&data->bytes, &txObj->bridgePoolTransfer))
+            break;
+
         default:
             return parser_unexpected_method;
     }
