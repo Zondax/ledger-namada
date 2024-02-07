@@ -66,9 +66,6 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         } default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 4;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -120,9 +117,6 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -163,9 +157,6 @@ static parser_error_t printRedelegateTxn( const parser_context_t *ctx,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -192,9 +183,6 @@ static parser_error_t printReactivateValidatorTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->reactivateValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -221,9 +209,6 @@ static parser_error_t printDeactivateValidatorTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->reactivateValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -250,9 +235,6 @@ static parser_error_t printResignStewardTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -283,9 +265,6 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -309,9 +288,6 @@ static parser_error_t printCustomTxn( const parser_context_t *ctx,
             }
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 1;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -379,9 +355,6 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
             }
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 3 + pubkeys_num;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -485,9 +458,6 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -564,9 +534,6 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             CHECK_ERROR(printAddress(delegation, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= (4 + voteProposal->number_of_delegations);
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -597,9 +564,6 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
             break;
 
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -626,9 +590,6 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 2;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -708,9 +669,6 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             }
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             return printExpert(ctx, adjustedDisplayIdx - 5, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -802,9 +760,6 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             break;
         }
         default: {
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 12;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
@@ -882,9 +837,6 @@ static parser_error_t printChangeValidatorMetadataTxn(  const parser_context_t *
             break;
         }
         default: {
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
@@ -926,9 +878,6 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->withdraw.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -968,9 +917,6 @@ static parser_error_t printClaimRewardsTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->withdraw.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -1002,9 +948,6 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -1060,9 +1003,6 @@ static parser_error_t printUpdateStewardCommissionTxn( const parser_context_t *c
           }
       break;
     } default:
-            if (!app_mode_expert()) {
-                return parser_display_idx_out_of_range;
-            }
             adjustedDisplayIdx -= 3;
             return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
@@ -1137,9 +1077,6 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
 
 
         default:
-            if (!app_mode_expert()) {
-               return parser_display_idx_out_of_range;
-            }
             displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }

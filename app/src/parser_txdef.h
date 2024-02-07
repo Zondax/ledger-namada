@@ -129,6 +129,8 @@ typedef struct {
 } masp_tx_section_t;
 #endif
 
+typedef struct section_t section_t;
+
 typedef struct {
     bytes_t extBytes;
     bytes_t bytes;
@@ -140,11 +142,12 @@ typedef struct {
     bytes_t dataHash;
     bytes_t codeHash;
     bytes_t memoHash;
+    section_t *memoSection;
 } header_t;
 
 #define CX_SHA256_SIZE 32
 
-typedef struct {
+struct section_t {
     uint8_t discriminant;
     bytes_t salt;
     uint8_t commitmentDiscriminant;
@@ -152,7 +155,7 @@ typedef struct {
     uint8_t bytes_hash[CX_SHA256_SIZE];
     bytes_t tag;
     uint8_t idx;
-} section_t;
+};
 
 typedef struct {
     uint32_t sectionLen;

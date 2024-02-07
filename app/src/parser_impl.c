@@ -139,6 +139,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
     }
 
+    if (ctx->tx_obj->transaction.header.memoSection != NULL) {
+      (*numItems)++;
+    }
+
     if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
         (*numItems)++;
     }

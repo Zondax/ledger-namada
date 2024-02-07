@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include <zxformat.h>
+#include "app_mode.h"
 #include "zxerror.h"
 #include "timeutils.h"
 
@@ -33,16 +34,6 @@
     if((count + 1) >= dstLen) {             \
         return parser_decimal_too_big;     \
     }
-
-__Z_INLINE bool isAllZeroes(const void *buf, size_t n) {
-    uint8_t *p = (uint8_t *) buf;
-    for (size_t i = 0; i < n; ++i) {
-        if (p[i]) {
-            return false;
-        }
-    }
-    return true;
-}
 
 parser_error_t uint256_to_str(char *output, uint16_t outputLen, const uint256_t *value) {
     if (output == NULL || value == NULL) {
@@ -273,37 +264,51 @@ parser_error_t printExpert( const parser_context_t *ctx,
                                    char *outKey, uint16_t outKeyLen,
                                    char *outVal, uint16_t outValLen,
                                    uint8_t pageIdx, uint8_t *pageCount) {
-
-    if(displayIdx >= 5 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
+  if (displayIdx >= 0 && !ctx->tx_obj->transaction.header.memoSection) {
+    displayIdx++;
+  }
+    if(displayIdx >= 6 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
         displayIdx++;
     }
+    if (!app_mode_expert() && displayIdx > 0) {
+    return parser_display_idx_out_of_range;
+  }
 
     switch (displayIdx) {
-        case 0:
+      case 0:
+        if (ctx->tx_obj->transaction.header.memoSection->commitmentDiscriminant) {
+          snprintf(outKey, outKeyLen, "Memo");
+          pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->transaction.header.memoSection->bytes.ptr, ctx->tx_obj->transaction.header.memoSection->bytes.len, pageIdx, pageCount);
+        } else {
+          snprintf(outKey, outKeyLen, "Memo Hash");
+          pageStringHex(outVal, outValLen, (const char*) ctx->tx_obj->transaction.header.memoSection->bytes_hash, CX_SHA256_SIZE, pageIdx, pageCount);
+        }
+      break;
+      case 1:
             snprintf(outKey, outKeyLen, "Timestamp");
             CHECK_ERROR(printTimestamp(ctx->tx_obj->transaction.timestamp,
                                        outVal, outValLen, pageIdx, pageCount))
-            break;
-        case 1: {
+                                       break;
+        case 2: {
             const bytes_t *pubkey = &ctx->tx_obj->transaction.header.pubkey;
             snprintf(outKey, outKeyLen, "Pubkey");
             CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
-        case 2:
+        case 3:
             snprintf(outKey, outKeyLen, "Epoch");
             if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.epoch) != NULL) {
                 return parser_unexpected_error;
             }
             break;
-        case 3: {
+        case 4: {
             snprintf(outKey, outKeyLen, "Gas limit");
             if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.gasLimit) != NULL) {
                 return parser_unexpected_error;
             }
             break;
         }
-        case 4: {
+        case 5: {
             if(ctx->tx_obj->transaction.header.fees.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Fees/gas unit");
                 CHECK_ERROR(print_uint256(&ctx->tx_obj->transaction.header.fees.amount, ctx->tx_obj->transaction.header.fees.amount_denom,
@@ -315,7 +320,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
             }
             break;
         }
-        case 5: {
+        case 6: {
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(print_uint256(&ctx->tx_obj->transaction.header.fees.amount, ctx->tx_obj->transaction.header.fees.amount_denom,
                                     "",

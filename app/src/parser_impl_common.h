@@ -89,6 +89,7 @@ extern "C" {
 #define IBC_NORMAL_PARAMS  8
 #define IBC_EXPERT_PARAMS  13
 
+bool isAllZeroes(const void *buf, size_t n);
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);

@@ -1381,6 +1381,26 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
         return parser_unexpected_error;
     }
 
+    txObj->transaction.header.memoSection = NULL;
+    if (!isAllZeroes(txObj->transaction.header.memoHash.ptr, txObj->transaction.header.memoHash.len)) {
+      section_t *extra_data = txObj->transaction.sections.extraData;
+      // Load the linked to data from the extra data sections
+      for (uint32_t i = 0; i < txObj->transaction.sections.extraDataLen; i++) {
+        uint8_t extraDataHash[HASH_LEN] = {0};
+        if (crypto_hashExtraDataSection(&extra_data[i], extraDataHash, sizeof(extraDataHash)) != zxerr_ok) {
+          return parser_unexpected_error;
+        }
+
+        if (!memcmp(extraDataHash, txObj->transaction.header.memoHash.ptr, HASH_LEN)) {
+          // If this section contains the memo
+          txObj->transaction.header.memoSection = &extra_data[i];
+        }
+      }
+      if (!txObj->transaction.header.memoSection) {
+        return parser_unexpected_error;
+      }
+    }
+
     CHECK_ERROR(readTransactionType(&txObj->transaction.sections.code.tag, &txObj->typeTx))
     switch (txObj->typeTx) {
         case Bond:
