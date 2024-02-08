@@ -139,6 +139,7 @@ typedef struct {
     bytes_t unshieldSectionHash;
     bytes_t dataHash;
     bytes_t codeHash;
+    bytes_t memoHash;
 } header_t;
 
 typedef struct {
@@ -181,12 +182,19 @@ typedef struct{
         tx_init_proposal_t initProposal;
         tx_vote_proposal_t voteProposal;
         tx_reveal_pubkey_t revealPubkey;
-        tx_unjail_validator_t unjailValidator;
         tx_withdraw_t withdraw;
         tx_commission_change_t commissionChange;
-        tx_become_validator_t becomeValidator;
         tx_update_vp_t updateVp;
         tx_ibc_t ibc;
+        tx_unjail_validator_t unjailValidator;
+        tx_become_validator_t becomeValidator;
+        tx_activate_validator_t activateValidator;
+        tx_redelegation_t redelegation;
+        tx_resign_steward_t resignSteward;
+        tx_consensus_key_change_t consensusKeyChange;
+        tx_update_steward_commission_t updateStewardCommission;
+        tx_metadata_change_t metadataChange;
+        tx_bridge_pool_transfer_t bridgePoolTransfer;
     };
 
     transaction_t transaction;

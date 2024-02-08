@@ -124,6 +124,8 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser_impl_txn.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/leb128.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_validator.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_delegation.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})

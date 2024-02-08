@@ -45,7 +45,7 @@ parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printAmount( const uint256_t *amount, uint8_t amountDenom, const char* symbol,
+parser_error_t printAmount( const bytes_t *amount, bool isSigned, uint8_t amountDenom, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
@@ -53,7 +53,8 @@ parser_error_t printPublicKey(const bytes_t *pubkey,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t uint256_to_str(char *output, uint16_t outputLen, const uint256_t *value);
+parser_error_t joinStrings(const bytes_t first, const bytes_t second, const char *separator,
+                            char * outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }
