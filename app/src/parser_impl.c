@@ -67,7 +67,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         }
         case InitProposal: {
-            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS);
+            *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS) + ctx->tx_obj->initProposal.proposal_type_entries;
             break;
         }
         case VoteProposal: {

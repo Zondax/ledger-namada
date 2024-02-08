@@ -404,21 +404,32 @@ static parser_error_t readPGFAction(parser_context_t *ctx) {
   return parser_ok;
 }
 
-static parser_error_t readProposalType(parser_context_t *ctx, parser_tx_t *v) {
+#define SELECT(pos, target, body) if(pos && (*pos)++ == target) { body; return parser_ok; }
+
+parser_error_t readProposalType(parser_context_t *ctx, parser_tx_t *v, uint16_t *pos, uint16_t target,
+                                       char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen,
+                                       uint8_t pageIdx, uint8_t *pageCount) {
   v->initProposal.has_proposal_code = 0;
   CHECK_ERROR(readByte(ctx, &v->initProposal.proposal_type))
     switch (v->initProposal.proposal_type) {
     case Default: {
-      // Proposal type 0 is Default(Option<Hash>), where Hash is the proposal code.
-      CHECK_ERROR(readByte(ctx, &v->initProposal.has_proposal_code))
+      SELECT(pos, target, {snprintf(outKey, outKeyLen, "Proposal type"); snprintf(outVal, outValLen, "Default");})
+        // Proposal type 0 is Default(Option<Hash>), where Hash is the proposal code.
+        CHECK_ERROR(readByte(ctx, &v->initProposal.has_proposal_code))
         if (v->initProposal.has_proposal_code) {
           v->initProposal.proposal_code_sechash.len = HASH_LEN;
           CHECK_ERROR(readBytes(ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
+            SELECT(pos, target, {
+                snprintf(outKey, outKeyLen, "Proposal hash");
+                const uint8_t *codeHash = v->initProposal.proposal_code_hash;
+                pageStringHex(outVal, outValLen, (const char*)codeHash, CX_SHA256_SIZE, pageIdx, pageCount);
+              })
             }
       break;
     }
 
     case PGFSteward: {
+      SELECT(pos, target, {snprintf(outKey, outKeyLen, "Proposal type"); snprintf(outVal, outValLen, "PGF Steward");})
       CHECK_ERROR(readUint32(ctx, &v->initProposal.pgf_steward_actions_num))
         if (v->initProposal.pgf_steward_actions_num > 0) {
           v->initProposal.pgf_steward_actions.len = (1 + ADDRESS_LEN_BYTES) * v->initProposal.pgf_steward_actions_num;
@@ -428,14 +439,14 @@ static parser_error_t readProposalType(parser_context_t *ctx, parser_tx_t *v) {
     }
 
     case PGFPayment: {
+      SELECT(pos, target, {snprintf(outKey, outKeyLen, "Proposal type"); snprintf(outVal, outValLen, "PGF Payment");})
       CHECK_ERROR(readUint32(ctx, &v->initProposal.pgf_payment_actions_num))
-        v->initProposal.pgf_payment_actions.ptr = ctx->buffer + ctx->offset;
+        
       if (v->initProposal.pgf_payment_actions_num > 0) {
         for (uint32_t i = 0; i < v->initProposal.pgf_payment_actions_num; ++i) {
           CHECK_ERROR(readPGFAction(ctx))
             }
       }
-      v->initProposal.pgf_payment_actions.ptr = ctx->buffer + ctx->offset - v->initProposal.pgf_payment_actions.len;
       break;
     }
 
@@ -463,7 +474,10 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     CHECK_ERROR(readBytes(&ctx, &v->initProposal.author.ptr, v->initProposal.author.len))
 
     // Proposal type
-    CHECK_ERROR(readProposalType(&ctx, v))
+    v->initProposal.proposal_type_bytes.ptr = ctx.buffer + ctx.offset;
+    v->initProposal.proposal_type_entries = 0;
+    CHECK_ERROR(readProposalType(&ctx, v, &v->initProposal.proposal_type_entries, 0xFFFF, NULL, 0, NULL, 0, 0, NULL))
+    v->initProposal.proposal_type_bytes.len = ctx.buffer + ctx.offset - v->initProposal.proposal_type_bytes.ptr;
 
     // Voting start epoch
     CHECK_ERROR(readUint64(&ctx, &v->initProposal.voting_start_epoch))
@@ -488,7 +502,7 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
             MEMCPY(v->initProposal.content_hash, extra_data[i].bytes_hash, CX_SHA256_SIZE);
             found_content = true;
         }
-        if (v->initProposal.has_proposal_code &&
+        if (v->initProposal.proposal_type == Default && v->initProposal.has_proposal_code &&
             !memcmp(extraDataHash, v->initProposal.proposal_code_sechash.ptr, HASH_LEN))
         {
             // If this section contains the proposal code

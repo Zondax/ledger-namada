@@ -53,8 +53,8 @@ extern "C" {
 #define INIT_ACCOUNT_NORMAL_PARAMS  3
 #define INIT_ACCOUNT_EXPERT_PARAMS  8
 
-#define INIT_PROPOSAL_NORMAL_PARAMS  8
-#define INIT_PROPOSAL_EXPERT_PARAMS  13
+#define INIT_PROPOSAL_NORMAL_PARAMS  7
+#define INIT_PROPOSAL_EXPERT_PARAMS  12
 
 #define VOTE_PROPOSAL_NORMAL_PARAMS 4
 #define VOTE_PROPOSAL_EXPERT_PARAMS 9
@@ -109,6 +109,9 @@ parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
+parser_error_t readProposalType(parser_context_t *ctx, parser_tx_t *v, uint16_t *pos, uint16_t target,
+                                       char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen,
+                                uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }

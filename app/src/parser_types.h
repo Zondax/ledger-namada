@@ -88,6 +88,7 @@ typedef struct {
     uint8_t content_hash[CX_SHA256_SIZE];
     bytes_t content_sechash;
     bytes_t author;
+    uint16_t proposal_type_entries;
     uint64_t voting_start_epoch;
     uint64_t voting_end_epoch;
     uint64_t grace_epoch;
@@ -107,6 +108,7 @@ typedef struct {
             bytes_t pgf_payment_actions;
         };
     };
+  bytes_t proposal_type_bytes;
 
     uint8_t content_secidx;
     uint8_t proposal_code_secidx;

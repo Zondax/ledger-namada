@@ -367,9 +367,15 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
-    // Less than 20 characters are epochs are uint64
+  uint8_t adjustedDisplayIdx = displayIdx;
+  uint8_t proposalTypeIdx = adjustedDisplayIdx - 2;
+  if (2 <= adjustedDisplayIdx) {
+    adjustedDisplayIdx -= MIN(proposalTypeIdx + 1, ctx->tx_obj->initProposal.proposal_type_entries);
+    adjustedDisplayIdx += 1;
+  }
+  // Less than 20 characters are epochs are uint64
   char strEpoch[21] = {0};
-    switch (displayIdx) {
+    switch (adjustedDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init proposal");
@@ -390,28 +396,9 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             break;
 
         case 2: {
-            snprintf(outKey, outKeyLen, "Proposal type");
-            switch (ctx->tx_obj->initProposal.proposal_type) {
-                case Default:
-                    if (ctx->tx_obj->initProposal.has_proposal_code) {
-                        const uint8_t *codeHash = ctx->tx_obj->initProposal.proposal_code_hash;
-                        pageStringHex(outVal, outValLen, (const char*)codeHash, CX_SHA256_SIZE, pageIdx, pageCount);
-                    } else {
-                        snprintf(outVal, outValLen, "Default");
-                    }
-                    break;
-
-                case PGFSteward:
-                    snprintf(outVal, outValLen, "PGF Steward");
-                    break;
-
-                case PGFPayment:
-                    snprintf(outVal, outValLen, "PGF Payment");
-                    break;
-
-                default:
-                    return parser_unexpected_type;
-            }
+          uint16_t pos = 0;
+          parser_context_t inner_ctx = {.buffer = ctx->tx_obj->initProposal.proposal_type_bytes.ptr, .bufferLen = ctx->tx_obj->initProposal.proposal_type_bytes.len, .offset = 0, .tx_obj = NULL};
+          CHECK_ERROR(readProposalType(&inner_ctx, ctx->tx_obj, &pos, proposalTypeIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
         }
 
@@ -449,8 +436,8 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
         default:
-            displayIdx -= 8;
-            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            adjustedDisplayIdx -= 8;
+            return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
     return parser_ok;
