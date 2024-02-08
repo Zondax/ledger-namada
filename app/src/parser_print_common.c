@@ -195,14 +195,12 @@ parser_error_t joinStrings(const bytes_t first, const bytes_t second, const char
     MEMZERO(outVal, outValLen);
 
     // Temporary variables to track where we are in the copying process
-    uint16_t currentPos = 0; // Current position in the total concatenated string
     uint16_t outValPos = 0;  // Current position in the output buffer
 
     // Copy from first string
     if (pageStartPos < first.len) {
         uint16_t firstPartLen = (pageStartPos + outValLen - 1 <= first.len) ? outValLen - 1 : first.len - pageStartPos;
         memcpy(outVal, first.ptr + pageStartPos, firstPartLen);
-        currentPos += firstPartLen;
         outValPos += firstPartLen;
     }
 
@@ -219,16 +217,8 @@ parser_error_t joinStrings(const bytes_t first, const bytes_t second, const char
         }
         if (sepCopyLen > 0) {
             memcpy(outVal + outValPos, separator, sepCopyLen);
-            currentPos += sepCopyLen;
             outValPos += sepCopyLen;
         }
-    }
-
-    // Adjust currentPos for copying second string
-    if (pageStartPos > first.len + strlen(separator)) {
-        currentPos = pageStartPos - first.len - strlen(separator);
-    } else {
-        currentPos = 0;
     }
 
     // Copy from second string
