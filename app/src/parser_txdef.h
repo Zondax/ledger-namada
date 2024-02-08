@@ -25,7 +25,7 @@ extern "C" {
 #include "parser_types.h"
 #include "coin.h"
 
-#define MAX_EXTRA_DATA_SECS 3
+#define MAX_EXTRA_DATA_SECS 4
 #define MAX_SIGNATURE_SECS 3
 
 

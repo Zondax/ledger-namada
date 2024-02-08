@@ -84,7 +84,6 @@ typedef struct {
 } mut_bytes_t;
 
 typedef struct {
-    uint8_t has_id;
     uint64_t proposal_id;
     uint8_t content_hash[CX_SHA256_SIZE];
     bytes_t content_sechash;

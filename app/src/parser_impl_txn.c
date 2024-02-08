@@ -340,30 +340,109 @@ static parser_error_t readInitAccountTxn(const bytes_t *data,const section_t *ex
     return parser_ok;
 }
 
-static parser_error_t readPGFPaymentAction(parser_context_t *ctx, bytes_t *buf, const bool first) {
-    const uint8_t tag = *(ctx->buffer + ctx->offset);
-    uint32_t action_len = 1 + ADDRESS_LEN_BYTES + 32;
-    switch (tag) {
-        case 0: // continuous payment
-            action_len += 1;
-            break;
-        case 1: // retro payment
-            // do nothing
-            break;
-        default:
-            return parser_unexpected_value;
+static parser_error_t readPGFTarget(parser_context_t *ctx) {
+  uint8_t pgf_target_tag;
+  CHECK_ERROR(readByte(ctx, &pgf_target_tag))
+    switch (pgf_target_tag) {
+    case 0: {// Internal
+      bytes_t address;
+      address.len = ADDRESS_LEN_BYTES;
+      CHECK_ERROR(readBytes(ctx, &address.ptr, address.len))
+      uint256_t amount;
+      CHECK_ERROR(readUint256(ctx, &amount))
+      return parser_ok;
+    } case 1: {// Ibc
+        // Target
+        uint32_t target_len;
+        CHECK_ERROR(readUint32(ctx, &target_len))
+        bytes_t target;
+        target.len = target_len;
+        CHECK_ERROR(readBytes(ctx, &target.ptr, target.len))
+        // Amount
+        uint256_t amount;
+        CHECK_ERROR(readUint256(ctx, &amount))
+        // Port
+        uint32_t port_id_len;
+        CHECK_ERROR(readUint32(ctx, &port_id_len))
+        bytes_t port_id;
+        port_id.len = port_id_len;
+        CHECK_ERROR(readBytes(ctx, &port_id.ptr, port_id.len))
+        // Channel ID
+        uint32_t channel_id_len;
+        CHECK_ERROR(readUint32(ctx, &channel_id_len))
+        bytes_t channel_id;
+        channel_id.len = channel_id_len;
+        CHECK_ERROR(readBytes(ctx, &channel_id.ptr, channel_id.len))
+        return parser_ok;
+      } default: return parser_unexpected_type;
+    }
+}
+
+static parser_error_t readPGFAction(parser_context_t *ctx) {
+  uint8_t pgf_action_tag;
+  CHECK_ERROR(readByte(ctx, &pgf_action_tag))
+    switch (pgf_action_tag) {
+    case 0: {// continuous payment
+      uint8_t add_remove_tag;
+      CHECK_ERROR(readByte(ctx, &add_remove_tag))
+        switch (add_remove_tag) {
+        case 0: // Add
+          CHECK_ERROR(readPGFTarget(ctx))
+          break;
+        case 1: // Remove
+          CHECK_ERROR(readPGFTarget(ctx))
+          break;
+        }
+      break;
+    } case 1: // retro payment
+      CHECK_ERROR(readPGFTarget(ctx))
+      break;
+    default:
+      return parser_unexpected_value;
     }
 
-    if (first) {
-        buf->len = action_len;
-        CHECK_ERROR(readBytes(ctx, &buf->ptr, buf->len))
-    } else {
-        buf->len += action_len;
-        uint8_t *tmpPtr = NULL;
-        CHECK_ERROR(readBytes(ctx, (const uint8_t **) &tmpPtr, action_len))
+  return parser_ok;
+}
+
+static parser_error_t readProposalType(parser_context_t *ctx, parser_tx_t *v) {
+  v->initProposal.has_proposal_code = 0;
+  CHECK_ERROR(readByte(ctx, &v->initProposal.proposal_type))
+    switch (v->initProposal.proposal_type) {
+    case Default: {
+      // Proposal type 0 is Default(Option<Hash>), where Hash is the proposal code.
+      CHECK_ERROR(readByte(ctx, &v->initProposal.has_proposal_code))
+        if (v->initProposal.has_proposal_code) {
+          v->initProposal.proposal_code_sechash.len = HASH_LEN;
+          CHECK_ERROR(readBytes(ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
+            }
+      break;
     }
 
-    return parser_ok;
+    case PGFSteward: {
+      CHECK_ERROR(readUint32(ctx, &v->initProposal.pgf_steward_actions_num))
+        if (v->initProposal.pgf_steward_actions_num > 0) {
+          v->initProposal.pgf_steward_actions.len = (1 + ADDRESS_LEN_BYTES) * v->initProposal.pgf_steward_actions_num;
+          CHECK_ERROR(readBytes(ctx, &v->initProposal.pgf_steward_actions.ptr, v->initProposal.pgf_steward_actions.len))
+            }
+      break;
+    }
+
+    case PGFPayment: {
+      CHECK_ERROR(readUint32(ctx, &v->initProposal.pgf_payment_actions_num))
+        v->initProposal.pgf_payment_actions.ptr = ctx->buffer + ctx->offset;
+      if (v->initProposal.pgf_payment_actions_num > 0) {
+        for (uint32_t i = 0; i < v->initProposal.pgf_payment_actions_num; ++i) {
+          CHECK_ERROR(readPGFAction(ctx))
+            }
+      }
+      v->initProposal.pgf_payment_actions.ptr = ctx->buffer + ctx->offset - v->initProposal.pgf_payment_actions.len;
+      break;
+    }
+
+    default:
+      return parser_unexpected_type;
+    }
+  return parser_ok;
 }
 
 static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
@@ -372,12 +451,8 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
     MEMZERO(&v->initProposal, sizeof(v->initProposal));
-
     // Check if the proposal has an ID
-    CHECK_ERROR(readByte(&ctx, &v->initProposal.has_id))
-    if (v->initProposal.has_id){
-        CHECK_ERROR(readUint64(&ctx, &v->initProposal.proposal_id));
-    }
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.proposal_id));
 
     // Read content section hash
     v->initProposal.content_sechash.len = HASH_LEN;
@@ -388,42 +463,7 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     CHECK_ERROR(readBytes(&ctx, &v->initProposal.author.ptr, v->initProposal.author.len))
 
     // Proposal type
-    v->initProposal.has_proposal_code = 0;
-    CHECK_ERROR(readByte(&ctx, &v->initProposal.proposal_type))
-    switch (v->initProposal.proposal_type) {
-        case Default: {
-            // Proposal type 0 is Default(Option<Hash>), where Hash is the proposal code.
-            CHECK_ERROR(readByte(&ctx, &v->initProposal.has_proposal_code))
-            if (v->initProposal.has_proposal_code) {
-                v->initProposal.proposal_code_sechash.len = HASH_LEN;
-                CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
-            }
-            break;
-        }
-
-        case PGFSteward: {
-            CHECK_ERROR(readUint32(&ctx, &v->initProposal.pgf_steward_actions_num))
-            if (v->initProposal.pgf_steward_actions_num > 0) {
-                v->initProposal.pgf_steward_actions.len = (1 + ADDRESS_LEN_BYTES) * v->initProposal.pgf_steward_actions_num;
-                CHECK_ERROR(readBytes(&ctx, &v->initProposal.pgf_steward_actions.ptr, v->initProposal.pgf_steward_actions.len))
-            }
-            break;
-        }
-
-        case PGFPayment: {
-            CHECK_ERROR(readUint32(&ctx, &v->initProposal.pgf_payment_actions_num))
-            if (v->initProposal.pgf_payment_actions_num > 0) {
-                CHECK_ERROR(readPGFPaymentAction(&ctx, &v->initProposal.pgf_payment_actions, true))
-                for (uint32_t i = 1; i < v->initProposal.pgf_payment_actions_num; ++i) {
-                    CHECK_ERROR(readPGFPaymentAction(&ctx, &v->initProposal.pgf_payment_actions, false))
-                }
-            }
-            break;
-        }
-
-        default:
-            return parser_unexpected_type;
-    }
+    CHECK_ERROR(readProposalType(&ctx, v))
 
     // Voting start epoch
     CHECK_ERROR(readUint64(&ctx, &v->initProposal.voting_start_epoch))

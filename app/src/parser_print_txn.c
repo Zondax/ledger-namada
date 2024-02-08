@@ -367,14 +367,8 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
-
-    // Bump displayIdx if ID is not present
-    if (ctx->tx_obj->initProposal.has_id == 0 && displayIdx >= 1) {
-        displayIdx++;
-    }
-
     // Less than 20 characters are epochs are uint64
-    char strEpoch[20] = {0};
+  char strEpoch[21] = {0};
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -386,9 +380,6 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             break;
 
         case 1:
-            if (ctx->tx_obj->initProposal.has_id == 0) {
-                return parser_unexpected_value;
-            }
             snprintf(outKey, outKeyLen, "ID");
             // Less than 20 characters as proposal_id is an Option<u64>
             char idString[21] = {0};
@@ -430,7 +421,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
-            snprintf(outKey, outKeyLen, "Voting start epoch");
+          snprintf(outKey, outKeyLen, "Voting start epoch");
             if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.voting_start_epoch) != NULL) {
                 return parser_unexpected_error;
             }
