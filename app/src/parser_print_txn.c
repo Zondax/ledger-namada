@@ -398,11 +398,12 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
         case 2: {
           uint16_t pos = 0;
           parser_context_t inner_ctx = {.buffer = ctx->tx_obj->initProposal.proposal_type_bytes.ptr, .bufferLen = ctx->tx_obj->initProposal.proposal_type_bytes.len, .offset = 0, .tx_obj = NULL};
-          CHECK_ERROR(readProposalType(&inner_ctx, ctx->tx_obj, &pos, proposalTypeIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+          parser_error_t err = readProposalType(&inner_ctx, ctx->tx_obj, &pos, proposalTypeIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+          if (err != parser_yield) {
+            return err;
+          }
             break;
         }
-
-
         case 3:
             snprintf(outKey, outKeyLen, "Author");
             CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
