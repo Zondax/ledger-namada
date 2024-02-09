@@ -368,24 +368,41 @@ static parser_error_t readPGFTarget(parser_context_t *ctx, uint16_t *pos, uint16
         // Target
         uint32_t target_len;
         CHECK_ERROR(readUint32(ctx, &target_len))
-          bytes_t target;
-        target.len = target_len;
-        CHECK_ERROR(readBytes(ctx, &target.ptr, target.len))
+          bytes_t target_bytes;
+        target_bytes.len = target_len;
+        CHECK_ERROR(readBytes(ctx, &target_bytes.ptr, target_bytes.len))
+          SELECT(pos, target, {
+              snprintf(outKey, outKeyLen, "Target");
+              pageStringExt(outVal, outValLen, (const char*)target_bytes.ptr, target_bytes.len, pageIdx, pageCount);
+                })
           // Amount
           uint256_t amount;
         CHECK_ERROR(readUint256(ctx, &amount))
+          SELECT(pos, target, {
+            snprintf(outKey, outKeyLen, "Amount");
+            CHECK_ERROR(print_uint256(&amount, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
+                                    outVal, outValLen, pageIdx, pageCount))
+          })
           // Port
           uint32_t port_id_len;
         CHECK_ERROR(readUint32(ctx, &port_id_len))
           bytes_t port_id;
         port_id.len = port_id_len;
         CHECK_ERROR(readBytes(ctx, &port_id.ptr, port_id.len))
+          SELECT(pos, target, {
+              snprintf(outKey, outKeyLen, "Port ID");
+              pageStringExt(outVal, outValLen, (const char*)port_id.ptr, port_id.len, pageIdx, pageCount);
+                })
           // Channel ID
           uint32_t channel_id_len;
         CHECK_ERROR(readUint32(ctx, &channel_id_len))
           bytes_t channel_id;
         channel_id.len = channel_id_len;
         CHECK_ERROR(readBytes(ctx, &channel_id.ptr, channel_id.len))
+          SELECT(pos, target, {
+              snprintf(outKey, outKeyLen, "Channel ID");
+              pageStringExt(outVal, outValLen, (const char*)channel_id.ptr, channel_id.len, pageIdx, pageCount);
+                })
           return parser_ok;
       } default: return parser_unexpected_type;
     }
