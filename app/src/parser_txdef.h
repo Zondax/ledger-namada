@@ -25,7 +25,7 @@ extern "C" {
 #include "parser_types.h"
 #include "coin.h"
 
-#define MAX_EXTRA_DATA_SECS 3
+#define MAX_EXTRA_DATA_SECS 4
 #define MAX_SIGNATURE_SECS 3
 
 
@@ -130,6 +130,16 @@ typedef struct {
 #endif
 
 typedef struct {
+    uint8_t discriminant;
+    bytes_t salt;
+    uint8_t commitmentDiscriminant;
+    bytes_t bytes;
+    uint8_t bytes_hash[HASH_LEN];
+    bytes_t tag;
+    uint8_t idx;
+} section_t;
+
+typedef struct {
     bytes_t extBytes;
     bytes_t bytes;
     fees_t fees;
@@ -140,16 +150,8 @@ typedef struct {
     bytes_t dataHash;
     bytes_t codeHash;
     bytes_t memoHash;
+    const section_t *memoSection;
 } header_t;
-
-typedef struct {
-    uint8_t discriminant;
-    bytes_t salt;
-    bytes_t bytes;
-    bytes_t tag;
-    uint8_t idx;
-} section_t;
-
 typedef struct {
     uint32_t sectionLen;
     uint32_t extraDataLen;

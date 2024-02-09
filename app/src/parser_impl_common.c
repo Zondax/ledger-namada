@@ -16,6 +16,16 @@
 #include "parser_impl_common.h"
 #include "leb128.h"
 
+bool isAllZeroes(const void *buf, size_t n) {
+    uint8_t *p = (uint8_t *) buf;
+    for (size_t i = 0; i < n; ++i) {
+        if (p[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte) {
     if (byte == NULL || ctx->offset >= ctx->bufferLen) {
         return parser_unexpected_error;

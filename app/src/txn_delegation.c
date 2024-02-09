@@ -84,14 +84,17 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
         return parser_unexpected_error;
 
     }
-
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 5 && !hasMemo) {
+        displayIdx++;
+    }
     const tx_redelegation_t *redelegation = &ctx->tx_obj->redelegation;
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Redelegate");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -112,11 +115,15 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
             CHECK_ERROR(printAmount(&redelegation->amount, false, COIN_AMOUNT_DECIMAL_PLACES, "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
+        case 5:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 5;
+            displayIdx -= 6;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 

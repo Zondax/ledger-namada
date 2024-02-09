@@ -104,6 +104,28 @@ typedef struct {
 } mut_bytes_t;
 
 typedef struct {
+    bytes_t address;
+    bytes_t amount;
+} pgf_internal_t;
+
+typedef struct {
+    bytes_t target;
+    bytes_t amount;
+    bytes_t portId;
+    bytes_t channelId;
+} pgf_ibc_t;
+typedef struct {
+    pgf_action_e action;
+    pgf_continuous_type_e add_rem;
+    pgf_target_type_e targetType;
+    union {
+        pgf_internal_t internal;
+        pgf_ibc_t ibc;
+    };
+    uint16_t length;
+} pgf_payment_action_t;
+
+typedef struct {
     uint64_t proposal_id;
     bytes_t content_hash;
     bytes_t content_sechash;
@@ -124,6 +146,7 @@ typedef struct {
         };
         struct {
             uint32_t pgf_payment_actions_num;
+            uint32_t pgf_payment_ibc_num;
             bytes_t pgf_payment_actions;
         };
     };

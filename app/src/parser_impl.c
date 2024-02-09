@@ -60,6 +60,13 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         }
         case InitProposal: {
             *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS);
+            if (ctx->tx_obj->initProposal.proposal_type == Default && ctx->tx_obj->initProposal.has_proposal_code) {
+                (*numItems)++;
+            } else if (ctx->tx_obj->initProposal.proposal_type == PGFSteward) {
+                *numItems += ctx->tx_obj->initProposal.pgf_steward_actions_num;
+            } else if (ctx->tx_obj->initProposal.proposal_type == PGFPayment) {
+                *numItems += 3 * ctx->tx_obj->initProposal.pgf_payment_actions_num + 2 * ctx->tx_obj->initProposal.pgf_payment_ibc_num;
+            }
             break;
         }
         case VoteProposal: {
@@ -161,6 +168,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         default:
             break;
+    }
+
+    if (ctx->tx_obj->transaction.header.memoSection != NULL) {
+      (*numItems)++;
     }
 
     if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {

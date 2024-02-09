@@ -371,6 +371,15 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     section_hashes.hashesLen += 2;
     signature_section.hashes.hashesLen += 2;
 
+    // Include the memo section hash in the signature if it's there
+    if (txObj->transaction.header.memoSection != NULL) {
+        const section_t *memo = txObj->transaction.header.memoSection;
+        uint8_t *memoHash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
+        section_hashes.indices.ptr[section_hashes.hashesLen] = memo->idx;
+        CHECK_ZXERR(crypto_hashExtraDataSection(memo, memoHash, HASH_LEN))
+        section_hashes.hashesLen++;
+        signature_section.hashes.hashesLen++;
+    }
 
     // Hash the eligible signature sections
     for (uint32_t i = 0; i < txObj->transaction.sections.signaturesLen; i++) {

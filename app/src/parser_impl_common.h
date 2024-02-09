@@ -84,6 +84,11 @@ extern "C" {
 #define BRIDGE_POOL_TRANSFER_NORMAL_PARAMS  9
 #define BRIDGE_POOL_TRANSFER_EXPERT_PARAMS  14
 
+#define CTX_CHECK_AVAIL(CTX, SIZE) \
+    if ( (CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->bufferLen) { return parser_unexpected_buffer_end; }
+
+bool isAllZeroes(const void *buf, size_t n);
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
@@ -102,6 +107,8 @@ parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
+
+parser_error_t readPGFPaymentAction(parser_context_t *ctx, pgf_payment_action_t *paymentAction);
 
 #ifdef __cplusplus
 }
