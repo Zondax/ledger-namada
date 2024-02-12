@@ -91,15 +91,20 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
-parser_error_t printCodeHash(bytes_t *codeHash,
+parser_error_t printCodeHash(section_t *codeSection,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
 
     char hexString[65] = {0};
     snprintf(outKey, outKeyLen, "Code hash");
-    array_to_hexstr((char*) hexString, sizeof(hexString), codeHash->ptr, codeHash->len);
-    pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+    if (codeSection->commitmentDiscriminant) {
+        array_to_hexstr((char*) hexString, sizeof(hexString), codeSection->bytes.ptr, codeSection->bytes.len);
+        pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+    } else {
+        array_to_hexstr((char*) hexString, sizeof(hexString), codeSection->bytes_hash, HASH_LEN);
+        pageString(outVal, outValLen, (const char*) hexString, pageIdx, pageCount);
+    }
 
     return parser_ok;
 }
@@ -234,6 +239,158 @@ parser_error_t joinStrings(const bytes_t first, const bytes_t second, const char
 
     // Ensure null-terminated
     outVal[outValPos] = '\0';
+
+    return parser_ok;
+}
+
+parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t displayIdx,
+                                   char *outKey, uint16_t outKeyLen,
+                                   char *outVal, uint16_t outValLen,
+                                   uint8_t pageIdx, uint8_t *pageCount) {
+    if (initProposal == NULL || outKey == NULL || outVal == NULL || pageCount == NULL) {
+        return parser_unexpected_error;
+    }
+
+    if (displayIdx == 0) {
+        snprintf(outKey, outKeyLen, "Proposal type");
+        switch (initProposal->proposal_type) {
+            case Default:
+                snprintf(outVal, outValLen, "Default");
+                break;
+
+            case PGFSteward:
+                snprintf(outVal, outValLen, "PGF Steward");
+                break;
+
+            case PGFPayment:
+                snprintf(outVal, outValLen, "PGF Payment");
+                break;
+        }
+
+        return parser_ok;
+    }
+
+    if (initProposal->proposal_type == Default) {
+        snprintf(outKey, outKeyLen, "Proposal hash");
+        pageStringHex(outVal, outValLen, (const char*)initProposal->proposal_code_hash.ptr,
+                      initProposal->proposal_code_hash.len, pageIdx, pageCount);
+
+    } else if (initProposal->proposal_type == PGFSteward) {
+        uint8_t add_rem_discriminant = 0;
+        bytes_t tmpBytes = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+        parser_context_t tmpCtx = { .buffer = initProposal->pgf_steward_actions.ptr,
+                                    .bufferLen = initProposal->pgf_steward_actions.len,
+                                    .offset = 0};
+        for (uint32_t i = 0; i < displayIdx; i++) {
+            CHECK_ERROR(readByte(&tmpCtx, &add_rem_discriminant))
+            CHECK_ERROR(readBytes(&tmpCtx, &tmpBytes.ptr, tmpBytes.len))
+        }
+
+        // Add = 0 | Remove = 1
+        snprintf(outKey, outKeyLen, "Add");
+        if (add_rem_discriminant == Remove) {
+            snprintf(outKey, outKeyLen, "Remove");
+        }
+
+        CHECK_ERROR(printAddress(tmpBytes, outVal, outValLen, pageIdx, pageCount))
+
+    } else if (initProposal->proposal_type == PGFPayment) {
+        pgf_payment_action_t pgfPayment = {0};
+        parser_context_t tmpCtx = { .buffer = initProposal->pgf_payment_actions.ptr,
+                                    .bufferLen = initProposal->pgf_payment_actions.len,
+                                    .offset = 0};
+
+        // const uint8_t elementIdx = (displayIdx - 1) / 3 + 1;
+        uint8_t printItemIdx = 0;
+        for (uint32_t i = 0; i < initProposal->pgf_payment_actions_num; i++) {
+            CHECK_ERROR(readPGFPaymentAction(&tmpCtx, &pgfPayment))
+            // Internal target contains 3 fields | IBC target contains 5 fields
+            printItemIdx += 3;
+            if (pgfPayment.targetType == PGFTargetIBC) {
+                printItemIdx += 2;
+            }
+            if (displayIdx <= printItemIdx) {
+                break;
+            }
+        }
+
+        const uint8_t tmpIdx = printItemIdx - displayIdx;
+        if (pgfPayment.targetType == PGFTargetInternal) {
+            switch (tmpIdx) {
+                case 2:
+                    snprintf(outKey, outKeyLen, "PGF Action");
+                    if (pgfPayment.action == Retro) {
+                        snprintf(outVal, outValLen, "Retro Payment");
+                    } else {
+                        const char *add_rem = (pgfPayment.add_rem) ? "Remove" : "Add";
+                        snprintf(outVal, outValLen, "%s Continuous Payment", add_rem);
+                    }
+                    break;
+
+                case 1:
+                    snprintf(outKey, outKeyLen, "Target");
+                    CHECK_ERROR(printAddress(pgfPayment.internal.address, outVal, outValLen, pageIdx, pageCount))
+                    break;
+
+                case 0:
+                    snprintf(outKey, outKeyLen, "Amount");
+                    CHECK_ERROR(printAmount(&pgfPayment.internal.amount, false, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
+                                            outVal, outValLen, pageIdx, pageCount))
+                    break;
+            }
+        } else if (pgfPayment.targetType == PGFTargetIBC) {
+            switch (tmpIdx) {
+                case 4:
+                    snprintf(outKey, outKeyLen, "PGF Action");
+                    if (pgfPayment.action == Retro) {
+                        snprintf(outVal, outValLen, "Retro Payment");
+                    } else {
+                        const char *add_rem = (pgfPayment.add_rem) ? "Remove" : "Add";
+                        snprintf(outVal, outValLen, "%s Continuous Payment", add_rem);
+                    }
+                    break;
+
+                case 3:
+                    snprintf(outKey, outKeyLen, "Target");
+                    pageStringExt(outVal, outValLen, (const char*) pgfPayment.ibc.target.ptr, pgfPayment.ibc.target.len, pageIdx, pageCount);
+                    break;
+
+                case 2:
+                    snprintf(outKey, outKeyLen, "Amount");
+                    CHECK_ERROR(printAmount(&pgfPayment.ibc.amount, false, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
+                                            outVal, outValLen, pageIdx, pageCount))
+                    break;
+                case 1:
+                    snprintf(outKey, outKeyLen, "Port ID");
+                    pageStringExt(outVal, outValLen, (const char*) pgfPayment.ibc.portId.ptr, pgfPayment.ibc.portId.len, pageIdx, pageCount);
+                    break;
+                case 0:
+                    snprintf(outKey, outKeyLen, "Channel ID");
+                    pageStringExt(outVal, outValLen, (const char*) pgfPayment.ibc.channelId.ptr, pgfPayment.ibc.channelId.len, pageIdx, pageCount);
+                    break;
+            }
+        }
+    }
+
+    return parser_ok;
+}
+parser_error_t printMemo( const parser_context_t *ctx,
+                                   char *outKey, uint16_t outKeyLen,
+                                   char *outVal, uint16_t outValLen,
+                                   uint8_t pageIdx, uint8_t *pageCount) {
+
+    if (ctx == NULL || outKey == NULL || outVal == NULL || pageCount == NULL ||
+        ctx->tx_obj->transaction.header.memoSection == NULL) {
+        return parser_unexpected_error;
+    }
+
+    if (ctx->tx_obj->transaction.header.memoSection->commitmentDiscriminant) {
+        snprintf(outKey, outKeyLen, "Memo");
+        pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->transaction.header.memoSection->bytes.ptr, ctx->tx_obj->transaction.header.memoSection->bytes.len, pageIdx, pageCount);
+    } else {
+        snprintf(outKey, outKeyLen, "Memo Hash");
+        pageStringHex(outVal, outValLen, (const char*) ctx->tx_obj->transaction.header.memoSection->bytes_hash, HASH_LEN, pageIdx, pageCount);
+    }
 
     return parser_ok;
 }

@@ -35,6 +35,7 @@ uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const u
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen,
                       uint8_t *output, uint16_t outputLen);
 
+zxerr_t crypto_computeCodeHash(section_t *extraData);
 zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t outputLen);
 zxerr_t crypto_hashCodeSection(const section_t *section, uint8_t *output, uint32_t outputLen);
 zxerr_t crypto_hashExtraDataSection(const section_t *section, uint8_t *output, uint32_t outputLen);

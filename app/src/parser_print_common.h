@@ -30,13 +30,18 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t printMemo( const parser_context_t *ctx,
+                        char *outKey, uint16_t outKeyLen,
+                        char *outVal, uint16_t outValLen,
+                        uint8_t pageIdx, uint8_t *pageCount);
+
 parser_error_t printExpert(const parser_context_t *ctx,
                            uint8_t displayIdx,
                            char *outKey, uint16_t outKeyLen,
                            char *outVal, uint16_t outValLen,
                            uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printCodeHash(bytes_t *codeHash,
+parser_error_t printCodeHash(section_t *codeSection,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount);
@@ -55,6 +60,11 @@ parser_error_t printPublicKey(const bytes_t *pubkey,
 
 parser_error_t joinStrings(const bytes_t first, const bytes_t second, const char *separator,
                             char * outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount);
+
+parser_error_t printProposal( const tx_init_proposal_t *initProposal, uint8_t displayIdx,
+                                   char *outKey, uint16_t outKeyLen,
+                                   char *outVal, uint16_t outValLen,
+                                   uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }

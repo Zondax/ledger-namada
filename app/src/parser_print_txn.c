@@ -34,6 +34,10 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
     if (ctx->tx_obj->bond.has_source == 0 && displayIdx >= 1) {
         displayIdx++;
     }
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 4 && !hasMemo) {
+        displayIdx++;
+    }
 
     switch (displayIdx) {
         case 0:
@@ -43,7 +47,7 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
                 snprintf(outVal, outValLen, "Unbond");
             }
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -58,16 +62,20 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
             break;
-        case 3: {
+        case 3:
             snprintf(outKey, outKeyLen, "Amount");
             CHECK_ERROR(printAmount(&ctx->tx_obj->bond.amount, false, COIN_AMOUNT_DECIMAL_PLACES, COIN_TICKER,
                                     outVal, outValLen, pageIdx, pageCount))
             break;
-        } default:
+        case 4:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
+        default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 4;
+            displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -79,12 +87,17 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 2 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Resign Steward");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -92,11 +105,15 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Steward");
             CHECK_ERROR(printAddress(ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 2:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 2;
+            displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -112,13 +129,17 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     if(displayIdx >= 4 && ctx->tx_obj->transfer.symbol) {
         displayIdx++;
     }
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 5 && !hasMemo) {
+        displayIdx++;
+    }
 
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Transfer");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -147,11 +168,15 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                     "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
+        case 5:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 5;
+            displayIdx -= 6;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -169,7 +194,7 @@ static parser_error_t printCustomTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Custom");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -194,19 +219,24 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
     // Since every account key entry will be considered as a different field, we adjust the display index.
     const uint32_t pubkeys_num = initAccount->number_of_pubkeys;
     const uint8_t pubkeys_first_field_idx = 1;
-    const uint8_t adjustedDisplayIdx = \
+    uint8_t adjustedDisplayIdx = \
         (displayIdx < pubkeys_first_field_idx) \
             ? displayIdx
             : ((displayIdx < pubkeys_first_field_idx + pubkeys_num) \
                 ? pubkeys_first_field_idx
                 : displayIdx - pubkeys_num + 1);
 
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (adjustedDisplayIdx >= 4 && !hasMemo) {
+        adjustedDisplayIdx++;
+    }
+
     switch (adjustedDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init Account");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -243,11 +273,15 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
                 pageStringHex(outVal, outValLen, (const char*)ctx->tx_obj->initAccount.vp_type_hash.ptr, ctx->tx_obj->initAccount.vp_type_hash.len, pageIdx, pageCount);
             }
             break;
+        case 4:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 3 + pubkeys_num;
+            displayIdx -= 3 + pubkeys_num + (hasMemo ? 1 : 0);
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -260,14 +294,40 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
+    const tx_init_proposal_t  *initProposal = &ctx->tx_obj->initProposal;
+    uint8_t adjustedIdx = displayIdx;
+
+    uint32_t proposalElements = 1;
+    switch (initProposal->proposal_type) {
+        case Default:
+            proposalElements += initProposal->has_proposal_code;
+            break;
+        case PGFSteward:
+            proposalElements += initProposal->pgf_steward_actions_num;
+            break;
+        case PGFPayment:
+            proposalElements += 3 * initProposal->pgf_payment_actions_num + 2 * initProposal->pgf_payment_ibc_num;
+            break;
+    }
+
+    if (displayIdx >= 2 && displayIdx < 2 + proposalElements) {
+        adjustedIdx = 2;
+    }
+    if (displayIdx >= 2 + proposalElements) {
+        adjustedIdx = displayIdx - proposalElements + 1;
+    }
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (adjustedIdx >= 8 && !hasMemo) {
+        adjustedIdx++;
+    }
     // Less than 20 characters are epochs are uint64
     char strEpoch[25] = {0};
-    switch (displayIdx) {
+    switch (adjustedIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init proposal");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -283,31 +343,9 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             break;
 
         case 2: {
-            snprintf(outKey, outKeyLen, "Proposal type");
-            switch (ctx->tx_obj->initProposal.proposal_type) {
-                case Default:
-                    if (ctx->tx_obj->initProposal.has_proposal_code) {
-                        const bytes_t *codeHash = &ctx->tx_obj->initProposal.proposal_code_hash;
-                        pageStringHex(outVal, outValLen, (const char*)codeHash->ptr, codeHash->len, pageIdx, pageCount);
-                    } else {
-                        snprintf(outVal, outValLen, "Default");
-                    }
-                    break;
-
-                case PGFSteward:
-                    snprintf(outVal, outValLen, "PGF Steward");
-                    break;
-
-                case PGFPayment:
-                    snprintf(outVal, outValLen, "PGF Payment");
-                    break;
-
-                default:
-                    return parser_unexpected_type;
-            }
+            CHECK_ERROR(printProposal(&ctx->tx_obj->initProposal, (displayIdx - 2), outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
         }
-
 
         case 3:
             snprintf(outKey, outKeyLen, "Author");
@@ -341,12 +379,17 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             array_to_hexstr((char*) strContent, sizeof(strContent), content->ptr, content->len);
             pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
+
+        case 8:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 8;
-            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            adjustedIdx -= 9;
+            return printExpert(ctx, adjustedIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
     return parser_ok;
@@ -362,19 +405,24 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
 
     const uint32_t delegations_num = voteProposal->number_of_delegations;
     const uint8_t delegations_first_field_idx = 4;
-    const uint8_t adjustedDisplayIdx = \
+    uint8_t adjustedDisplayIdx = \
         (displayIdx < delegations_first_field_idx) \
             ? displayIdx
             : ((displayIdx < delegations_first_field_idx + delegations_num) \
                 ? delegations_first_field_idx
                 : displayIdx - delegations_num + 1);
     *pageCount = 1;
+
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (adjustedDisplayIdx >= 5 && !hasMemo) {
+        adjustedDisplayIdx++;
+    }
     switch (adjustedDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Vote Proposal");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -435,11 +483,15 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             const bytes_t tmpProposal = {.ptr = voteProposal->delegations.ptr + delegationOffset, .len = ADDRESS_LEN_BYTES};
             CHECK_ERROR(printAddress(tmpProposal, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 5:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= (4 + voteProposal->number_of_delegations);
+            displayIdx -= (5 + voteProposal->number_of_delegations - (hasMemo ? 0 : 1));
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -453,12 +505,17 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
 
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 2 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Reveal Pubkey");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -467,12 +524,15 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
             const bytes_t *pubkey = &ctx->tx_obj->revealPubkey.pubkey;
             CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
+        case 2:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
 
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 2;
+            displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -484,12 +544,17 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                                   uint8_t pageIdx, uint8_t *pageCount) {
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 3 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Change consensus key");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -501,11 +566,15 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 3:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 3;
+            displayIdx -= 4;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -517,12 +586,17 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 2 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Unjail Validator");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -530,11 +604,15 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 2:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 2;
+            displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
     return parser_ok;
@@ -545,6 +623,11 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 2 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
@@ -553,7 +636,7 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
                 snprintf(outVal, outValLen, "Deactivate Validator");
             }
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -561,11 +644,15 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->activateValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 2:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 2;
+            displayIdx -= 3;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
     return parser_ok;
@@ -597,13 +684,16 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
     if (adjustedDisplayIdx >= 4 && !updateVp->has_vp_code) {
         adjustedDisplayIdx++;
     }
+    if (adjustedDisplayIdx >= 5 && ctx->tx_obj->transaction.header.memoSection == NULL) {
+        adjustedDisplayIdx++;
+    }
 
     switch (adjustedDisplayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Update Account");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -644,11 +734,17 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                 pageStringHex(outVal, outValLen, (const char*)ctx->tx_obj->updateVp.vp_type_hash.ptr, ctx->tx_obj->updateVp.vp_type_hash.len, pageIdx, pageCount);
             }
             break;
+
+        case 5:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 4 + pubkeys_num - (updateVp->has_threshold ? 0 : 1) - (updateVp->has_vp_code ? 0 : 1);
+            displayIdx -= 5 + pubkeys_num - (updateVp->has_threshold ? 0 : 1) - (updateVp->has_vp_code ? 0 : 1)
+                    - (ctx->tx_obj->transaction.header.memoSection ? 0 : 1);
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -671,12 +767,17 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         displayIdx++;
     }
 
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 12 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Init Validator");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -729,7 +830,8 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 9: {
             snprintf(outKey, outKeyLen, "Description");
-            snprintf(outVal, outValLen, "(none)");
+            // snprintf(outVal, outValLen, "(none)");
+            snprintf(outVal, outValLen, "");
             if (ctx->tx_obj->becomeValidator.description.len > 0) {
                 pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.description.ptr, ctx->tx_obj->becomeValidator.description.len, pageIdx, pageCount);
             }
@@ -745,11 +847,15 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
             break;
         }
+        case 12:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default: {
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 12;
+            displayIdx -= 13;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }
@@ -768,6 +874,11 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
     if (ctx->tx_obj->withdraw.has_source == 0 && displayIdx >= 1) {
         displayIdx++;
     }
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 3 && !hasMemo) {
+        displayIdx++;
+    }
+
     const tx_withdraw_t *withdraw = &ctx->tx_obj->withdraw;
     switch (displayIdx) {
         case 0:
@@ -778,7 +889,7 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                 snprintf(outVal, outValLen, "Withdraw");
             }
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -793,11 +904,15 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(withdraw->validator, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 3:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 3;
+            displayIdx -= 4;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -810,12 +925,17 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
 
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 3 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Change commission");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -827,11 +947,15 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Validator");
             CHECK_ERROR(printAddress(ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
+        case 3:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default:
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 3;
+            displayIdx -= 4;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -845,12 +969,16 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
                                     uint8_t pageIdx, uint8_t *pageCount) {
 
     const tx_ibc_t *ibc = &ctx->tx_obj->ibc;
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 8 && !hasMemo) {
+        displayIdx++;
+    }
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "IBC");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -909,12 +1037,15 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
             break;
         }
 
+        case 8:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
 
         default:
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 8;
+            displayIdx -= 9;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -928,12 +1059,11 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
 
     const tx_update_steward_commission_t *updateStewardCommission = &ctx->tx_obj->updateStewardCommission;
-
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "Type");
         snprintf(outVal, outValLen, "Update Steward Commission");
         if (app_mode_expert()) {
-            CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+            CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                         outVal, outValLen, pageIdx, pageCount))
         }
         return parser_ok;
@@ -969,11 +1099,18 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
         return parser_ok;
     }
 
+    if (ctx->tx_obj->transaction.header.memoSection != NULL && displayIdx < (2 + 2 * updateStewardCommission->commissionLen) + 1) {
+        CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+        return parser_ok;
+    }
+
+
     if (!app_mode_expert()) {
         return parser_display_idx_out_of_range;
     }
     // displayIdx will be greater than the right part. No underflow
-    const uint8_t adjustedDisplayIdx  = displayIdx - 2 - (2 * updateStewardCommission->commissionLen);
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const uint8_t adjustedDisplayIdx  = displayIdx - 2 - (2 * updateStewardCommission->commissionLen) - (hasMemo ? 1 : 0);
     return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
 
@@ -1004,12 +1141,17 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
         displayIdx++;
     }
 
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 8 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Change metadata");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -1048,11 +1190,15 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
             CHECK_ERROR(printAmount(&metadataChange->commission_rate, true, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
+        case 8:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default: {
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 8;
+            displayIdx -= 9;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }
@@ -1068,12 +1214,17 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
 
     tx_bridge_pool_transfer_t *bridgePoolTransfer = &ctx->tx_obj->bridgePoolTransfer;
     char tmpBuffer[45] = {0};
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 9 && !hasMemo) {
+        displayIdx++;
+    }
+
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Bridge Pool Transfer");
             if (app_mode_expert()) {
-                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code.bytes, outKey, outKeyLen,
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
             }
             break;
@@ -1127,11 +1278,15 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
             CHECK_ERROR(printAmount(&bridgePoolTransfer->gasAmount, false, 0, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
+        case 9:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
         default: {
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 9;
+            displayIdx -= 10;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }
