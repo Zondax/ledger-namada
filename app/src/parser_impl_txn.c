@@ -23,6 +23,7 @@
 #include "txn_delegation.h"
 #include "stdbool.h"
 #include <zxformat.h>
+#include "mem.c"
 
 #define DISCRIMINANT_DATA 0x00
 #define DISCRIMINANT_EXTRA_DATA 0x01
@@ -54,6 +55,324 @@ static const tokens_t nam_tokens[] = {
 #define PREFIX_IMPLICIT 0
 #define PREFIX_ESTABLISHED 1
 #define PREFIX_INTERNAL 2
+
+parser_error_t readUint128(parser_context_t *ctx, uint128_t *value) {
+    if (value == NULL || ctx->offset + sizeof(uint128_t) > ctx->bufferLen) {
+        return parser_unexpected_error;
+    }
+
+    MEMCPY(value, ctx->buffer + ctx->offset, sizeof(uint128_t));
+    ctx->offset += sizeof(uint128_t);
+    return parser_ok;
+}
+
+parser_error_t readInt128(parser_context_t *ctx, int128_t *value) {
+    if (value == NULL || ctx->offset + sizeof(int128_t) > ctx->bufferLen) {
+        return parser_unexpected_error;
+    }
+
+    MEMCPY(value, ctx->buffer + ctx->offset, sizeof(int128_t));
+    ctx->offset += sizeof(int128_t);
+    return parser_ok;
+}
+
+parser_error_t readBytesAlt(parser_context_t *ctx, uint8_t *output, uint16_t outputLen) {
+    if (ctx->offset + outputLen > ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+
+    MEMCPY(output, ctx->buffer + ctx->offset, outputLen);
+    ctx->offset += outputLen;
+    return parser_ok;
+}
+
+parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj);
+parser_error_t readAssetType(parser_context_t *ctx, AssetType *obj);
+parser_error_t readAuthorized(parser_context_t *ctx, Authorized *obj);
+parser_error_t readBlockHeight(parser_context_t *ctx, BlockHeight *obj);
+parser_error_t readBranchId(parser_context_t *ctx, BranchId *obj);
+parser_error_t readConvertDescriptionV5(parser_context_t *ctx, ConvertDescriptionV5 *obj);
+parser_error_t readEphemeralKeyBytes(parser_context_t *ctx, EphemeralKeyBytes *obj);
+parser_error_t readNullifier(parser_context_t *ctx, Nullifier *obj);
+parser_error_t readOutputDescriptionV5(parser_context_t *ctx, OutputDescriptionV5 *obj);
+parser_error_t readPublicKey(parser_context_t *ctx, PublicKey *obj);
+parser_error_t readSignature(parser_context_t *ctx, Signature *obj);
+parser_error_t readSpendDescriptionV5(parser_context_t *ctx, SpendDescriptionV5 *obj);
+parser_error_t readTransaction(parser_context_t *ctx, Transaction *obj);
+parser_error_t readCompactSize(parser_context_t *ctx, CompactSize *obj);
+parser_error_t readTransaction_authorization(parser_context_t *ctx, Transaction_authorization *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
+parser_error_t readTransaction_convert_anchor(parser_context_t *ctx, Transaction_convert_anchor *obj, uint64_t cd_v5s_count);
+parser_error_t readTransaction_spend_anchor(parser_context_t *ctx, Transaction_spend_anchor *obj, uint64_t sd_v5s_count);
+parser_error_t readTransaction_value_balance(parser_context_t *ctx, Transaction_value_balance *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
+parser_error_t readTransparentAddress(parser_context_t *ctx, TransparentAddress *obj);
+parser_error_t readTxInAuthorized(parser_context_t *ctx, TxInAuthorized *obj);
+parser_error_t readTxOut(parser_context_t *ctx, TxOut *obj);
+parser_error_t readTxVersion(parser_context_t *ctx, TxVersion *obj);
+parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetType_i128 *obj);
+
+
+parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj) {
+  CHECK_ERROR(readAssetType(ctx, &obj->f0))
+  CHECK_ERROR(readInt128(ctx, &obj->f1))
+  return parser_ok;
+}
+
+parser_error_t readAssetType(parser_context_t *ctx, AssetType *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->identifier, 32))
+  return parser_ok;
+}
+
+parser_error_t readAuthorized(parser_context_t *ctx, Authorized *obj) {
+  CHECK_ERROR(readSignature(ctx, &obj->binding_sig))
+  return parser_ok;
+}
+
+parser_error_t readBlockHeight(parser_context_t *ctx, BlockHeight *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readBranchId(parser_context_t *ctx, BranchId *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->tag))
+  switch(obj->tag) {
+  }
+  return parser_ok;
+}
+
+parser_error_t readConvertDescriptionV5(parser_context_t *ctx, ConvertDescriptionV5 *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->cv, 32))
+  return parser_ok;
+}
+
+parser_error_t readEphemeralKeyBytes(parser_context_t *ctx, EphemeralKeyBytes *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readNullifier(parser_context_t *ctx, Nullifier *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readOutputDescriptionV5(parser_context_t *ctx, OutputDescriptionV5 *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->cv, 32))
+  CHECK_ERROR(readBytesAlt(ctx, obj->cmu, 32))
+  CHECK_ERROR(readEphemeralKeyBytes(ctx, &obj->ephemeral_key))
+  CHECK_ERROR(readBytesAlt(ctx, obj->enc_ciphertext, 612))
+  CHECK_ERROR(readBytesAlt(ctx, obj->out_ciphertext, 80))
+  return parser_ok;
+}
+
+parser_error_t readPublicKey(parser_context_t *ctx, PublicKey *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readSignature(parser_context_t *ctx, Signature *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->rbar, 32))
+  CHECK_ERROR(readBytesAlt(ctx, obj->sbar, 32))
+  return parser_ok;
+}
+
+parser_error_t readSpendDescriptionV5(parser_context_t *ctx, SpendDescriptionV5 *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->cv, 32))
+  CHECK_ERROR(readNullifier(ctx, &obj->nullifier))
+  CHECK_ERROR(readPublicKey(ctx, &obj->rk))
+  return parser_ok;
+}
+
+uint64_t decompactSize(CompactSize *obj) {
+  switch(obj->tag) {
+  case 253:
+  return obj->u16;
+  case 254:
+  return obj->u32;
+  case 255:
+  return obj->u64;
+  default:
+  return obj->tag;
+  }
+}
+
+parser_error_t readTransaction(parser_context_t *ctx, Transaction *obj) {
+  CHECK_ERROR(readTxVersion(ctx, &obj->version))
+  CHECK_ERROR(readBranchId(ctx, &obj->consensus_branch_id))
+  CHECK_ERROR(readUint32(ctx, &obj->lock_time))
+  CHECK_ERROR(readBlockHeight(ctx, &obj->expiry_height))
+  CHECK_ERROR(readCompactSize(ctx, &obj->vin_count))
+    uint64_t vin_count = decompactSize(&obj->vin_count);
+  if((obj->vin = mem_alloc(vin_count * sizeof(TxInAuthorized))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < vin_count; i++) {
+    CHECK_ERROR(readTxInAuthorized(ctx, &obj->vin[i]))
+  }
+  CHECK_ERROR(readCompactSize(ctx, &obj->vout_count))
+  uint64_t vout_count = decompactSize(&obj->vout_count);
+  if((obj->vout = mem_alloc(vout_count * sizeof(TxOut))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < vout_count; i++) {
+    CHECK_ERROR(readTxOut(ctx, &obj->vout[i]))
+  }
+  CHECK_ERROR(readCompactSize(ctx, &obj->sd_v5s_count))
+  uint64_t sd_v5s_count = decompactSize(&obj->sd_v5s_count);
+  if((obj->sd_v5s = mem_alloc(sd_v5s_count * sizeof(SpendDescriptionV5))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < sd_v5s_count; i++) {
+    CHECK_ERROR(readSpendDescriptionV5(ctx, &obj->sd_v5s[i]))
+  }
+  CHECK_ERROR(readCompactSize(ctx, &obj->cd_v5s_count))
+  uint64_t cd_v5s_count = decompactSize(&obj->cd_v5s_count);
+  if((obj->cd_v5s = mem_alloc(cd_v5s_count * sizeof(ConvertDescriptionV5))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < cd_v5s_count; i++) {
+    CHECK_ERROR(readConvertDescriptionV5(ctx, &obj->cd_v5s[i]))
+  }
+  CHECK_ERROR(readCompactSize(ctx, &obj->od_v5s_count))
+  uint64_t od_v5s_count = decompactSize(&obj->od_v5s_count);
+  if((obj->od_v5s = mem_alloc(od_v5s_count * sizeof(OutputDescriptionV5))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < od_v5s_count; i++) {
+    CHECK_ERROR(readOutputDescriptionV5(ctx, &obj->od_v5s[i]))
+      }
+  CHECK_ERROR(readTransaction_value_balance(ctx, &obj->value_balance, sd_v5s_count, cd_v5s_count, od_v5s_count))
+    CHECK_ERROR(readTransaction_spend_anchor(ctx, &obj->spend_anchor, sd_v5s_count))
+    CHECK_ERROR(readTransaction_convert_anchor(ctx, &obj->convert_anchor, cd_v5s_count))
+  if((obj->v_spend_proofs = mem_alloc(sd_v5s_count * sizeof(uint8_t[192]))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < sd_v5s_count; i++) {
+    CHECK_ERROR(readBytesAlt(ctx, obj->v_spend_proofs[i], 192))
+  }
+  if((obj->v_spend_auth_sigs = mem_alloc(sd_v5s_count * sizeof(Signature))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < sd_v5s_count; i++) {
+    CHECK_ERROR(readSignature(ctx, &obj->v_spend_auth_sigs[i]))
+  }
+  if((obj->v_convert_proofs = mem_alloc(cd_v5s_count * sizeof(uint8_t[192]))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < cd_v5s_count; i++) {
+    CHECK_ERROR(readBytesAlt(ctx, obj->v_convert_proofs[i], 192))
+  }
+  if((obj->v_output_proofs = mem_alloc(od_v5s_count * sizeof(uint8_t[192]))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < od_v5s_count; i++) {
+    CHECK_ERROR(readBytesAlt(ctx, obj->v_output_proofs[i], 192))
+  }
+  CHECK_ERROR(readTransaction_authorization(ctx, &obj->authorization, sd_v5s_count, cd_v5s_count, od_v5s_count))
+  return parser_ok;
+}
+
+parser_error_t readCompactSize(parser_context_t *ctx, CompactSize *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 253:
+  CHECK_ERROR(readUint16(ctx, &obj->u16))
+  break;
+  case 254:
+  CHECK_ERROR(readUint32(ctx, &obj->u32))
+  break;
+  case 255:
+  CHECK_ERROR(readUint64(ctx, &obj->u64))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransaction_authorization(parser_context_t *ctx, Transaction_authorization *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count) {
+  switch(sd_v5s_count > 0 || cd_v5s_count > 0 || od_v5s_count > 0) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readAuthorized(ctx, &obj->Some))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransaction_convert_anchor(parser_context_t *ctx, Transaction_convert_anchor *obj, uint64_t cd_v5s_count) {
+  switch(cd_v5s_count > 0) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readBytesAlt(ctx, obj->Some, 32))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransaction_spend_anchor(parser_context_t *ctx, Transaction_spend_anchor *obj, uint64_t sd_v5s_count) {
+  switch(sd_v5s_count > 0) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readBytesAlt(ctx, obj->Some, 32))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransaction_value_balance(parser_context_t *ctx, Transaction_value_balance *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count) {
+  switch(sd_v5s_count > 0 || cd_v5s_count > 0 || od_v5s_count > 0) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readValueSumAssetType_i128(ctx, &obj->Some))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransparentAddress(parser_context_t *ctx, TransparentAddress *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 20))
+  return parser_ok;
+}
+
+parser_error_t readTxInAuthorized(parser_context_t *ctx, TxInAuthorized *obj) {
+  CHECK_ERROR(readAssetType(ctx, &obj->asset_type))
+  CHECK_ERROR(readUint64(ctx, &obj->value))
+  CHECK_ERROR(readTransparentAddress(ctx, &obj->address))
+  return parser_ok;
+}
+
+parser_error_t readTxOut(parser_context_t *ctx, TxOut *obj) {
+  CHECK_ERROR(readAssetType(ctx, &obj->asset_type))
+  CHECK_ERROR(readUint64(ctx, &obj->value))
+  CHECK_ERROR(readTransparentAddress(ctx, &obj->address))
+  return parser_ok;
+}
+
+parser_error_t readTxVersion(parser_context_t *ctx, TxVersion *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->header))
+  CHECK_ERROR(readUint32(ctx, &obj->version_group_id))
+  return parser_ok;
+}
+
+parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetType_i128 *obj) {
+  CHECK_ERROR(readCompactSize(ctx, &obj->f0))
+  uint64_t f0 = decompactSize(&obj->f0);
+  if((obj->f1 = mem_alloc(f0 * sizeof(AssetType_i128))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < f0; i++) {
+    CHECK_ERROR(readAssetType_i128(ctx, &obj->f1[i]))
+  }
+  return parser_ok;
+}
+
+
+
+
+
+
+
 
 parser_error_t readToken(const bytes_t *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
@@ -1205,23 +1524,31 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     return parser_ok;
 }
 
-#if(0)
-static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
-    (void) ctx;
-    (void) ciphertext;
-    return parser_ok;
-}
-
-
-static parser_error_t readMaspTx(parser_context_t *ctx, section_t *maspTx) {
-    ctx->offset += 1171; // <- Transfer 2 // Transfer 1 -> 2403;//todo figure out correct number, fix this hack
-    (void) maspTx;
+static parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
+    if (ctx == NULL) {
+        return parser_unexpected_error;
+    }
+  uint8_t discriminant;
+    CHECK_ERROR(readByte(ctx, &discriminant))
+    if (discriminant != DISCRIMINANT_MASP_TX) {
+        return parser_unexpected_value;
+    }
+  CHECK_ERROR(readTransaction(ctx, &maspTx->data))
     return parser_ok;
 }
 
 static parser_error_t readMaspBuilder(parser_context_t *ctx, section_t *maspBuilder) {
-    ctx->offset += 941; // <- Transfer 2 // Transfer 1 -> 3060; //todo figure out correct number, fix this hack
+    if (ctx == NULL) {
+        return parser_unexpected_error;
+    }
     (void) maspBuilder;
+    return parser_ok;
+}
+
+#if(0)
+static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
+    (void) ctx;
+    (void) ciphertext;
     return parser_ok;
 }
 #endif
@@ -1237,6 +1564,8 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
 
     v->transaction.sections.extraDataLen = 0;
     v->transaction.sections.signaturesLen = 0;
+
+    mem_init();
 
     for (uint32_t i = 0; i < v->transaction.sections.sectionLen; i++) {
         if (ctx->offset >= ctx->bufferLen) {
@@ -1272,18 +1601,18 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 signature->idx = i+1;
                 break;
             }
-#if(0)
-            case DISCRIMINANT_CIPHERTEXT:
-                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
-                break;
-
             case DISCRIMINANT_MASP_TX:
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
                 break;
 
             case DISCRIMINANT_MASP_BUILDER:
-                CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
+                CHECK_ERROR(readMaspBuilder(ctx, NULL))
                 break;
+#if(0)
+            case DISCRIMINANT_CIPHERTEXT:
+                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
+                break;
+
 #endif
             default:
                 return parser_unexpected_field;
