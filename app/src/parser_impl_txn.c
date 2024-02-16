@@ -374,6 +374,587 @@ parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetTy
 
 
 
+
+typedef struct {
+  uint8_t f0;
+  uint8_t f1[32];
+} u8_u8_32;
+
+typedef struct {
+  ValueSumAssetType_i128 assets;
+  uint8_t generator[32];
+} AllowedConversion;
+
+typedef struct {
+  uint8_t f0[32];
+} ChainCode;
+
+typedef struct {
+  uint32_t f0;
+} ChildIndex;
+
+typedef struct {
+  uint8_t auth_pathLen;
+  u8_u8_32 *auth_path;
+  uint64_t position;
+} MerklePathu8_32;
+
+typedef struct {
+  AllowedConversion allowed;
+  uint64_t value;
+  MerklePathu8_32 merkle_path;
+} ConvertDescriptionInfo;
+
+typedef struct {
+  uint8_t f0[11];
+} Diversifier;
+
+typedef struct {
+  uint8_t f0[32];
+} DiversifierKey;
+
+typedef struct {
+  uint8_t f0[32];
+} NullifierDerivingKey;
+
+typedef struct {
+  uint8_t ak[32];
+  NullifierDerivingKey nk;
+} ViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} OutgoingViewingKey;
+
+typedef struct {
+  ViewingKey vk;
+  OutgoingViewingKey ovk;
+} FullViewingKey;
+
+typedef struct {
+  uint8_t f0[4];
+} FvkTag;
+
+typedef struct {
+  uint8_t depth;
+  FvkTag parent_fvk_tag;
+  ChildIndex child_index;
+  ChainCode chain_code;
+  FullViewingKey fvk;
+  DiversifierKey dk;
+} ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[512];
+} MemoBytes;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t BeforeZip212[32];
+  uint8_t AfterZip212[32];
+  };
+} Rseed;
+
+typedef struct {
+  AssetType asset_type;
+  uint64_t value;
+  uint8_t g_d[32];
+  uint8_t pk_d[32];
+  Rseed rseed;
+} Note;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  OutgoingViewingKey Some;
+  };
+} OptionOutgoingViewingKey;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t Some[32];
+  };
+} Optionu8_32;
+
+typedef struct {
+  Diversifier diversifier;
+  uint8_t pk_d[32];
+} PaymentAddress;
+
+typedef struct {
+  ExtendedFullViewingKey extsk;
+  Diversifier diversifier;
+  Note note;
+  uint8_t alpha[32];
+  MerklePathu8_32 merkle_path;
+} SpendDescriptionInfoExtendedFullViewingKey;
+
+typedef struct {
+  OptionOutgoingViewingKey ovk;
+  PaymentAddress to;
+  Note note;
+  MemoBytes memo;
+} SaplingOutputInfo;
+
+typedef struct {
+  Optionu8_32 spend_anchor;
+  BlockHeight target_height;
+  ValueSumAssetType_i128 value_balance;
+  Optionu8_32 convert_anchor;
+  uint32_t spendsLen;
+  SpendDescriptionInfoExtendedFullViewingKey *spends;
+  uint32_t convertsLen;
+  ConvertDescriptionInfo *converts;
+  uint32_t outputsLen;
+  SaplingOutputInfo *outputs;
+} SaplingBuilder_ExtendedFullViewingKey;
+
+typedef struct {
+  TxOut coin;
+} TransparentInputInfo;
+
+typedef struct {
+  uint32_t inputsLen;
+  TransparentInputInfo *inputs;
+  uint32_t voutLen;
+  TxOut *vout;
+} TransparentBuilder;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint16_t u16;
+  uint32_t u32;
+  uint64_t u64;
+  };
+} ValueSumAssetType_i128_CompactSize;
+
+typedef struct {
+  BlockHeight target_height;
+  BlockHeight expiry_height;
+  TransparentBuilder transparent_builder;
+  SaplingBuilder_ExtendedFullViewingKey sapling_builder;
+} Builder__ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} Hash;
+
+typedef struct {
+  uint32_t spend_indicesLen;
+  uint64_t *spend_indices;
+  uint32_t convert_indicesLen;
+  uint64_t *convert_indices;
+  uint32_t output_indicesLen;
+  uint64_t *output_indices;
+} SaplingMetadata;
+
+typedef struct {
+  uint8_t bytes[ADDRESS_LEN_BYTES];
+} AddressAlt;
+
+typedef struct {
+  uint64_t f0;
+} Epoch;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  Epoch Some;
+  };
+} OptionEpoch;
+
+typedef struct {
+  uint8_t f0;
+} Denomination;
+
+typedef struct {
+  uint8_t tag;
+} MaspDigitPos;
+
+typedef struct {
+  AddressAlt token;
+  Denomination denom;
+  MaspDigitPos position;
+  OptionEpoch epoch;
+} AssetData;
+
+typedef struct {
+  Hash target;
+  uint32_t asset_typesLen;
+  AssetData *asset_types;
+  SaplingMetadata metadata;
+  Builder__ExtendedFullViewingKey builder;
+} MaspBuilder;
+
+parser_error_t readu8_u8_32(parser_context_t *ctx, u8_u8_32 *obj);
+parser_error_t readAllowedConversion(parser_context_t *ctx, AllowedConversion *obj);
+parser_error_t readBuilder__ExtendedFullViewingKey(parser_context_t *ctx, Builder__ExtendedFullViewingKey *obj);
+parser_error_t readChainCode(parser_context_t *ctx, ChainCode *obj);
+parser_error_t readChildIndex(parser_context_t *ctx, ChildIndex *obj);
+parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, ConvertDescriptionInfo *obj);
+parser_error_t readDiversifier(parser_context_t *ctx, Diversifier *obj);
+parser_error_t readDiversifierKey(parser_context_t *ctx, DiversifierKey *obj);
+parser_error_t readExtendedFullViewingKey(parser_context_t *ctx, ExtendedFullViewingKey *obj);
+parser_error_t readFullViewingKey(parser_context_t *ctx, FullViewingKey *obj);
+parser_error_t readFvkTag(parser_context_t *ctx, FvkTag *obj);
+parser_error_t readMemoBytes(parser_context_t *ctx, MemoBytes *obj);
+parser_error_t readMerklePathu8_32(parser_context_t *ctx, MerklePathu8_32 *obj);
+parser_error_t readNote(parser_context_t *ctx, Note *obj);
+parser_error_t readNullifierDerivingKey(parser_context_t *ctx, NullifierDerivingKey *obj);
+parser_error_t readOptionOutgoingViewingKey(parser_context_t *ctx, OptionOutgoingViewingKey *obj);
+parser_error_t readOptionu8_32(parser_context_t *ctx, Optionu8_32 *obj);
+parser_error_t readOutgoingViewingKey(parser_context_t *ctx, OutgoingViewingKey *obj);
+parser_error_t readPaymentAddress(parser_context_t *ctx, PaymentAddress *obj);
+parser_error_t readRseed(parser_context_t *ctx, Rseed *obj);
+parser_error_t readSaplingBuilder_ExtendedFullViewingKey(parser_context_t *ctx, SaplingBuilder_ExtendedFullViewingKey *obj);
+parser_error_t readSaplingOutputInfo(parser_context_t *ctx, SaplingOutputInfo *obj);
+parser_error_t readSpendDescriptionInfoExtendedFullViewingKey(parser_context_t *ctx, SpendDescriptionInfoExtendedFullViewingKey *obj);
+parser_error_t readTransparentBuilder(parser_context_t *ctx, TransparentBuilder *obj);
+parser_error_t readTransparentInputInfo(parser_context_t *ctx, TransparentInputInfo *obj);
+parser_error_t readValueSumAssetType_i128_CompactSize(parser_context_t *ctx, ValueSumAssetType_i128_CompactSize *obj);
+parser_error_t readViewingKey(parser_context_t *ctx, ViewingKey *obj);
+parser_error_t readMaspBuilder(parser_context_t *ctx, MaspBuilder *obj);
+parser_error_t readHash(parser_context_t *ctx, Hash *obj);
+parser_error_t readAssetData(parser_context_t *ctx, AssetData *obj);
+parser_error_t readSaplingMetadata(parser_context_t *ctx, SaplingMetadata *obj);
+parser_error_t readOptionEpoch(parser_context_t *ctx, OptionEpoch *obj);
+parser_error_t readEpoch(parser_context_t *ctx, Epoch *obj);
+parser_error_t readDenomination(parser_context_t *ctx, Denomination *obj);
+parser_error_t readMaspDigitPos(parser_context_t *ctx, MaspDigitPos *obj);
+
+parser_error_t readu8_u8_32(parser_context_t *ctx, u8_u8_32 *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->f0))
+  CHECK_ERROR(readBytesAlt(ctx, obj->f1, 32))
+  return parser_ok;
+}
+
+parser_error_t readAllowedConversion(parser_context_t *ctx, AllowedConversion *obj) {
+  CHECK_ERROR(readValueSumAssetType_i128(ctx, &obj->assets))
+  CHECK_ERROR(readBytesAlt(ctx, obj->generator, 32))
+  return parser_ok;
+}
+
+parser_error_t readBuilder__ExtendedFullViewingKey(parser_context_t *ctx, Builder__ExtendedFullViewingKey *obj) {
+  CHECK_ERROR(readBlockHeight(ctx, &obj->target_height))
+  CHECK_ERROR(readBlockHeight(ctx, &obj->expiry_height))
+  CHECK_ERROR(readTransparentBuilder(ctx, &obj->transparent_builder))
+  CHECK_ERROR(readSaplingBuilder_ExtendedFullViewingKey(ctx, &obj->sapling_builder))
+  return parser_ok;
+}
+
+parser_error_t readChainCode(parser_context_t *ctx, ChainCode *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readChildIndex(parser_context_t *ctx, ChildIndex *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, ConvertDescriptionInfo *obj) {
+  CHECK_ERROR(readAllowedConversion(ctx, &obj->allowed))
+  CHECK_ERROR(readUint64(ctx, &obj->value))
+  CHECK_ERROR(readMerklePathu8_32(ctx, &obj->merkle_path))
+  return parser_ok;
+}
+
+parser_error_t readDiversifier(parser_context_t *ctx, Diversifier *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 11))
+  return parser_ok;
+}
+
+parser_error_t readDiversifierKey(parser_context_t *ctx, DiversifierKey *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readExtendedFullViewingKey(parser_context_t *ctx, ExtendedFullViewingKey *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->depth))
+  CHECK_ERROR(readFvkTag(ctx, &obj->parent_fvk_tag))
+  CHECK_ERROR(readChildIndex(ctx, &obj->child_index))
+  CHECK_ERROR(readChainCode(ctx, &obj->chain_code))
+  CHECK_ERROR(readFullViewingKey(ctx, &obj->fvk))
+  CHECK_ERROR(readDiversifierKey(ctx, &obj->dk))
+  return parser_ok;
+}
+
+parser_error_t readFullViewingKey(parser_context_t *ctx, FullViewingKey *obj) {
+  CHECK_ERROR(readViewingKey(ctx, &obj->vk))
+  CHECK_ERROR(readOutgoingViewingKey(ctx, &obj->ovk))
+  return parser_ok;
+}
+
+parser_error_t readFvkTag(parser_context_t *ctx, FvkTag *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 4))
+  return parser_ok;
+}
+
+parser_error_t readMemoBytes(parser_context_t *ctx, MemoBytes *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 512))
+  return parser_ok;
+}
+
+parser_error_t readMerklePathu8_32(parser_context_t *ctx, MerklePathu8_32 *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->auth_pathLen))
+  if((obj->auth_path = mem_alloc(obj->auth_pathLen * sizeof(u8_u8_32))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->auth_pathLen; i++) {
+    CHECK_ERROR(readu8_u8_32(ctx, &obj->auth_path[i]))
+  }
+  CHECK_ERROR(readUint64(ctx, &obj->position))
+  return parser_ok;
+}
+
+parser_error_t readNote(parser_context_t *ctx, Note *obj) {
+  CHECK_ERROR(readAssetType(ctx, &obj->asset_type))
+  CHECK_ERROR(readUint64(ctx, &obj->value))
+  CHECK_ERROR(readBytesAlt(ctx, obj->g_d, 32))
+  CHECK_ERROR(readBytesAlt(ctx, obj->pk_d, 32))
+  CHECK_ERROR(readRseed(ctx, &obj->rseed))
+  return parser_ok;
+}
+
+parser_error_t readNullifierDerivingKey(parser_context_t *ctx, NullifierDerivingKey *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readOptionOutgoingViewingKey(parser_context_t *ctx, OptionOutgoingViewingKey *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readOutgoingViewingKey(ctx, &obj->Some))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readOptionu8_32(parser_context_t *ctx, Optionu8_32 *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readBytesAlt(ctx, obj->Some, 32))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readOutgoingViewingKey(parser_context_t *ctx, OutgoingViewingKey *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readPaymentAddress(parser_context_t *ctx, PaymentAddress *obj) {
+  CHECK_ERROR(readDiversifier(ctx, &obj->diversifier))
+  CHECK_ERROR(readBytesAlt(ctx, obj->pk_d, 32))
+  return parser_ok;
+}
+
+parser_error_t readRseed(parser_context_t *ctx, Rseed *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 1:
+  CHECK_ERROR(readBytesAlt(ctx, obj->BeforeZip212, 32))
+  break;
+  case 2:
+  CHECK_ERROR(readBytesAlt(ctx, obj->AfterZip212, 32))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readSaplingBuilder_ExtendedFullViewingKey(parser_context_t *ctx, SaplingBuilder_ExtendedFullViewingKey *obj) {
+  CHECK_ERROR(readOptionu8_32(ctx, &obj->spend_anchor))
+  CHECK_ERROR(readBlockHeight(ctx, &obj->target_height))
+  CHECK_ERROR(readValueSumAssetType_i128(ctx, &obj->value_balance))
+  CHECK_ERROR(readOptionu8_32(ctx, &obj->convert_anchor))
+  CHECK_ERROR(readUint32(ctx, &obj->spendsLen))
+  if((obj->spends = mem_alloc(obj->spendsLen * sizeof(SpendDescriptionInfoExtendedFullViewingKey))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->spendsLen; i++) {
+    CHECK_ERROR(readSpendDescriptionInfoExtendedFullViewingKey(ctx, &obj->spends[i]))
+  }
+  CHECK_ERROR(readUint32(ctx, &obj->convertsLen))
+  if((obj->converts = mem_alloc(obj->convertsLen * sizeof(ConvertDescriptionInfo))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->convertsLen; i++) {
+    CHECK_ERROR(readConvertDescriptionInfo(ctx, &obj->converts[i]))
+  }
+  CHECK_ERROR(readUint32(ctx, &obj->outputsLen))
+  if((obj->outputs = mem_alloc(obj->outputsLen * sizeof(SaplingOutputInfo))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->outputsLen; i++) {
+    CHECK_ERROR(readSaplingOutputInfo(ctx, &obj->outputs[i]))
+  }
+  return parser_ok;
+}
+
+parser_error_t readSaplingOutputInfo(parser_context_t *ctx, SaplingOutputInfo *obj) {
+  CHECK_ERROR(readOptionOutgoingViewingKey(ctx, &obj->ovk))
+  CHECK_ERROR(readPaymentAddress(ctx, &obj->to))
+  CHECK_ERROR(readNote(ctx, &obj->note))
+  CHECK_ERROR(readMemoBytes(ctx, &obj->memo))
+  return parser_ok;
+}
+
+parser_error_t readSpendDescriptionInfoExtendedFullViewingKey(parser_context_t *ctx, SpendDescriptionInfoExtendedFullViewingKey *obj) {
+  CHECK_ERROR(readExtendedFullViewingKey(ctx, &obj->extsk))
+  CHECK_ERROR(readDiversifier(ctx, &obj->diversifier))
+  CHECK_ERROR(readNote(ctx, &obj->note))
+  CHECK_ERROR(readBytesAlt(ctx, obj->alpha, 32))
+  CHECK_ERROR(readMerklePathu8_32(ctx, &obj->merkle_path))
+  return parser_ok;
+}
+
+parser_error_t readTransparentBuilder(parser_context_t *ctx, TransparentBuilder *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->inputsLen))
+  if((obj->inputs = mem_alloc(obj->inputsLen * sizeof(TransparentInputInfo))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->inputsLen; i++) {
+    CHECK_ERROR(readTransparentInputInfo(ctx, &obj->inputs[i]))
+  }
+  CHECK_ERROR(readUint32(ctx, &obj->voutLen))
+  if((obj->vout = mem_alloc(obj->voutLen * sizeof(TxOut))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->voutLen; i++) {
+    CHECK_ERROR(readTxOut(ctx, &obj->vout[i]))
+  }
+  return parser_ok;
+}
+
+parser_error_t readTransparentInputInfo(parser_context_t *ctx, TransparentInputInfo *obj) {
+  CHECK_ERROR(readTxOut(ctx, &obj->coin))
+  return parser_ok;
+}
+
+parser_error_t readValueSumAssetType_i128_CompactSize(parser_context_t *ctx, ValueSumAssetType_i128_CompactSize *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 253:
+  CHECK_ERROR(readUint16(ctx, &obj->u16))
+  break;
+  case 254:
+  CHECK_ERROR(readUint32(ctx, &obj->u32))
+  break;
+  case 255:
+  CHECK_ERROR(readUint64(ctx, &obj->u64))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readViewingKey(parser_context_t *ctx, ViewingKey *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->ak, 32))
+  CHECK_ERROR(readNullifierDerivingKey(ctx, &obj->nk))
+  return parser_ok;
+}
+
+parser_error_t readHash(parser_context_t *ctx, Hash *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 32))
+  return parser_ok;
+}
+
+parser_error_t readSaplingMetadata(parser_context_t *ctx, SaplingMetadata *obj) {
+  CHECK_ERROR(readUint32(ctx, &obj->spend_indicesLen))
+  if((obj->spend_indices = mem_alloc(obj->spend_indicesLen * sizeof(uint64_t))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->spend_indicesLen; i++) {
+    CHECK_ERROR(readUint64(ctx, &obj->spend_indices[i]))
+  }
+  CHECK_ERROR(readUint32(ctx, &obj->convert_indicesLen))
+  if((obj->convert_indices = mem_alloc(obj->convert_indicesLen * sizeof(uint64_t))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->convert_indicesLen; i++) {
+    CHECK_ERROR(readUint64(ctx, &obj->convert_indices[i]))
+  }
+  CHECK_ERROR(readUint32(ctx, &obj->output_indicesLen))
+  if((obj->output_indices = mem_alloc(obj->output_indicesLen * sizeof(uint64_t))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->output_indicesLen; i++) {
+    CHECK_ERROR(readUint64(ctx, &obj->output_indices[i]))
+  }
+  return parser_ok;
+}
+
+parser_error_t readAddressAlt(parser_context_t *ctx, AddressAlt *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->bytes, ADDRESS_LEN_BYTES))
+  return parser_ok;
+}
+
+parser_error_t readAssetData(parser_context_t *ctx, AssetData *obj) {
+  CHECK_ERROR(readAddressAlt(ctx, &obj->token))
+  CHECK_ERROR(readDenomination(ctx, &obj->denom))
+  CHECK_ERROR(readMaspDigitPos(ctx, &obj->position))
+  CHECK_ERROR(readOptionEpoch(ctx, &obj->epoch))
+  return parser_ok;
+}
+
+parser_error_t readMaspBuilder(parser_context_t *ctx, MaspBuilder *obj) {
+  CHECK_ERROR(readHash(ctx, &obj->target))
+  CHECK_ERROR(readUint32(ctx, &obj->asset_typesLen))
+  if((obj->asset_types = mem_alloc(obj->asset_typesLen * sizeof(AssetData))) == NULL) {
+    return parser_unexpected_error;
+  }
+  for(uint32_t i = 0; i < obj->asset_typesLen; i++) {
+    CHECK_ERROR(readAssetData(ctx, &obj->asset_types[i]))
+      }
+  CHECK_ERROR(readSaplingMetadata(ctx, &obj->metadata))
+  CHECK_ERROR(readBuilder__ExtendedFullViewingKey(ctx, &obj->builder))
+  return parser_ok;
+}
+
+parser_error_t readEpoch(parser_context_t *ctx, Epoch *obj) {
+  CHECK_ERROR(readUint64(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readOptionEpoch(parser_context_t *ctx, OptionEpoch *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 0:
+  break;
+  case 1:
+  CHECK_ERROR(readEpoch(ctx, &obj->Some))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readDenomination(parser_context_t *ctx, Denomination *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readMaspDigitPos(parser_context_t *ctx, MaspDigitPos *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  return parser_ok;
+}
+
+
+
+
+
+
+
+
+
 parser_error_t readToken(const bytes_t *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
         return parser_unexpected_value;
@@ -1537,11 +2118,17 @@ static parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspT
     return parser_ok;
 }
 
-static parser_error_t readMaspBuilder(parser_context_t *ctx, section_t *maspBuilder) {
+static parser_error_t readMaspBuilderSection(parser_context_t *ctx, section_t *maspBuilder) {
     if (ctx == NULL) {
         return parser_unexpected_error;
     }
-    (void) maspBuilder;
+    uint8_t discriminant;
+    CHECK_ERROR(readByte(ctx, &discriminant))
+    if (discriminant != DISCRIMINANT_MASP_BUILDER) {
+        return parser_unexpected_value;
+    }
+    MaspBuilder mb;
+    CHECK_ERROR(readMaspBuilder(ctx, &mb))
     return parser_ok;
 }
 
@@ -1606,7 +2193,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 break;
 
             case DISCRIMINANT_MASP_BUILDER:
-                CHECK_ERROR(readMaspBuilder(ctx, NULL))
+                CHECK_ERROR(readMaspBuilderSection(ctx, NULL))
                 break;
 #if(0)
             case DISCRIMINANT_CIPHERTEXT:
