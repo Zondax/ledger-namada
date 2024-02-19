@@ -50,7 +50,7 @@ parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
-parser_error_t printAddressAlt(AddressAlt *addr,
+parser_error_t printAddressAlt(const AddressAlt *addr,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 

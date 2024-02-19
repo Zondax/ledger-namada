@@ -215,7 +215,7 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
             break;
         }
         case Address:
-            CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len));
+            CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->addressBytes.ptr, signature_section->addressBytes.len));
             break;
 
         default:

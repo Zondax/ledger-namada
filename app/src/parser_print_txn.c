@@ -56,11 +56,11 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Source");
-            CHECK_ERROR(printAddress(ctx->tx_obj->bond.source, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->bond.source, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Amount");
@@ -103,7 +103,7 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Steward");
-            CHECK_ERROR(printAddress(ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -159,7 +159,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                     outVal, outValLen, pageIdx, pageCount))
             } else {
                 snprintf(outKey, outKeyLen, "Token");
-                CHECK_ERROR(printAddress(ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
             }
             break;
         case 4:
@@ -349,7 +349,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
 
         case 3:
             snprintf(outKey, outKeyLen, "Author");
-            CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
             snprintf(outKey, outKeyLen, "Voting start epoch");
@@ -469,7 +469,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voter");
-            CHECK_ERROR(printAddress(voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
             if (voteProposal->number_of_delegations == 0) {
@@ -479,9 +479,13 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             if (displayIdx - adjustedDisplayIdx >= voteProposal->number_of_delegations) {
                 return parser_value_out_of_range;
             }
-            const uint16_t delegationOffset = (displayIdx - adjustedDisplayIdx) * ADDRESS_LEN_BYTES;
-            const bytes_t tmpProposal = {.ptr = voteProposal->delegations.ptr + delegationOffset, .len = ADDRESS_LEN_BYTES};
-            CHECK_ERROR(printAddress(tmpProposal, outVal, outValLen, pageIdx, pageCount))
+            parser_context_t tmpCtx = {.buffer = voteProposal->delegations.ptr, .bufferLen = voteProposal->delegations.len, .offset = 0};
+            AddressAlt tmpProposal;
+            for(uint32_t i = 0; i <= displayIdx - adjustedDisplayIdx; i++) {
+              CHECK_ERROR(readAddressAlt(&tmpCtx, &tmpProposal))
+            }
+            
+            CHECK_ERROR(printAddressAlt(&tmpProposal, outVal, outValLen, pageIdx, pageCount))
             break;
         case 5:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -564,7 +568,7 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -602,7 +606,7 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -642,7 +646,7 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->activateValidator.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->activateValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -699,7 +703,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Address");
-            CHECK_ERROR(printAddress(updateVp->address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&updateVp->address, outVal, outValLen, pageIdx, pageCount))
             break;
 
         case 2: {
@@ -783,7 +787,7 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             break;
         case 1: {
             snprintf(outKey, outKeyLen, "Address");
-            CHECK_ERROR(printAddress(ctx->tx_obj->becomeValidator.address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->becomeValidator.address, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 2: {
@@ -898,11 +902,11 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Source");
-            CHECK_ERROR(printAddress(withdraw->source, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&withdraw->source, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(withdraw->validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&withdraw->validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -945,7 +949,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -1071,7 +1075,7 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
 
     if (displayIdx == 1) {
         snprintf(outKey, outKeyLen, "Steward");
-        CHECK_ERROR(printAddress(ctx->tx_obj->updateStewardCommission.steward, outVal, outValLen, pageIdx, pageCount))
+        CHECK_ERROR(printAddressAlt(&ctx->tx_obj->updateStewardCommission.steward, outVal, outValLen, pageIdx, pageCount))
         return parser_ok;
     }
 
@@ -1079,19 +1083,19 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
     if (displayIdx >= 2 &&  displayIdx < (2 + 2 * updateStewardCommission->commissionLen)) {
         const bool printValidator = displayIdx % 2 == 0;
 
-        bytes_t address = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+        AddressAlt address;
         bytes_t amount = {.ptr = NULL, .len = 32};
         parser_context_t tmpCtx = { .buffer = updateStewardCommission->commission.ptr,
                                     .bufferLen = updateStewardCommission->commission.len,
                                     .offset = 0};
         for (uint8_t i = 0; i < displayIdx / 2; i++) {
-            CHECK_ERROR(readBytes(&tmpCtx, &address.ptr, address.len))
+            CHECK_ERROR(readAddressAlt(&tmpCtx, &address))
             CHECK_ERROR(readBytes(&tmpCtx, &amount.ptr, amount.len))
         }
 
         if (printValidator) {
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(address, outVal, outValLen, pageIdx, pageCount));
+            CHECK_ERROR(printAddressAlt(&address, outVal, outValLen, pageIdx, pageCount));
         } else {
             snprintf(outKey, outKeyLen, "Commission Rate");
             CHECK_ERROR(printAmount(&amount, true, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
@@ -1157,7 +1161,7 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
             break;
         case 1: {
             snprintf(outKey, outKeyLen, "Validator");
-            printAddress(metadataChange->validator, outVal, outValLen, pageIdx, pageCount);
+            printAddressAlt(&metadataChange->validator, outVal, outValLen, pageIdx, pageCount);
             break;
         }
         case 2: {
@@ -1239,7 +1243,7 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
         }
         case 2: {
             snprintf(outKey, outKeyLen, "Transfer Sender");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->sender, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->sender, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 3: {
@@ -1265,12 +1269,12 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
         }
           case 6: {
             snprintf(outKey, outKeyLen, "Gas Payer");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->gasPayer, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->gasPayer, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 7: {
             snprintf(outKey, outKeyLen, "Gas Token");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->gasToken, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->gasToken, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 8: {

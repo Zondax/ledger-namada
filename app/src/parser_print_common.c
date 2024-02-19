@@ -91,7 +91,7 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
-parser_error_t printAddressAlt( AddressAlt *addr,
+parser_error_t printAddressAlt( const AddressAlt *addr,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
 
@@ -288,13 +288,13 @@ parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t dis
 
     } else if (initProposal->proposal_type == PGFSteward) {
         uint8_t add_rem_discriminant = 0;
-        bytes_t tmpBytes = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+        AddressAlt tmpBytes;
         parser_context_t tmpCtx = { .buffer = initProposal->pgf_steward_actions.ptr,
                                     .bufferLen = initProposal->pgf_steward_actions.len,
                                     .offset = 0};
         for (uint32_t i = 0; i < displayIdx; i++) {
             CHECK_ERROR(readByte(&tmpCtx, &add_rem_discriminant))
-            CHECK_ERROR(readBytes(&tmpCtx, &tmpBytes.ptr, tmpBytes.len))
+            CHECK_ERROR(readAddressAlt(&tmpCtx, &tmpBytes))
         }
 
         // Add = 0 | Remove = 1
@@ -303,7 +303,7 @@ parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t dis
             snprintf(outKey, outKeyLen, "Remove");
         }
 
-        CHECK_ERROR(printAddress(tmpBytes, outVal, outValLen, pageIdx, pageCount))
+        CHECK_ERROR(printAddressAlt(&tmpBytes, outVal, outValLen, pageIdx, pageCount))
 
     } else if (initProposal->proposal_type == PGFPayment) {
         pgf_payment_action_t pgfPayment = {0};
@@ -340,7 +340,7 @@ parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t dis
 
                 case 1:
                     snprintf(outKey, outKeyLen, "Target");
-                    CHECK_ERROR(printAddress(pgfPayment.internal.address, outVal, outValLen, pageIdx, pageCount))
+                    CHECK_ERROR(printAddressAlt(&pgfPayment.internal.address, outVal, outValLen, pageIdx, pageCount))
                     break;
 
                 case 0:
@@ -447,7 +447,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
                 CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
             } else {
                 snprintf(outKey, outKeyLen, "Fee token");
-                CHECK_ERROR(printAddress(ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
             }
             break;
         }

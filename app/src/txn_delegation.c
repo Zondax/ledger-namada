@@ -26,8 +26,7 @@ parser_error_t readBondUnbond(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    v->bond.validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->bond.validator.ptr, v->bond.validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->bond.validator))
 
     // Amount
     v->bond.amount.len = 32;
@@ -36,8 +35,7 @@ parser_error_t readBondUnbond(const bytes_t *data, parser_tx_t *v) {
     // Source
     readByte(&ctx, &v->bond.has_source);
     if (v->bond.has_source) {
-        v->bond.source.len = ADDRESS_LEN_BYTES;
-        CHECK_ERROR(readBytes(&ctx, &v->bond.source.ptr, v->bond.source.len))
+        CHECK_ERROR(readAddressAlt(&ctx, &v->bond.source))
         v->bond.has_source = 1;
     }
 
@@ -52,16 +50,13 @@ parser_error_t readRedelegate(const bytes_t *data, tx_redelegation_t *redelegati
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Source validator
-    redelegation->src_validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &redelegation->src_validator.ptr, redelegation->src_validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &redelegation->src_validator))
 
     // Destination validator
-    redelegation->dest_validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &redelegation->dest_validator.ptr, redelegation->dest_validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &redelegation->dest_validator))
 
     // Owner
-    redelegation->owner.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &redelegation->owner.ptr, redelegation->owner.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &redelegation->owner))
 
     // Amount
     redelegation->amount.len = 32;
@@ -100,15 +95,15 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Source Validator");
-            CHECK_ERROR(printAddress(redelegation->src_validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&redelegation->src_validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Destination Validator");
-            CHECK_ERROR(printAddress(redelegation->dest_validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&redelegation->dest_validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Owner");
-            CHECK_ERROR(printAddress(redelegation->owner, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&redelegation->owner, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
             snprintf(outKey, outKeyLen, "Amount");

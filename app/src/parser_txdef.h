@@ -60,7 +60,8 @@ typedef struct {
     uint8_t idx;
     concatenated_hashes_t hashes;
     signer_discriminant_e signerDiscriminant;
-    bytes_t address;
+    AddressAlt address;
+  bytes_t addressBytes;
     uint32_t pubKeysLen;
     bytes_t pubKeys;
     uint32_t signaturesLen;
