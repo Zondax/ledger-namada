@@ -54,6 +54,19 @@ static const tokens_t nam_tokens[] = {
 
 #define PREFIX_IMPLICIT 0
 #define PREFIX_ESTABLISHED 1
+#define PREFIX_POS 2
+#define PREFIX_SLASH_POOL 3
+#define PREFIX_PARAMETERS 4
+#define PREFIX_GOVERNANCE 5
+#define PREFIX_IBC 6
+#define PREFIX_ETH_BRIDGE 7
+#define PREFIX_BRIDGE_POOL 8
+#define PREFIX_MULTITOKEN 9
+#define PREFIX_PGF 10
+#define PREFIX_ERC20 11
+#define PREFIX_NUT 12
+#define PREFIX_IBC_TOKEN 13
+#define PREFIX_MASP 14
 #define PREFIX_INTERNAL 2
 
 parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj);
@@ -977,6 +990,85 @@ parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLe
     return parser_ok;
 }
 
+parser_error_t encodeAddress(AddressAlt *addr, char *address, uint16_t addressLen) {
+    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
+
+    switch (addr->tag) {
+        case 0:
+            tmpBuffer[0] = PREFIX_ESTABLISHED;
+            MEMCPY(tmpBuffer + 1, addr->Established.f0.hash, 20);
+            break;
+        case 1:
+            tmpBuffer[0] = PREFIX_IMPLICIT;
+            MEMCPY(tmpBuffer + 1, addr->Implicit.f0.f0.f0, 20);
+            break;
+        case 2:
+            switch (addr->Internal.f0.tag) {
+            case 0:
+              tmpBuffer[0] = PREFIX_POS;
+              break;
+            case 1:
+              tmpBuffer[0] = PREFIX_SLASH_POOL;
+              break;
+            case 2:
+              tmpBuffer[0] = PREFIX_PARAMETERS;
+              break;
+            case 3:
+              tmpBuffer[0] = PREFIX_IBC;
+              break;
+            case 4:
+              tmpBuffer[0] = PREFIX_IBC_TOKEN;
+              MEMCPY(tmpBuffer + 1, addr->Internal.f0.IbcToken.f0.f0, 20);
+              break;
+            case 5:
+              tmpBuffer[0] = PREFIX_GOVERNANCE;
+              break;
+            case 6:
+              tmpBuffer[0] = PREFIX_ETH_BRIDGE;
+              break;
+            case 7:
+              tmpBuffer[0] = PREFIX_BRIDGE_POOL;
+              break;
+            case 8:
+              tmpBuffer[0] = PREFIX_ERC20;
+              MEMCPY(tmpBuffer + 1, addr->Internal.f0.Erc20.f0.f0, 20);
+              break;
+            case 9:
+              tmpBuffer[0] = PREFIX_NUT;
+              MEMCPY(tmpBuffer + 1, addr->Internal.f0.Nut.f0.f0, 20);
+              break;
+            case 10:
+              tmpBuffer[0] = PREFIX_MULTITOKEN;
+              break;
+            case 11:
+              tmpBuffer[0] = PREFIX_PGF;
+              break;
+            case 12:
+              tmpBuffer[0] = PREFIX_MASP;
+              break;
+            }
+            break;
+
+        default:
+            return parser_value_out_of_range;
+    }
+
+    // Check HRP for mainnet/testnet
+    const char *hrp = "tnam";
+    const zxerr_t err = bech32EncodeFromBytes(address,
+                                addressLen,
+                                hrp,
+                                (uint8_t*) tmpBuffer,
+                                ADDRESS_LEN_BYTES,
+                                1,
+                                BECH32_ENCODING_BECH32M);
+
+    if (err != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    return parser_ok;
+}
+
 static parser_error_t readTransactionType(bytes_t *codeTag, transaction_type_e *type) {
     if (codeTag == NULL || type == NULL) {
          return parser_unexpected_error;
@@ -1400,12 +1492,10 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Source
-    v->transfer.source_address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.source_address.ptr, v->transfer.source_address.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.source_address))
 
     // Target
-    v->transfer.target_address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.target_address.ptr, v->transfer.target_address.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.target_address))
 
     // Token
     v->transfer.token.len = ADDRESS_LEN_BYTES;

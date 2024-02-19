@@ -145,11 +145,11 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Sender");
-            CHECK_ERROR(printAddress(ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(printAddress(ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             if(ctx->tx_obj->transfer.symbol != NULL) {

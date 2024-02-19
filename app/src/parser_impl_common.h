@@ -102,6 +102,7 @@ parser_error_t readPubkey(parser_context_t *ctx, bytes_t *pubkey);
 
 parser_error_t readToken(const bytes_t *token, const char **symbol);
 parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
+parser_error_t encodeAddress(AddressAlt *addr, char *address, uint16_t addressLen);
 parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint16_t strVoteLen);
 
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);

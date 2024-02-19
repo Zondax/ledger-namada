@@ -282,18 +282,6 @@ typedef struct {
 } masp_tx_section_t;
 
 typedef struct {
-  uint8_t f0[20];
-} IbcTokenHash;
-
-typedef struct {
-  uint8_t f0[20];
-} EthAddress;
-
-typedef struct {
-  uint8_t f0[20];
-} PublicKeyHash;
-
-typedef struct {
   uint8_t f0;
   uint8_t f1[32];
 } u8_u8_32;
@@ -468,86 +456,6 @@ typedef struct {
   uint32_t output_indicesLen;
   uint64_t *output_indices;
 } SaplingMetadata;
-
-typedef struct {
-  uint8_t hash[20];
-} EstablishedAddress;
-
-typedef struct {
-  EstablishedAddress f0;
-} AddressEstablished;
-
-typedef struct {
-  PublicKeyHash f0;
-} ImplicitAddress;
-
-typedef struct {
-  ImplicitAddress f0;
-} AddressImplicit;
-
-typedef struct {
-  EthAddress f0;
-} InternalAddressErc20;
-
-typedef struct {} InternalAddressEthBridge;
-
-typedef struct {} InternalAddressEthBridgePool;
-
-typedef struct {} InternalAddressGovernance;
-
-typedef struct {} InternalAddressIbc;
-
-typedef struct {
-  IbcTokenHash f0;
-} InternalAddressIbcToken;
-
-typedef struct {} InternalAddressMasp;
-
-typedef struct {} InternalAddressMultitoken;
-
-typedef struct {
-  EthAddress f0;
-} InternalAddressNut;
-
-typedef struct {} InternalAddressParameters;
-
-typedef struct {} InternalAddressPgf;
-
-typedef struct {} InternalAddressPoS;
-
-typedef struct {} InternalAddressPosSlashPool;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  InternalAddressPoS PoS;
-  InternalAddressPosSlashPool PosSlashPool;
-  InternalAddressParameters Parameters;
-  InternalAddressIbc Ibc;
-  InternalAddressIbcToken IbcToken;
-  InternalAddressGovernance Governance;
-  InternalAddressEthBridge EthBridge;
-  InternalAddressEthBridgePool EthBridgePool;
-  InternalAddressErc20 Erc20;
-  InternalAddressNut Nut;
-  InternalAddressMultitoken Multitoken;
-  InternalAddressPgf Pgf;
-  InternalAddressMasp Masp;
-  };
-} InternalAddress;
-
-typedef struct {
-  InternalAddress f0;
-} AddressInternal;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  AddressEstablished Established;
-  AddressImplicit Implicit;
-  AddressInternal Internal;
-  };
-} AddressAlt;
 
 typedef struct {
   uint64_t f0;

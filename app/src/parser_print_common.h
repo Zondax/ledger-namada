@@ -50,6 +50,10 @@ parser_error_t printAddress(bytes_t pubkeyHash,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t printAddressAlt(AddressAlt *addr,
+                            char *outVal, uint16_t outValLen,
+                            uint8_t pageIdx, uint8_t *pageCount);
+
 parser_error_t printAmount( const bytes_t *amount, bool isSigned, uint8_t amountDenom, const char* symbol,
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount);

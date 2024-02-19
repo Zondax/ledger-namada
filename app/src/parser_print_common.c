@@ -91,6 +91,17 @@ parser_error_t printAddress( bytes_t pubkeyHash,
     return parser_ok;
 }
 
+parser_error_t printAddressAlt( AddressAlt *addr,
+                             char *outVal, uint16_t outValLen,
+                             uint8_t pageIdx, uint8_t *pageCount) {
+
+    char address[110] = {0};
+    CHECK_ERROR(encodeAddress(addr, address, sizeof(address)))
+    pageString(outVal, outValLen, (const char*) address, pageIdx, pageCount);
+
+    return parser_ok;
+}
+
 parser_error_t printCodeHash(section_t *codeSection,
                              char *outKey, uint16_t outKeyLen,
                              char *outVal, uint16_t outValLen,
