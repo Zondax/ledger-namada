@@ -56,6 +56,87 @@ static const tokens_t nam_tokens[] = {
 #define PREFIX_ESTABLISHED 1
 #define PREFIX_INTERNAL 2
 
+parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj);
+parser_error_t readAssetType(parser_context_t *ctx, AssetType *obj);
+parser_error_t readAuthorized(parser_context_t *ctx, Authorized *obj);
+parser_error_t readBlockHeight(parser_context_t *ctx, BlockHeight *obj);
+parser_error_t readBranchId(parser_context_t *ctx, BranchId *obj);
+parser_error_t readConvertDescriptionV5(parser_context_t *ctx, ConvertDescriptionV5 *obj);
+parser_error_t readEphemeralKeyBytes(parser_context_t *ctx, EphemeralKeyBytes *obj);
+parser_error_t readNullifier(parser_context_t *ctx, Nullifier *obj);
+parser_error_t readOutputDescriptionV5(parser_context_t *ctx, OutputDescriptionV5 *obj);
+parser_error_t readPublicKey(parser_context_t *ctx, PublicKey *obj);
+parser_error_t readSignature(parser_context_t *ctx, Signature *obj);
+parser_error_t readSpendDescriptionV5(parser_context_t *ctx, SpendDescriptionV5 *obj);
+parser_error_t readTransaction(parser_context_t *ctx, Transaction *obj);
+parser_error_t readCompactSize(parser_context_t *ctx, CompactSize *obj);
+parser_error_t readTransaction_authorization(parser_context_t *ctx, Transaction_authorization *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
+parser_error_t readTransaction_convert_anchor(parser_context_t *ctx, Transaction_convert_anchor *obj, uint64_t cd_v5s_count);
+parser_error_t readTransaction_spend_anchor(parser_context_t *ctx, Transaction_spend_anchor *obj, uint64_t sd_v5s_count);
+parser_error_t readTransaction_value_balance(parser_context_t *ctx, Transaction_value_balance *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
+parser_error_t readTransparentAddress(parser_context_t *ctx, TransparentAddress *obj);
+parser_error_t readTxInAuthorized(parser_context_t *ctx, TxInAuthorized *obj);
+parser_error_t readTxOut(parser_context_t *ctx, TxOut *obj);
+parser_error_t readTxVersion(parser_context_t *ctx, TxVersion *obj);
+parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetType_i128 *obj);
+parser_error_t readu8_u8_32(parser_context_t *ctx, u8_u8_32 *obj);
+parser_error_t readAllowedConversion(parser_context_t *ctx, AllowedConversion *obj);
+parser_error_t readBuilder__ExtendedFullViewingKey(parser_context_t *ctx, Builder__ExtendedFullViewingKey *obj);
+parser_error_t readChainCode(parser_context_t *ctx, ChainCode *obj);
+parser_error_t readChildIndex(parser_context_t *ctx, ChildIndex *obj);
+parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, ConvertDescriptionInfo *obj);
+parser_error_t readDiversifier(parser_context_t *ctx, Diversifier *obj);
+parser_error_t readDiversifierKey(parser_context_t *ctx, DiversifierKey *obj);
+parser_error_t readExtendedFullViewingKey(parser_context_t *ctx, ExtendedFullViewingKey *obj);
+parser_error_t readFullViewingKey(parser_context_t *ctx, FullViewingKey *obj);
+parser_error_t readFvkTag(parser_context_t *ctx, FvkTag *obj);
+parser_error_t readMemoBytes(parser_context_t *ctx, MemoBytes *obj);
+parser_error_t readMerklePathu8_32(parser_context_t *ctx, MerklePathu8_32 *obj);
+parser_error_t readNote(parser_context_t *ctx, Note *obj);
+parser_error_t readNullifierDerivingKey(parser_context_t *ctx, NullifierDerivingKey *obj);
+parser_error_t readOptionOutgoingViewingKey(parser_context_t *ctx, OptionOutgoingViewingKey *obj);
+parser_error_t readOptionu8_32(parser_context_t *ctx, Optionu8_32 *obj);
+parser_error_t readOutgoingViewingKey(parser_context_t *ctx, OutgoingViewingKey *obj);
+parser_error_t readPaymentAddress(parser_context_t *ctx, PaymentAddress *obj);
+parser_error_t readRseed(parser_context_t *ctx, Rseed *obj);
+parser_error_t readSaplingBuilder_ExtendedFullViewingKey(parser_context_t *ctx, SaplingBuilder_ExtendedFullViewingKey *obj);
+parser_error_t readSaplingOutputInfo(parser_context_t *ctx, SaplingOutputInfo *obj);
+parser_error_t readSpendDescriptionInfoExtendedFullViewingKey(parser_context_t *ctx, SpendDescriptionInfoExtendedFullViewingKey *obj);
+parser_error_t readTransparentBuilder(parser_context_t *ctx, TransparentBuilder *obj);
+parser_error_t readTransparentInputInfo(parser_context_t *ctx, TransparentInputInfo *obj);
+parser_error_t readValueSumAssetType_i128_CompactSize(parser_context_t *ctx, ValueSumAssetType_i128_CompactSize *obj);
+parser_error_t readViewingKey(parser_context_t *ctx, ViewingKey *obj);
+parser_error_t readMaspBuilder(parser_context_t *ctx, MaspBuilder *obj);
+parser_error_t readHash(parser_context_t *ctx, Hash *obj);
+parser_error_t readAssetData(parser_context_t *ctx, AssetData *obj);
+parser_error_t readSaplingMetadata(parser_context_t *ctx, SaplingMetadata *obj);
+parser_error_t readOptionEpoch(parser_context_t *ctx, OptionEpoch *obj);
+parser_error_t readEpoch(parser_context_t *ctx, Epoch *obj);
+parser_error_t readDenomination(parser_context_t *ctx, Denomination *obj);
+parser_error_t readMaspDigitPos(parser_context_t *ctx, MaspDigitPos *obj);
+parser_error_t readAddressEstablished(parser_context_t *ctx, AddressEstablished *obj);
+parser_error_t readAddressImplicit(parser_context_t *ctx, AddressImplicit *obj);
+parser_error_t readAddressInternal(parser_context_t *ctx, AddressInternal *obj);
+parser_error_t readEstablishedAddress(parser_context_t *ctx, EstablishedAddress *obj);
+parser_error_t readImplicitAddress(parser_context_t *ctx, ImplicitAddress *obj);
+parser_error_t readInternalAddress(parser_context_t *ctx, InternalAddress *obj);
+parser_error_t readInternalAddressErc20(parser_context_t *ctx, InternalAddressErc20 *obj);
+parser_error_t readInternalAddressEthBridge(parser_context_t *ctx, InternalAddressEthBridge *obj);
+parser_error_t readInternalAddressEthBridgePool(parser_context_t *ctx, InternalAddressEthBridgePool *obj);
+parser_error_t readInternalAddressGovernance(parser_context_t *ctx, InternalAddressGovernance *obj);
+parser_error_t readInternalAddressIbc(parser_context_t *ctx, InternalAddressIbc *obj);
+parser_error_t readInternalAddressIbcToken(parser_context_t *ctx, InternalAddressIbcToken *obj);
+parser_error_t readInternalAddressMasp(parser_context_t *ctx, InternalAddressMasp *obj);
+parser_error_t readInternalAddressMultitoken(parser_context_t *ctx, InternalAddressMultitoken *obj);
+parser_error_t readInternalAddressNut(parser_context_t *ctx, InternalAddressNut *obj);
+parser_error_t readInternalAddressParameters(parser_context_t *ctx, InternalAddressParameters *obj);
+parser_error_t readInternalAddressPgf(parser_context_t *ctx, InternalAddressPgf *obj);
+parser_error_t readInternalAddressPoS(parser_context_t *ctx, InternalAddressPoS *obj);
+parser_error_t readInternalAddressPosSlashPool(parser_context_t *ctx, InternalAddressPosSlashPool *obj);
+parser_error_t readPublicKeyHash(parser_context_t *ctx, PublicKeyHash *obj);
+parser_error_t readEthAddress(parser_context_t *ctx, EthAddress *obj);
+parser_error_t readIbcTokenHash(parser_context_t *ctx, IbcTokenHash *obj);
+
 parser_error_t readUint128(parser_context_t *ctx, uint128_t *value) {
     if (value == NULL || ctx->offset + sizeof(uint128_t) > ctx->bufferLen) {
         return parser_unexpected_error;
@@ -85,31 +166,6 @@ parser_error_t readBytesAlt(parser_context_t *ctx, uint8_t *output, uint16_t out
     ctx->offset += outputLen;
     return parser_ok;
 }
-
-parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj);
-parser_error_t readAssetType(parser_context_t *ctx, AssetType *obj);
-parser_error_t readAuthorized(parser_context_t *ctx, Authorized *obj);
-parser_error_t readBlockHeight(parser_context_t *ctx, BlockHeight *obj);
-parser_error_t readBranchId(parser_context_t *ctx, BranchId *obj);
-parser_error_t readConvertDescriptionV5(parser_context_t *ctx, ConvertDescriptionV5 *obj);
-parser_error_t readEphemeralKeyBytes(parser_context_t *ctx, EphemeralKeyBytes *obj);
-parser_error_t readNullifier(parser_context_t *ctx, Nullifier *obj);
-parser_error_t readOutputDescriptionV5(parser_context_t *ctx, OutputDescriptionV5 *obj);
-parser_error_t readPublicKey(parser_context_t *ctx, PublicKey *obj);
-parser_error_t readSignature(parser_context_t *ctx, Signature *obj);
-parser_error_t readSpendDescriptionV5(parser_context_t *ctx, SpendDescriptionV5 *obj);
-parser_error_t readTransaction(parser_context_t *ctx, Transaction *obj);
-parser_error_t readCompactSize(parser_context_t *ctx, CompactSize *obj);
-parser_error_t readTransaction_authorization(parser_context_t *ctx, Transaction_authorization *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
-parser_error_t readTransaction_convert_anchor(parser_context_t *ctx, Transaction_convert_anchor *obj, uint64_t cd_v5s_count);
-parser_error_t readTransaction_spend_anchor(parser_context_t *ctx, Transaction_spend_anchor *obj, uint64_t sd_v5s_count);
-parser_error_t readTransaction_value_balance(parser_context_t *ctx, Transaction_value_balance *obj, uint64_t sd_v5s_count, uint64_t cd_v5s_count, uint64_t od_v5s_count);
-parser_error_t readTransparentAddress(parser_context_t *ctx, TransparentAddress *obj);
-parser_error_t readTxInAuthorized(parser_context_t *ctx, TxInAuthorized *obj);
-parser_error_t readTxOut(parser_context_t *ctx, TxOut *obj);
-parser_error_t readTxVersion(parser_context_t *ctx, TxVersion *obj);
-parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetType_i128 *obj);
-
 
 parser_error_t readAssetType_i128(parser_context_t *ctx, AssetType_i128 *obj) {
   CHECK_ERROR(readAssetType(ctx, &obj->f0))
@@ -366,264 +422,6 @@ parser_error_t readValueSumAssetType_i128(parser_context_t *ctx, ValueSumAssetTy
   }
   return parser_ok;
 }
-
-
-
-
-
-
-
-
-
-typedef struct {
-  uint8_t f0;
-  uint8_t f1[32];
-} u8_u8_32;
-
-typedef struct {
-  ValueSumAssetType_i128 assets;
-  uint8_t generator[32];
-} AllowedConversion;
-
-typedef struct {
-  uint8_t f0[32];
-} ChainCode;
-
-typedef struct {
-  uint32_t f0;
-} ChildIndex;
-
-typedef struct {
-  uint8_t auth_pathLen;
-  u8_u8_32 *auth_path;
-  uint64_t position;
-} MerklePathu8_32;
-
-typedef struct {
-  AllowedConversion allowed;
-  uint64_t value;
-  MerklePathu8_32 merkle_path;
-} ConvertDescriptionInfo;
-
-typedef struct {
-  uint8_t f0[11];
-} Diversifier;
-
-typedef struct {
-  uint8_t f0[32];
-} DiversifierKey;
-
-typedef struct {
-  uint8_t f0[32];
-} NullifierDerivingKey;
-
-typedef struct {
-  uint8_t ak[32];
-  NullifierDerivingKey nk;
-} ViewingKey;
-
-typedef struct {
-  uint8_t f0[32];
-} OutgoingViewingKey;
-
-typedef struct {
-  ViewingKey vk;
-  OutgoingViewingKey ovk;
-} FullViewingKey;
-
-typedef struct {
-  uint8_t f0[4];
-} FvkTag;
-
-typedef struct {
-  uint8_t depth;
-  FvkTag parent_fvk_tag;
-  ChildIndex child_index;
-  ChainCode chain_code;
-  FullViewingKey fvk;
-  DiversifierKey dk;
-} ExtendedFullViewingKey;
-
-typedef struct {
-  uint8_t f0[512];
-} MemoBytes;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  uint8_t BeforeZip212[32];
-  uint8_t AfterZip212[32];
-  };
-} Rseed;
-
-typedef struct {
-  AssetType asset_type;
-  uint64_t value;
-  uint8_t g_d[32];
-  uint8_t pk_d[32];
-  Rseed rseed;
-} Note;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  OutgoingViewingKey Some;
-  };
-} OptionOutgoingViewingKey;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  uint8_t Some[32];
-  };
-} Optionu8_32;
-
-typedef struct {
-  Diversifier diversifier;
-  uint8_t pk_d[32];
-} PaymentAddress;
-
-typedef struct {
-  ExtendedFullViewingKey extsk;
-  Diversifier diversifier;
-  Note note;
-  uint8_t alpha[32];
-  MerklePathu8_32 merkle_path;
-} SpendDescriptionInfoExtendedFullViewingKey;
-
-typedef struct {
-  OptionOutgoingViewingKey ovk;
-  PaymentAddress to;
-  Note note;
-  MemoBytes memo;
-} SaplingOutputInfo;
-
-typedef struct {
-  Optionu8_32 spend_anchor;
-  BlockHeight target_height;
-  ValueSumAssetType_i128 value_balance;
-  Optionu8_32 convert_anchor;
-  uint32_t spendsLen;
-  SpendDescriptionInfoExtendedFullViewingKey *spends;
-  uint32_t convertsLen;
-  ConvertDescriptionInfo *converts;
-  uint32_t outputsLen;
-  SaplingOutputInfo *outputs;
-} SaplingBuilder_ExtendedFullViewingKey;
-
-typedef struct {
-  TxOut coin;
-} TransparentInputInfo;
-
-typedef struct {
-  uint32_t inputsLen;
-  TransparentInputInfo *inputs;
-  uint32_t voutLen;
-  TxOut *vout;
-} TransparentBuilder;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  uint16_t u16;
-  uint32_t u32;
-  uint64_t u64;
-  };
-} ValueSumAssetType_i128_CompactSize;
-
-typedef struct {
-  BlockHeight target_height;
-  BlockHeight expiry_height;
-  TransparentBuilder transparent_builder;
-  SaplingBuilder_ExtendedFullViewingKey sapling_builder;
-} Builder__ExtendedFullViewingKey;
-
-typedef struct {
-  uint8_t f0[32];
-} Hash;
-
-typedef struct {
-  uint32_t spend_indicesLen;
-  uint64_t *spend_indices;
-  uint32_t convert_indicesLen;
-  uint64_t *convert_indices;
-  uint32_t output_indicesLen;
-  uint64_t *output_indices;
-} SaplingMetadata;
-
-typedef struct {
-  uint8_t bytes[ADDRESS_LEN_BYTES];
-} AddressAlt;
-
-typedef struct {
-  uint64_t f0;
-} Epoch;
-
-typedef struct {
-  uint8_t tag;
-  union {
-  Epoch Some;
-  };
-} OptionEpoch;
-
-typedef struct {
-  uint8_t f0;
-} Denomination;
-
-typedef struct {
-  uint8_t tag;
-} MaspDigitPos;
-
-typedef struct {
-  AddressAlt token;
-  Denomination denom;
-  MaspDigitPos position;
-  OptionEpoch epoch;
-} AssetData;
-
-typedef struct {
-  Hash target;
-  uint32_t asset_typesLen;
-  AssetData *asset_types;
-  SaplingMetadata metadata;
-  Builder__ExtendedFullViewingKey builder;
-} MaspBuilder;
-
-parser_error_t readu8_u8_32(parser_context_t *ctx, u8_u8_32 *obj);
-parser_error_t readAllowedConversion(parser_context_t *ctx, AllowedConversion *obj);
-parser_error_t readBuilder__ExtendedFullViewingKey(parser_context_t *ctx, Builder__ExtendedFullViewingKey *obj);
-parser_error_t readChainCode(parser_context_t *ctx, ChainCode *obj);
-parser_error_t readChildIndex(parser_context_t *ctx, ChildIndex *obj);
-parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, ConvertDescriptionInfo *obj);
-parser_error_t readDiversifier(parser_context_t *ctx, Diversifier *obj);
-parser_error_t readDiversifierKey(parser_context_t *ctx, DiversifierKey *obj);
-parser_error_t readExtendedFullViewingKey(parser_context_t *ctx, ExtendedFullViewingKey *obj);
-parser_error_t readFullViewingKey(parser_context_t *ctx, FullViewingKey *obj);
-parser_error_t readFvkTag(parser_context_t *ctx, FvkTag *obj);
-parser_error_t readMemoBytes(parser_context_t *ctx, MemoBytes *obj);
-parser_error_t readMerklePathu8_32(parser_context_t *ctx, MerklePathu8_32 *obj);
-parser_error_t readNote(parser_context_t *ctx, Note *obj);
-parser_error_t readNullifierDerivingKey(parser_context_t *ctx, NullifierDerivingKey *obj);
-parser_error_t readOptionOutgoingViewingKey(parser_context_t *ctx, OptionOutgoingViewingKey *obj);
-parser_error_t readOptionu8_32(parser_context_t *ctx, Optionu8_32 *obj);
-parser_error_t readOutgoingViewingKey(parser_context_t *ctx, OutgoingViewingKey *obj);
-parser_error_t readPaymentAddress(parser_context_t *ctx, PaymentAddress *obj);
-parser_error_t readRseed(parser_context_t *ctx, Rseed *obj);
-parser_error_t readSaplingBuilder_ExtendedFullViewingKey(parser_context_t *ctx, SaplingBuilder_ExtendedFullViewingKey *obj);
-parser_error_t readSaplingOutputInfo(parser_context_t *ctx, SaplingOutputInfo *obj);
-parser_error_t readSpendDescriptionInfoExtendedFullViewingKey(parser_context_t *ctx, SpendDescriptionInfoExtendedFullViewingKey *obj);
-parser_error_t readTransparentBuilder(parser_context_t *ctx, TransparentBuilder *obj);
-parser_error_t readTransparentInputInfo(parser_context_t *ctx, TransparentInputInfo *obj);
-parser_error_t readValueSumAssetType_i128_CompactSize(parser_context_t *ctx, ValueSumAssetType_i128_CompactSize *obj);
-parser_error_t readViewingKey(parser_context_t *ctx, ViewingKey *obj);
-parser_error_t readMaspBuilder(parser_context_t *ctx, MaspBuilder *obj);
-parser_error_t readHash(parser_context_t *ctx, Hash *obj);
-parser_error_t readAssetData(parser_context_t *ctx, AssetData *obj);
-parser_error_t readSaplingMetadata(parser_context_t *ctx, SaplingMetadata *obj);
-parser_error_t readOptionEpoch(parser_context_t *ctx, OptionEpoch *obj);
-parser_error_t readEpoch(parser_context_t *ctx, Epoch *obj);
-parser_error_t readDenomination(parser_context_t *ctx, Denomination *obj);
-parser_error_t readMaspDigitPos(parser_context_t *ctx, MaspDigitPos *obj);
 
 parser_error_t readu8_u8_32(parser_context_t *ctx, u8_u8_32 *obj) {
   CHECK_ERROR(readByte(ctx, &obj->f0))
@@ -893,8 +691,145 @@ parser_error_t readSaplingMetadata(parser_context_t *ctx, SaplingMetadata *obj) 
   return parser_ok;
 }
 
+parser_error_t readEstablishedAddress(parser_context_t *ctx, EstablishedAddress *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->hash, 20))
+  return parser_ok;
+}
+
+parser_error_t readAddressEstablished(parser_context_t *ctx, AddressEstablished *obj) {
+  CHECK_ERROR(readEstablishedAddress(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readImplicitAddress(parser_context_t *ctx, ImplicitAddress *obj) {
+  CHECK_ERROR(readPublicKeyHash(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readAddressImplicit(parser_context_t *ctx, AddressImplicit *obj) {
+  CHECK_ERROR(readImplicitAddress(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readInternalAddress(parser_context_t *ctx, InternalAddress *obj) {
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 0:
+  CHECK_ERROR(readInternalAddressPoS(ctx, &obj->PoS))
+  break;
+  case 1:
+  CHECK_ERROR(readInternalAddressPosSlashPool(ctx, &obj->PosSlashPool))
+  break;
+  case 2:
+  CHECK_ERROR(readInternalAddressParameters(ctx, &obj->Parameters))
+  break;
+  case 3:
+  CHECK_ERROR(readInternalAddressIbc(ctx, &obj->Ibc))
+  break;
+  case 4:
+  CHECK_ERROR(readInternalAddressIbcToken(ctx, &obj->IbcToken))
+  break;
+  case 5:
+  CHECK_ERROR(readInternalAddressGovernance(ctx, &obj->Governance))
+  break;
+  case 6:
+  CHECK_ERROR(readInternalAddressEthBridge(ctx, &obj->EthBridge))
+  break;
+  case 7:
+  CHECK_ERROR(readInternalAddressEthBridgePool(ctx, &obj->EthBridgePool))
+  break;
+  case 8:
+  CHECK_ERROR(readInternalAddressErc20(ctx, &obj->Erc20))
+  break;
+  case 9:
+  CHECK_ERROR(readInternalAddressNut(ctx, &obj->Nut))
+  break;
+  case 10:
+  CHECK_ERROR(readInternalAddressMultitoken(ctx, &obj->Multitoken))
+  break;
+  case 11:
+  CHECK_ERROR(readInternalAddressPgf(ctx, &obj->Pgf))
+  break;
+  case 12:
+  CHECK_ERROR(readInternalAddressMasp(ctx, &obj->Masp))
+  break;
+  }
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressErc20(parser_context_t *ctx, InternalAddressErc20 *obj) {
+  CHECK_ERROR(readEthAddress(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressEthBridge(parser_context_t *ctx, InternalAddressEthBridge *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressEthBridgePool(parser_context_t *ctx, InternalAddressEthBridgePool *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressGovernance(parser_context_t *ctx, InternalAddressGovernance *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressIbc(parser_context_t *ctx, InternalAddressIbc *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressIbcToken(parser_context_t *ctx, InternalAddressIbcToken *obj) {
+  CHECK_ERROR(readIbcTokenHash(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressMasp(parser_context_t *ctx, InternalAddressMasp *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressMultitoken(parser_context_t *ctx, InternalAddressMultitoken *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressNut(parser_context_t *ctx, InternalAddressNut *obj) {
+  CHECK_ERROR(readEthAddress(ctx, &obj->f0))
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressParameters(parser_context_t *ctx, InternalAddressParameters *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressPgf(parser_context_t *ctx, InternalAddressPgf *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressPoS(parser_context_t *ctx, InternalAddressPoS *obj) {
+  return parser_ok;
+}
+
+parser_error_t readInternalAddressPosSlashPool(parser_context_t *ctx, InternalAddressPosSlashPool *obj) {
+  return parser_ok;
+}
+
+parser_error_t readAddressInternal(parser_context_t *ctx, AddressInternal *obj) {
+  CHECK_ERROR(readInternalAddress(ctx, &obj->f0))
+  return parser_ok;
+}
+
 parser_error_t readAddressAlt(parser_context_t *ctx, AddressAlt *obj) {
-  CHECK_ERROR(readBytesAlt(ctx, obj->bytes, ADDRESS_LEN_BYTES))
+  CHECK_ERROR(readByte(ctx, &obj->tag))
+  switch(obj->tag) {
+  case 0:
+  CHECK_ERROR(readAddressEstablished(ctx, &obj->Established))
+  break;
+  case 1:
+  CHECK_ERROR(readAddressImplicit(ctx, &obj->Implicit))
+  break;
+  case 2:
+  CHECK_ERROR(readAddressInternal(ctx, &obj->Internal))
+  break;
+  }
   return parser_ok;
 }
 
@@ -947,13 +882,20 @@ parser_error_t readMaspDigitPos(parser_context_t *ctx, MaspDigitPos *obj) {
   return parser_ok;
 }
 
+parser_error_t readPublicKeyHash(parser_context_t *ctx, PublicKeyHash *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 20))
+  return parser_ok;
+}
 
+parser_error_t readEthAddress(parser_context_t *ctx, EthAddress *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 20))
+  return parser_ok;
+}
 
-
-
-
-
-
+parser_error_t readIbcTokenHash(parser_context_t *ctx, IbcTokenHash *obj) {
+  CHECK_ERROR(readBytesAlt(ctx, obj->f0, 20))
+  return parser_ok;
+}
 
 parser_error_t readToken(const bytes_t *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
@@ -2118,7 +2060,7 @@ static parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspT
     return parser_ok;
 }
 
-static parser_error_t readMaspBuilderSection(parser_context_t *ctx, section_t *maspBuilder) {
+static parser_error_t readMaspBuilderSection(parser_context_t *ctx, MaspBuilder *maspBuilder) {
     if (ctx == NULL) {
         return parser_unexpected_error;
     }
@@ -2127,8 +2069,7 @@ static parser_error_t readMaspBuilderSection(parser_context_t *ctx, section_t *m
     if (discriminant != DISCRIMINANT_MASP_BUILDER) {
         return parser_unexpected_value;
     }
-    MaspBuilder mb;
-    CHECK_ERROR(readMaspBuilder(ctx, &mb))
+    CHECK_ERROR(readMaspBuilder(ctx, maspBuilder))
     return parser_ok;
 }
 
@@ -2193,7 +2134,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 break;
 
             case DISCRIMINANT_MASP_BUILDER:
-                CHECK_ERROR(readMaspBuilderSection(ctx, NULL))
+                CHECK_ERROR(readMaspBuilderSection(ctx, &v->transaction.sections.maspBuilder))
                 break;
 #if(0)
             case DISCRIMINANT_CIPHERTEXT:

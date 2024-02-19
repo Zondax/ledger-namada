@@ -282,6 +282,308 @@ typedef struct {
 } masp_tx_section_t;
 
 typedef struct {
+  uint8_t f0[20];
+} IbcTokenHash;
+
+typedef struct {
+  uint8_t f0[20];
+} EthAddress;
+
+typedef struct {
+  uint8_t f0[20];
+} PublicKeyHash;
+
+typedef struct {
+  uint8_t f0;
+  uint8_t f1[32];
+} u8_u8_32;
+
+typedef struct {
+  ValueSumAssetType_i128 assets;
+  uint8_t generator[32];
+} AllowedConversion;
+
+typedef struct {
+  uint8_t f0[32];
+} ChainCode;
+
+typedef struct {
+  uint32_t f0;
+} ChildIndex;
+
+typedef struct {
+  uint8_t auth_pathLen;
+  u8_u8_32 *auth_path;
+  uint64_t position;
+} MerklePathu8_32;
+
+typedef struct {
+  AllowedConversion allowed;
+  uint64_t value;
+  MerklePathu8_32 merkle_path;
+} ConvertDescriptionInfo;
+
+typedef struct {
+  uint8_t f0[11];
+} Diversifier;
+
+typedef struct {
+  uint8_t f0[32];
+} DiversifierKey;
+
+typedef struct {
+  uint8_t f0[32];
+} NullifierDerivingKey;
+
+typedef struct {
+  uint8_t ak[32];
+  NullifierDerivingKey nk;
+} ViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} OutgoingViewingKey;
+
+typedef struct {
+  ViewingKey vk;
+  OutgoingViewingKey ovk;
+} FullViewingKey;
+
+typedef struct {
+  uint8_t f0[4];
+} FvkTag;
+
+typedef struct {
+  uint8_t depth;
+  FvkTag parent_fvk_tag;
+  ChildIndex child_index;
+  ChainCode chain_code;
+  FullViewingKey fvk;
+  DiversifierKey dk;
+} ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[512];
+} MemoBytes;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t BeforeZip212[32];
+  uint8_t AfterZip212[32];
+  };
+} Rseed;
+
+typedef struct {
+  AssetType asset_type;
+  uint64_t value;
+  uint8_t g_d[32];
+  uint8_t pk_d[32];
+  Rseed rseed;
+} Note;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  OutgoingViewingKey Some;
+  };
+} OptionOutgoingViewingKey;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t Some[32];
+  };
+} Optionu8_32;
+
+typedef struct {
+  Diversifier diversifier;
+  uint8_t pk_d[32];
+} PaymentAddress;
+
+typedef struct {
+  ExtendedFullViewingKey extsk;
+  Diversifier diversifier;
+  Note note;
+  uint8_t alpha[32];
+  MerklePathu8_32 merkle_path;
+} SpendDescriptionInfoExtendedFullViewingKey;
+
+typedef struct {
+  OptionOutgoingViewingKey ovk;
+  PaymentAddress to;
+  Note note;
+  MemoBytes memo;
+} SaplingOutputInfo;
+
+typedef struct {
+  Optionu8_32 spend_anchor;
+  BlockHeight target_height;
+  ValueSumAssetType_i128 value_balance;
+  Optionu8_32 convert_anchor;
+  uint32_t spendsLen;
+  SpendDescriptionInfoExtendedFullViewingKey *spends;
+  uint32_t convertsLen;
+  ConvertDescriptionInfo *converts;
+  uint32_t outputsLen;
+  SaplingOutputInfo *outputs;
+} SaplingBuilder_ExtendedFullViewingKey;
+
+typedef struct {
+  TxOut coin;
+} TransparentInputInfo;
+
+typedef struct {
+  uint32_t inputsLen;
+  TransparentInputInfo *inputs;
+  uint32_t voutLen;
+  TxOut *vout;
+} TransparentBuilder;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint16_t u16;
+  uint32_t u32;
+  uint64_t u64;
+  };
+} ValueSumAssetType_i128_CompactSize;
+
+typedef struct {
+  BlockHeight target_height;
+  BlockHeight expiry_height;
+  TransparentBuilder transparent_builder;
+  SaplingBuilder_ExtendedFullViewingKey sapling_builder;
+} Builder__ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} Hash;
+
+typedef struct {
+  uint32_t spend_indicesLen;
+  uint64_t *spend_indices;
+  uint32_t convert_indicesLen;
+  uint64_t *convert_indices;
+  uint32_t output_indicesLen;
+  uint64_t *output_indices;
+} SaplingMetadata;
+
+typedef struct {
+  uint8_t hash[20];
+} EstablishedAddress;
+
+typedef struct {
+  EstablishedAddress f0;
+} AddressEstablished;
+
+typedef struct {
+  PublicKeyHash f0;
+} ImplicitAddress;
+
+typedef struct {
+  ImplicitAddress f0;
+} AddressImplicit;
+
+typedef struct {
+  EthAddress f0;
+} InternalAddressErc20;
+
+typedef struct {} InternalAddressEthBridge;
+
+typedef struct {} InternalAddressEthBridgePool;
+
+typedef struct {} InternalAddressGovernance;
+
+typedef struct {} InternalAddressIbc;
+
+typedef struct {
+  IbcTokenHash f0;
+} InternalAddressIbcToken;
+
+typedef struct {} InternalAddressMasp;
+
+typedef struct {} InternalAddressMultitoken;
+
+typedef struct {
+  EthAddress f0;
+} InternalAddressNut;
+
+typedef struct {} InternalAddressParameters;
+
+typedef struct {} InternalAddressPgf;
+
+typedef struct {} InternalAddressPoS;
+
+typedef struct {} InternalAddressPosSlashPool;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  InternalAddressPoS PoS;
+  InternalAddressPosSlashPool PosSlashPool;
+  InternalAddressParameters Parameters;
+  InternalAddressIbc Ibc;
+  InternalAddressIbcToken IbcToken;
+  InternalAddressGovernance Governance;
+  InternalAddressEthBridge EthBridge;
+  InternalAddressEthBridgePool EthBridgePool;
+  InternalAddressErc20 Erc20;
+  InternalAddressNut Nut;
+  InternalAddressMultitoken Multitoken;
+  InternalAddressPgf Pgf;
+  InternalAddressMasp Masp;
+  };
+} InternalAddress;
+
+typedef struct {
+  InternalAddress f0;
+} AddressInternal;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  AddressEstablished Established;
+  AddressImplicit Implicit;
+  AddressInternal Internal;
+  };
+} AddressAlt;
+
+typedef struct {
+  uint64_t f0;
+} Epoch;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  Epoch Some;
+  };
+} OptionEpoch;
+
+typedef struct {
+  uint8_t f0;
+} Denomination;
+
+typedef struct {
+  uint8_t tag;
+} MaspDigitPos;
+
+typedef struct {
+  AddressAlt token;
+  Denomination denom;
+  MaspDigitPos position;
+  OptionEpoch epoch;
+} AssetData;
+
+typedef struct {
+  Hash target;
+  uint32_t asset_typesLen;
+  AssetData *asset_types;
+  SaplingMetadata metadata;
+  Builder__ExtendedFullViewingKey builder;
+} MaspBuilder;
+
+typedef struct {
     uint8_t discriminant;
     bytes_t salt;
     uint8_t commitmentDiscriminant;
@@ -313,9 +615,9 @@ typedef struct {
     section_t extraData[MAX_EXTRA_DATA_SECS];
     signature_section_t signatures[MAX_SIGNATURE_SECS];
     masp_tx_section_t maspTx;
+    MaspBuilder maspBuilder;
 #if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
-    section_t maspBuilder; // todo: if we need to parse this in future, it will not be a section_t
 #endif
 } sections_t;
 
