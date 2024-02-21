@@ -84,6 +84,14 @@ extern "C" {
 #define BRIDGE_POOL_TRANSFER_NORMAL_PARAMS  9
 #define BRIDGE_POOL_TRANSFER_EXPERT_PARAMS  14
 
+#define DISCRIMINANT_DATA 0x00
+#define DISCRIMINANT_EXTRA_DATA 0x01
+#define DISCRIMINANT_CODE 0x02
+#define DISCRIMINANT_SIGNATURE 0x03
+#define DISCRIMINANT_CIPHERTEXT 0x04
+#define DISCRIMINANT_MASP_TX 0x05
+#define DISCRIMINANT_MASP_BUILDER 0x06
+
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);

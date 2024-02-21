@@ -15,6 +15,7 @@
 ********************************************************************************/
 #include "parser_impl_common.h"
 #include "parser_txdef.h"
+#include "parser_impl_masp.h"
 #include "crypto_helper.h"
 #include "leb128.h"
 #include "bech32.h"
@@ -23,14 +24,6 @@
 #include "txn_delegation.h"
 #include "stdbool.h"
 #include <zxformat.h>
-
-#define DISCRIMINANT_DATA 0x00
-#define DISCRIMINANT_EXTRA_DATA 0x01
-#define DISCRIMINANT_CODE 0x02
-#define DISCRIMINANT_SIGNATURE 0x03
-#define DISCRIMINANT_CIPHERTEXT 0x04
-#define DISCRIMINANT_MASP_TX 0x05
-#define DISCRIMINANT_MASP_BUILDER 0x06
 
 // Update VP types
 static const vp_types_t vp_user = { "vp_user.wasm", "User"};
@@ -1147,26 +1140,6 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     return parser_ok;
 }
 
-#if(0)
-static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
-    (void) ctx;
-    (void) ciphertext;
-    return parser_ok;
-}
-
-
-static parser_error_t readMaspTx(parser_context_t *ctx, section_t *maspTx) {
-    ctx->offset += 1171; // <- Transfer 2 // Transfer 1 -> 2403;//todo figure out correct number, fix this hack
-    (void) maspTx;
-    return parser_ok;
-}
-
-static parser_error_t readMaspBuilder(parser_context_t *ctx, section_t *maspBuilder) {
-    ctx->offset += 941; // <- Transfer 2 // Transfer 1 -> 3060; //todo figure out correct number, fix this hack
-    (void) maspBuilder;
-    return parser_ok;
-}
-#endif
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
@@ -1214,9 +1187,8 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 signature->idx = i+1;
                 break;
             }
-#if(0)
             case DISCRIMINANT_CIPHERTEXT:
-                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
+                //CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
                 break;
 
             case DISCRIMINANT_MASP_TX:
@@ -1226,7 +1198,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
                 break;
-#endif
+
             default:
                 return parser_unexpected_field;
         }
