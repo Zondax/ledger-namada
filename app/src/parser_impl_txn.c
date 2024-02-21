@@ -15,6 +15,7 @@
 ********************************************************************************/
 #include "parser_impl_common.h"
 #include "parser_txdef.h"
+#include "parser_impl_masp.h"
 #include "crypto_helper.h"
 #include "leb128.h"
 #include "bech32.h"
@@ -22,15 +23,9 @@
 #include "txn_validator.h"
 #include "txn_delegation.h"
 #include "stdbool.h"
-#include <zxformat.h>
+#include "parser_address.h"
 
-#define DISCRIMINANT_DATA 0x00
-#define DISCRIMINANT_EXTRA_DATA 0x01
-#define DISCRIMINANT_CODE 0x02
-#define DISCRIMINANT_SIGNATURE 0x03
-#define DISCRIMINANT_CIPHERTEXT 0x04
-#define DISCRIMINANT_MASP_TX 0x05
-#define DISCRIMINANT_MASP_BUILDER 0x06
+#include <zxformat.h>
 
 // Update VP types
 static const vp_types_t vp_user = { "vp_user.wasm", "User"};
@@ -55,14 +50,14 @@ static const tokens_t nam_tokens[] = {
 #define PREFIX_ESTABLISHED 1
 #define PREFIX_INTERNAL 2
 
-parser_error_t readToken(const bytes_t *token, const char **symbol) {
+parser_error_t readToken(const AddressAlt *token, const char **symbol) {
     if (token == NULL || symbol == NULL) {
         return parser_unexpected_value;
     }
 
     // Convert token to address
     char address[53] = {0};
-    CHECK_ERROR(readAddress(*token, address, sizeof(address)))
+    CHECK_ERROR(encodeAddress(token, address, sizeof(address)))
 
     *symbol = NULL;
 
@@ -95,43 +90,6 @@ parser_error_t readVPType(const bytes_t *vp_type_tag, const char **vp_type_text)
         *vp_type_text = (char*) PIC(vp_validator.text);
     }
 
-    return parser_ok;
-}
-
-parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen) {
-    const uint8_t addressType = *pubkeyHash.ptr++;
-    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
-
-    switch (addressType) {
-        case 0:
-            tmpBuffer[0] = PREFIX_ESTABLISHED;
-            break;
-        case 1:
-            tmpBuffer[1] = PREFIX_IMPLICIT;
-            break;
-        case 2:
-            tmpBuffer[2] = PREFIX_INTERNAL;
-            break;
-
-        default:
-            return parser_value_out_of_range;
-    }
-
-    MEMCPY(tmpBuffer + 1, pubkeyHash.ptr, 20);
-
-    // Check HRP for mainnet/testnet
-    const char *hrp = "tnam";
-    const zxerr_t err = bech32EncodeFromBytes(address,
-                                addressLen,
-                                hrp,
-                                (uint8_t*) tmpBuffer,
-                                ADDRESS_LEN_BYTES,
-                                1,
-                                BECH32_ENCODING_BECH32M);
-
-    if (err != zxerr_ok) {
-        return parser_unexpected_error;
-    }
     return parser_ok;
 }
 
@@ -211,8 +169,7 @@ static parser_error_t readPGFInternal(parser_context_t *ctx, pgf_payment_action_
     }
 
     // Read target
-    paymentAction->internal.address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(ctx, &paymentAction->internal.address.ptr, paymentAction->internal.address.len))
+    CHECK_ERROR(readAddressAlt(ctx, &paymentAction->internal.address))
     // Read amount
     paymentAction->internal.amount.len = 32;
     CHECK_ERROR(readBytes(ctx, &paymentAction->internal.amount.ptr, paymentAction->internal.amount.len))
@@ -303,9 +260,8 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     v->initProposal.content_sechash.len = HASH_LEN;
     CHECK_ERROR(readBytes(&ctx, &v->initProposal.content_sechash.ptr, v->initProposal.content_sechash.len))
 
-    // Author, should be of length ADDRESS_LEN_BYTES
-    v->initProposal.author.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->initProposal.author.ptr, v->initProposal.author.len))
+    // Author
+    CHECK_ERROR(readAddressAlt(&ctx, &v->initProposal.author))
 
     // Proposal type
     CHECK_ERROR(readByte(&ctx, &v->initProposal.proposal_type))
@@ -326,11 +282,11 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
             v->initProposal.pgf_steward_actions.len = 0;
 
             uint8_t add_rem_discriminant = 0;
-            bytes_t tmpBytes = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+            AddressAlt tmpBytes;
             for (uint32_t i = 0; i < v->initProposal.pgf_steward_actions_num; i++) {
                 CHECK_ERROR(readByte(&ctx, &add_rem_discriminant))
-                CHECK_ERROR(readBytes(&ctx, &tmpBytes.ptr, tmpBytes.len))
-                v->initProposal.pgf_steward_actions.len += 1 + ADDRESS_LEN_BYTES;
+                CHECK_ERROR(readAddressAlt(&ctx, &tmpBytes))
+                v->initProposal.pgf_steward_actions.len = ctx.buffer + ctx.offset - v->initProposal.pgf_steward_actions.ptr;
             }
             break;
         }
@@ -416,16 +372,19 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     }
 
     // Voter, should be of length ADDRESS_LEN_BYTES
-    v->voteProposal.voter.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->voteProposal.voter.ptr, v->voteProposal.voter.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->voteProposal.voter))
 
     // Delegators
     v->voteProposal.number_of_delegations = 0;
     CHECK_ERROR(readUint32(&ctx, &v->voteProposal.number_of_delegations))
     v->voteProposal.delegations.len = 0;
     if (v->voteProposal.number_of_delegations > 0 ){
-        v->voteProposal.delegations.len = ADDRESS_LEN_BYTES*v->voteProposal.number_of_delegations;
-        CHECK_ERROR(readBytes(&ctx, &v->voteProposal.delegations.ptr, v->voteProposal.delegations.len))
+          v->voteProposal.delegations.ptr = ctx.buffer + ctx.offset;
+        for (uint32_t i = 0; i < v->voteProposal.number_of_delegations; i++) {
+          AddressAlt tmp;
+          CHECK_ERROR(readAddressAlt(&ctx, &tmp))
+        }
+        v->voteProposal.delegations.len = ctx.buffer + ctx.offset - v->voteProposal.delegations.ptr;
     }
 
     if ((ctx.offset != ctx.bufferLen)) {
@@ -452,16 +411,14 @@ static parser_error_t readWithdrawTxn(bytes_t *buffer, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    v->withdraw.validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->withdraw.validator.ptr, v->withdraw.validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->withdraw.validator))
 
     // Does this tx specify the source
     CHECK_ERROR(readByte(&ctx, &v->withdraw.has_source))
 
     // Source
     if (v->withdraw.has_source != 0) {
-        v->withdraw.source.len = ADDRESS_LEN_BYTES;
-        CHECK_ERROR(readBytes(&ctx, &v->withdraw.source.ptr, v->withdraw.source.len))
+        CHECK_ERROR(readAddressAlt(&ctx, &v->withdraw.source))
     }
 
     if (ctx.offset != ctx.bufferLen) {
@@ -474,8 +431,7 @@ static parser_error_t readCommissionChangeTxn(bytes_t *buffer, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = buffer->ptr, .bufferLen = buffer->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    v->commissionChange.validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->commissionChange.validator.ptr, v->commissionChange.validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->commissionChange.validator))
 
     // Read new commission rate
     v->commissionChange.new_rate.len = 32;
@@ -496,8 +452,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Address
-    v->updateVp.address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->updateVp.address.ptr, v->updateVp.address.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->updateVp.address))
 
     // VP code hash (optional)
     CHECK_ERROR(readByte(&ctx, &v->updateVp.has_vp_code));
@@ -554,16 +509,12 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Source
-    v->transfer.source_address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.source_address.ptr, v->transfer.source_address.len))
-
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.source_address))
     // Target
-    v->transfer.target_address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.target_address.ptr, v->transfer.target_address.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.target_address))
 
     // Token
-    v->transfer.token.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.token.ptr, v->transfer.token.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.token))
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
 
@@ -605,8 +556,7 @@ static parser_error_t readResignSteward(const bytes_t *data, tx_resign_steward_t
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    resignSteward->steward.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &resignSteward->steward.ptr, resignSteward->steward.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &resignSteward->steward))
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }
@@ -617,8 +567,7 @@ static parser_error_t readChangeConsensusKey(const bytes_t *data, tx_consensus_k
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    consensusKeyChange->validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &consensusKeyChange->validator.ptr, consensusKeyChange->validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &consensusKeyChange->validator))
     // Consensus key
     CHECK_ERROR(readPubkey(&ctx, &consensusKeyChange->consensus_key))
 
@@ -632,18 +581,17 @@ static parser_error_t readUpdateStewardCommission(const bytes_t *data, tx_update
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Address
-    updateStewardCommission->steward.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &updateStewardCommission->steward.ptr, updateStewardCommission->steward.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &updateStewardCommission->steward))
 
     updateStewardCommission->commissionLen = 0;
     CHECK_ERROR(readUint32(&ctx, &updateStewardCommission->commissionLen))
 
     updateStewardCommission->commission.ptr = ctx.buffer + ctx.offset;
     const uint16_t startOffset = ctx.offset;
-    bytes_t address = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+    AddressAlt address;
     bytes_t amount = {.ptr = NULL, .len = 32};
     for (uint32_t i = 0; i < updateStewardCommission->commissionLen; i++) {
-        CHECK_ERROR(readBytes(&ctx, &address.ptr, address.len))
+        CHECK_ERROR(readAddressAlt(&ctx, &address))
         CHECK_ERROR(readBytes(&ctx, &amount.ptr, amount.len))
     }
     updateStewardCommission->commission.len = ctx.offset - startOffset;
@@ -658,8 +606,7 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Validator
-    metadataChange->validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &metadataChange->validator.ptr, metadataChange->validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &metadataChange->validator))
 
     uint32_t tmpValue = 0;
     // The validator email
@@ -765,8 +712,7 @@ static parser_error_t readBridgePoolTransfer(const bytes_t *data, tx_bridge_pool
     bridgePoolTransfer->recipient.len = ETH_ADDRESS_LEN;
     CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->recipient.ptr, bridgePoolTransfer->recipient.len))
 
-    bridgePoolTransfer->sender.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->sender.ptr, bridgePoolTransfer->sender.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &bridgePoolTransfer->sender))
 
     bridgePoolTransfer->amount.len = 32;
     CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->amount.ptr, bridgePoolTransfer->amount.len))
@@ -774,11 +720,9 @@ static parser_error_t readBridgePoolTransfer(const bytes_t *data, tx_bridge_pool
     bridgePoolTransfer->gasAmount.len = 32;
     CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasAmount.ptr, bridgePoolTransfer->gasAmount.len))
 
-    bridgePoolTransfer->gasPayer.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasPayer.ptr, bridgePoolTransfer->gasPayer.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &bridgePoolTransfer->gasPayer))
 
-    bridgePoolTransfer->gasToken.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &bridgePoolTransfer->gasToken.ptr, bridgePoolTransfer->gasToken.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &bridgePoolTransfer->gasToken))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -954,8 +898,7 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     CHECK_ERROR(readByte(ctx, &v->transaction.header.fees.denom))
 
     // Fee.address
-    v->transaction.header.fees.address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(ctx, &v->transaction.header.fees.address.ptr, v->transaction.header.fees.address.len))
+    CHECK_ERROR(readAddressAlt(ctx, &v->transaction.header.fees.address))
     // Get symbol from token
     CHECK_ERROR(readToken(&v->transaction.header.fees.address, &v->transaction.header.fees.symbol))
 
@@ -1086,8 +1029,9 @@ static parser_error_t readSignatureSection(parser_context_t *ctx, signature_sect
         break;
 
         case Address:
-        signature->address.len = ADDRESS_LEN_BYTES;
-        CHECK_ERROR(readBytes(ctx, &signature->address.ptr, signature->address.len))
+        signature->addressBytes.ptr = ctx->buffer + ctx->offset;
+        CHECK_ERROR(readAddressAlt(ctx, &signature->address))
+        signature->addressBytes.len = ctx->buffer + ctx->offset - signature->addressBytes.ptr;
         break;
 
         default:
@@ -1201,26 +1145,6 @@ static parser_error_t readCodeSection(parser_context_t *ctx, section_t *code) {
     return parser_ok;
 }
 
-#if(0)
-static parser_error_t readCiphertext(parser_context_t *ctx, section_t *ciphertext) {
-    (void) ctx;
-    (void) ciphertext;
-    return parser_ok;
-}
-
-
-static parser_error_t readMaspTx(parser_context_t *ctx, section_t *maspTx) {
-    ctx->offset += 1171; // <- Transfer 2 // Transfer 1 -> 2403;//todo figure out correct number, fix this hack
-    (void) maspTx;
-    return parser_ok;
-}
-
-static parser_error_t readMaspBuilder(parser_context_t *ctx, section_t *maspBuilder) {
-    ctx->offset += 941; // <- Transfer 2 // Transfer 1 -> 3060; //todo figure out correct number, fix this hack
-    (void) maspBuilder;
-    return parser_ok;
-}
-#endif
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     if (ctx == NULL || v == NULL) {
         return parser_unexpected_value;
@@ -1230,7 +1154,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
     if (v->transaction.sections.sectionLen > 7) {
         return parser_invalid_output_buffer;
     }
-
+    v->transaction.isMasp = false;
     v->transaction.sections.extraDataLen = 0;
     v->transaction.sections.signaturesLen = 0;
 
@@ -1268,19 +1192,20 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 signature->idx = i+1;
                 break;
             }
-#if(0)
             case DISCRIMINANT_CIPHERTEXT:
-                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
+                //CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
                 break;
 
             case DISCRIMINANT_MASP_TX:
+                // Identify tx has masp tx
+                v->transaction.isMasp = true;
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
                 break;
 
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
                 break;
-#endif
+
             default:
                 return parser_unexpected_field;
         }

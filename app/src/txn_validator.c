@@ -16,6 +16,7 @@
 #include "txn_validator.h"
 #include "parser_impl_common.h"
 #include "zxmacros.h"
+#include "parser_address.h"
 
 parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_data, const uint32_t extraDataLen, parser_tx_t *v) {
     if (data == NULL || extra_data == NULL || v == NULL || extraDataLen >= MAX_EXTRA_DATA_SECS) {
@@ -23,8 +24,7 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     }
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    v->becomeValidator.address.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.address.ptr, v->becomeValidator.address.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->becomeValidator.address))
 
     CHECK_ERROR(readPubkey(&ctx, &v->becomeValidator.consensus_key))
 
@@ -123,11 +123,7 @@ parser_error_t readUnjailValidator(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Address
-    if (ctx.bufferLen != ADDRESS_LEN_BYTES) {
-        return parser_unexpected_value;
-    }
-    v->revealPubkey.pubkey.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &v->unjailValidator.validator.ptr, v->unjailValidator.validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &v->unjailValidator.validator))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -143,12 +139,7 @@ parser_error_t readActivateValidator(const bytes_t *data, tx_activate_validator_
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
     // Address
-    if (ctx.bufferLen != ADDRESS_LEN_BYTES) {
-        return parser_unexpected_value;
-    }
-
-    txObject->validator.len = ADDRESS_LEN_BYTES;
-    CHECK_ERROR(readBytes(&ctx, &txObject->validator.ptr, txObject->validator.len))
+    CHECK_ERROR(readAddressAlt(&ctx, &txObject->validator))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
