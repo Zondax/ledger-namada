@@ -51,7 +51,7 @@ static parser_error_t bigint_to_str(const bytes_t *value, bool isSigned, char *o
     // note that is little endian!
     if (isSigned && value->ptr[ptrLen - 1] & 0x80) {
         isNegative = true;
-        // to do absolut value we perform two's complement (flip all bits and add 1)
+        // to do absolute value we perform two's complement (flip all bits and add 1)
         uint8_t carry = 1;
         for (uint8_t i = 0; i < ptrLen; i++) {
             intAbsVal[i] = (uint8_t)(~value->ptr[i] + carry);
