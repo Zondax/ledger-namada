@@ -60,7 +60,8 @@ typedef struct {
     uint8_t idx;
     concatenated_hashes_t hashes;
     signer_discriminant_e signerDiscriminant;
-    bytes_t address;
+    AddressAlt address;
+  bytes_t addressBytes;
     uint32_t pubKeysLen;
     bytes_t pubKeys;
     uint32_t signaturesLen;
@@ -122,12 +123,374 @@ typedef struct {
     uint8_t has_sapling_bundle;
     masp_sapling_bundle_t sapling_bundle;
 } masp_tx_data_t;
+#endif
+
+typedef struct {
+  uint64_t lo;
+  int64_t hi;
+} int128_t;
+
+typedef struct {
+  uint64_t lo;
+  uint64_t hi;
+} uint128_t;
+
+typedef struct {
+  uint8_t identifier[32];
+} AssetType;
+
+typedef struct {
+  AssetType f0;
+  int128_t f1;
+} AssetType_i128;
+
+typedef struct {
+  uint32_t f0;
+} BlockHeight;
+
+typedef struct {
+  uint32_t tag;
+  union {
+  };
+} BranchId;
+
+typedef struct {
+  uint8_t cv[32];
+} ConvertDescriptionV5;
+
+typedef struct {
+  uint8_t f0[32];
+} EphemeralKeyBytes;
+
+typedef struct {
+  uint8_t f0[32];
+} Nullifier;
+
+typedef struct {
+  uint8_t cv[32];
+  uint8_t cmu[32];
+  EphemeralKeyBytes ephemeral_key;
+  uint8_t enc_ciphertext[612];
+  uint8_t out_ciphertext[80];
+} OutputDescriptionV5;
+
+typedef struct {
+  uint8_t f0[32];
+} PublicKey;
+
+typedef struct {
+  uint8_t rbar[32];
+  uint8_t sbar[32];
+} Signature;
+
+typedef struct {
+  Signature binding_sig;
+} Authorized;
+
+typedef struct {
+  uint8_t cv[32];
+  Nullifier nullifier;
+  PublicKey rk;
+} SpendDescriptionV5;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint16_t u16;
+  uint32_t u32;
+  uint64_t u64;
+  };
+} CompactSize;
+
+typedef struct {
+  union {
+  Authorized Some;
+  };
+} Transaction_authorization;
+
+typedef struct {
+  union {
+  uint8_t Some[32];
+  };
+} Transaction_convert_anchor;
+
+typedef struct {
+  union {
+  uint8_t Some[32];
+  };
+} Transaction_spend_anchor;
+
+typedef struct {
+  uint8_t f0[20];
+} TransparentAddress;
+
+typedef struct {
+  AssetType asset_type;
+  uint64_t value;
+  TransparentAddress address;
+} TxInAuthorized;
+
+typedef struct {
+  AssetType asset_type;
+  uint64_t value;
+  TransparentAddress address;
+} TxOut;
+
+typedef struct {
+  uint32_t header;
+  uint32_t version_group_id;
+} TxVersion;
+
+typedef struct {
+  CompactSize f0;
+  AssetType_i128 *f1;
+} ValueSumAssetType_i128;
+
+typedef struct {
+  union {
+  ValueSumAssetType_i128 Some;
+  };
+} Transaction_value_balance;
+
+typedef struct {
+  TxVersion version;
+  BranchId consensus_branch_id;
+  uint32_t lock_time;
+  BlockHeight expiry_height;
+  CompactSize vin_count;
+  TxInAuthorized *vin;
+  CompactSize vout_count;
+  TxOut *vout;
+  CompactSize sd_v5s_count;
+  SpendDescriptionV5 *sd_v5s;
+  CompactSize cd_v5s_count;
+  ConvertDescriptionV5 *cd_v5s;
+  CompactSize od_v5s_count;
+  OutputDescriptionV5 *od_v5s;
+  Transaction_value_balance value_balance;
+  Transaction_spend_anchor spend_anchor;
+  Transaction_convert_anchor convert_anchor;
+  uint8_t (*v_spend_proofs)[192];
+  Signature *v_spend_auth_sigs;
+  uint8_t (*v_convert_proofs)[192];
+  uint8_t (*v_output_proofs)[192];
+  Transaction_authorization authorization;
+} Transaction;
 
 typedef struct {
     bytes_t tx_id; // [u8;32]
-    masp_tx_data_t data;
+  Transaction data;
 } masp_tx_section_t;
-#endif
+
+typedef struct {
+  uint8_t f0;
+  uint8_t f1[32];
+} u8_u8_32;
+
+typedef struct {
+  ValueSumAssetType_i128 assets;
+  uint8_t generator[32];
+} AllowedConversion;
+
+typedef struct {
+  uint8_t f0[32];
+} ChainCode;
+
+typedef struct {
+  uint32_t f0;
+} ChildIndex;
+
+typedef struct {
+  uint8_t auth_pathLen;
+  u8_u8_32 *auth_path;
+  uint64_t position;
+} MerklePathu8_32;
+
+typedef struct {
+  AllowedConversion allowed;
+  uint64_t value;
+  MerklePathu8_32 merkle_path;
+} ConvertDescriptionInfo;
+
+typedef struct {
+  uint8_t f0[11];
+} Diversifier;
+
+typedef struct {
+  uint8_t f0[32];
+} DiversifierKey;
+
+typedef struct {
+  uint8_t f0[32];
+} NullifierDerivingKey;
+
+typedef struct {
+  uint8_t ak[32];
+  NullifierDerivingKey nk;
+} ViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} OutgoingViewingKey;
+
+typedef struct {
+  ViewingKey vk;
+  OutgoingViewingKey ovk;
+} FullViewingKey;
+
+typedef struct {
+  uint8_t f0[4];
+} FvkTag;
+
+typedef struct {
+  uint8_t depth;
+  FvkTag parent_fvk_tag;
+  ChildIndex child_index;
+  ChainCode chain_code;
+  FullViewingKey fvk;
+  DiversifierKey dk;
+} ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[512];
+} MemoBytes;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t BeforeZip212[32];
+  uint8_t AfterZip212[32];
+  };
+} Rseed;
+
+typedef struct {
+  AssetType asset_type;
+  uint64_t value;
+  uint8_t g_d[32];
+  uint8_t pk_d[32];
+  Rseed rseed;
+} Note;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  OutgoingViewingKey Some;
+  };
+} OptionOutgoingViewingKey;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint8_t Some[32];
+  };
+} Optionu8_32;
+
+typedef struct {
+  Diversifier diversifier;
+  uint8_t pk_d[32];
+} PaymentAddress;
+
+typedef struct {
+  ExtendedFullViewingKey extsk;
+  Diversifier diversifier;
+  Note note;
+  uint8_t alpha[32];
+  MerklePathu8_32 merkle_path;
+} SpendDescriptionInfoExtendedFullViewingKey;
+
+typedef struct {
+  OptionOutgoingViewingKey ovk;
+  PaymentAddress to;
+  Note note;
+  MemoBytes memo;
+} SaplingOutputInfo;
+
+typedef struct {
+  Optionu8_32 spend_anchor;
+  BlockHeight target_height;
+  ValueSumAssetType_i128 value_balance;
+  Optionu8_32 convert_anchor;
+  uint32_t spendsLen;
+  SpendDescriptionInfoExtendedFullViewingKey *spends;
+  uint32_t convertsLen;
+  ConvertDescriptionInfo *converts;
+  uint32_t outputsLen;
+  SaplingOutputInfo *outputs;
+} SaplingBuilder_ExtendedFullViewingKey;
+
+typedef struct {
+  TxOut coin;
+} TransparentInputInfo;
+
+typedef struct {
+  uint32_t inputsLen;
+  TransparentInputInfo *inputs;
+  uint32_t voutLen;
+  TxOut *vout;
+} TransparentBuilder;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  uint16_t u16;
+  uint32_t u32;
+  uint64_t u64;
+  };
+} ValueSumAssetType_i128_CompactSize;
+
+typedef struct {
+  BlockHeight target_height;
+  BlockHeight expiry_height;
+  TransparentBuilder transparent_builder;
+  SaplingBuilder_ExtendedFullViewingKey sapling_builder;
+} Builder__ExtendedFullViewingKey;
+
+typedef struct {
+  uint8_t f0[32];
+} Hash;
+
+typedef struct {
+  uint32_t spend_indicesLen;
+  uint64_t *spend_indices;
+  uint32_t convert_indicesLen;
+  uint64_t *convert_indices;
+  uint32_t output_indicesLen;
+  uint64_t *output_indices;
+} SaplingMetadata;
+
+typedef struct {
+  uint64_t f0;
+} Epoch;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  Epoch Some;
+  };
+} OptionEpoch;
+
+typedef struct {
+  uint8_t f0;
+} Denomination;
+
+typedef struct {
+  uint8_t tag;
+} MaspDigitPos;
+
+typedef struct {
+  AddressAlt token;
+  Denomination denom;
+  MaspDigitPos position;
+  OptionEpoch epoch;
+} AssetData;
+
+typedef struct {
+  Hash target;
+  uint32_t asset_typesLen;
+  AssetData *asset_types;
+  SaplingMetadata metadata;
+  Builder__ExtendedFullViewingKey builder;
+} MaspBuilder;
 
 typedef struct {
     uint8_t discriminant;
@@ -160,10 +523,10 @@ typedef struct {
     section_t data;
     section_t extraData[MAX_EXTRA_DATA_SECS];
     signature_section_t signatures[MAX_SIGNATURE_SECS];
+    masp_tx_section_t maspTx;
+    MaspBuilder maspBuilder;
 #if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
-    masp_tx_section_t maspTx;
-    section_t maspBuilder; // todo: if we need to parse this in future, it will not be a section_t
 #endif
 } sections_t;
 
