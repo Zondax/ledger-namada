@@ -50,3 +50,6 @@ pub const PROOF_GENERATION_KEY_GENERATOR: AffineNielsPoint = AffinePoint::from_r
 
 pub const DIV_SIZE:             usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
+pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"MASP__gd";
+pub const GH_FIRST_BLOCK: &[u8; 64] =
+    b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";

@@ -27,13 +27,13 @@ typedef enum {
     SpendingKeyGenerator,
     ProofGenerationKeyGenerator,
     PublicKeyGenerator,
-    InvalidKey,
 } constant_key_t;
 
 #define KEY_LENGTH 32
 #define EXTENDED_KEY_LENGTH 64
 #define DIVERSIFIER_LENGTH 11
-typedef uint8_t spending_key_t[KEY_LENGTH];
+#define DIVERSIFIER_LIST_LENGTH 44
+typedef uint8_t spending_key_t[EXTENDED_KEY_LENGTH];
 typedef uint8_t ask_t[KEY_LENGTH];
 typedef uint8_t nsk_t[KEY_LENGTH];
 
@@ -43,6 +43,7 @@ typedef uint8_t nk_t[KEY_LENGTH];
 typedef uint8_t dk_t[KEY_LENGTH];
 typedef uint8_t ivk_t[KEY_LENGTH];
 typedef uint8_t ovk_t[KEY_LENGTH];
+typedef uint8_t d_t[DIVERSIFIER_LENGTH];
 
 typedef uint8_t public_address_t[KEY_LENGTH];
 
@@ -52,13 +53,13 @@ typedef struct {
         ask_t ask;
         ak_t ak;
     };
-    union {
-        nsk_t nsk;
-        nk_t nk;
-    };
+    nsk_t nsk;
+    nk_t nk;
     dk_t dk;
     ivk_t ivk;
     ovk_t ovk;
+    d_t diversifier;
+    d_t diversifier_start_index;
     public_address_t address;
 } keys_t;
 

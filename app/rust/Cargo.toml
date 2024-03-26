@@ -25,11 +25,12 @@ debug = false
 opt-level = "z"
 
 [profile.dev]
-lto = "fat"
+lto = true
 codegen-units = 1
 debug=true
-opt-level = "s"
+opt-level = "z"
 panic = "abort"
+strip = true 
 
 [features]
 default = []

@@ -82,9 +82,6 @@ RUST_TARGET:=thumbv6m-none-eabi
 rust:
 	cd rust && RUSTC_BOOTSTRAP=1 CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target $(RUST_TARGET) --release
 
-# Before linking, we need to be sure rust lib is there
-bin/app.elf: rust
-
 .PHONY: rust_clean
 rust_clean:
 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo clean

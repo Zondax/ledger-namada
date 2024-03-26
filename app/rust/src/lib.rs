@@ -20,7 +20,7 @@
 
 use core::panic::PanicInfo;
 
-use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR};
+use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR, KEY_DIVERSIFICATION_PERSONALIZATION, GH_FIRST_BLOCK};
 mod constants;
 use aes::Aes256;
 use aes::cipher::{
@@ -29,7 +29,6 @@ use aes::cipher::{
 };
 use binary_ff1::BinaryFF1;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
-
 
 fn debug(_msg: &str) {}
 
@@ -107,25 +106,39 @@ pub fn get_diversifiers(
 }
 
 #[no_mangle]
-pub extern "C" fn get_default_diversifier_list_start_index(
+pub extern "C" fn get_default_diversifier_list(
     dk: &[u8; 32],
-    di: &mut [u8; 11],
+    start_index: &mut [u8; 11],
     d_l: &mut [u8; 44],
 ) -> ParserError {
-    let start = &mut *di;
+    let start = &mut *start_index;
     let diversifier =  &mut *d_l;
     get_diversifiers(dk,  start, diversifier);
     ParserError::ParserOk
 }
 
 #[no_mangle]
+pub extern "C" fn is_valid_diversifier(
+    hash: &[u8; 32],
+) -> bool {
+    let u = AffinePoint::from_bytes(*hash);
+    if u.is_some().unwrap_u8() == 1 {
+        let q = u.unwrap().mul_by_cofactor();
+        return q != ExtendedPoint::identity();
+    }
+
+    false
+}
+
+#[no_mangle]
 pub extern "C" fn get_pkd(
     ivk_ptr: &[u8; 32],
-    div_hash: & [u8; 32],
+    h: &[u8; 32],
     pk_d: &mut [u8; 32],
 ) -> ParserError {
 
-    let extended = ExtendedPoint::from(AffinePoint::from_bytes(*div_hash).unwrap());
+    let affine = AffinePoint::from_bytes(*h).unwrap();
+    let extended = ExtendedPoint::from(affine);
     let cofactor = extended.mul_by_cofactor();
     let p = cofactor.to_niels().multiply_bits(ivk_ptr);
     *pk_d = AffinePoint::from(p).to_bytes();
@@ -138,7 +151,6 @@ pub extern "C" fn get_pkd(
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
-
 
 #[cfg(test)]
 mod tests {
