@@ -65,18 +65,29 @@ $(error ICONNAME is not set)
 endif
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
-
-DEFINES += HAVE_HASH HAVE_RIPEMD160 HAVE_SHA256
-CFLAGS += -Wvla
+# Add SDK BLAKE2b
+DEFINES += HAVE_HASH HAVE_BLAKE2
 INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
+
+
+# Building Rust
+LDFLAGS += -z muldefs
+LDLIBS += -L$(MY_DIR)rust/target/$(RUST_TARGET)/release -lrslib
+
+APP_SOURCE_PATH += $(CURDIR)/rust/include
+APP_CUSTOM_LINK_DEPENDENCIES = rust
+RUST_TARGET:=thumbv6m-none-eabi
 
 .PHONY: rust
 rust:
-	@echo "No rust code"
+	cd rust && RUSTC_BOOTSTRAP=1 CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target $(RUST_TARGET) --release
+
+# Before linking, we need to be sure rust lib is there
+bin/app.elf: rust
 
 .PHONY: rust_clean
 rust_clean:
-	@echo "No rust code"
+	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo clean
 
 clean: rust_clean
 
