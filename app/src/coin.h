@@ -88,27 +88,13 @@ typedef enum {
 } signing_key_type_e;
 
 typedef enum {
-    addr_masp_transparent_secp256k1 = 0,
-    addr_masp_shielded = 1, // was addr_sapling
-    addr_masp_shielded_div = 2,
-} address_kind_e;
+    PublicAddress = 0,
+    ViewKeys = 1,
+    ProofGenerationKey = 2,
+    InvalidKey,
+} key_kind_e;
 
-typedef enum {
-    key_ivk = 0,
-    key_ovk = 1,
-    key_fvk = 2,
-    nf = 3
-} key_type_e;
-
-#define INS_SIGN_WRAPPER                0x02
-
-#define INS_GET_SHIELDED_ADDRESS 0x10
-#define INS_INIT_MASP_TRANSFER 0xe0
-#define INS_GET_IVK 0xf0
-#define INS_GET_OVK 0xf1
-#define INS_GET_NF 0xf2
-
-#define INS_GET_SIGNATURE 0x0A
+#define INS_GET_KEYS                    0x03
 
 #ifdef __cplusplus
 }

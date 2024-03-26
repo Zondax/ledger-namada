@@ -32,6 +32,7 @@
 #include "transparent.h"
 #include "zxmacros.h"
 #include "view_internal.h"
+#include "review_keys.h"
 
 static bool tx_initialized = false;
 
@@ -136,12 +137,42 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
         THROW(APDU_CODE_DATA_INVALID);
     }
     if (requireConfirmation) {
-        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_cmd);
         view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-    *tx = action_addrResponse.len;
+    *tx = cmdResponseLen;
+    THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void handleGetKeys(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    extractHDPath(rx, OFFSET_DATA);
+    if (G_io_apdu_buffer[OFFSET_P2] >= InvalidKey) {
+        THROW(APDU_CODE_INVALIDP1P2);
+    }
+
+    const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+    const key_kind_e requestedKeys = (key_kind_e) G_io_apdu_buffer[OFFSET_P2];
+
+    // ViewKey will require explicit user confirmation to leave the device
+    if (!requireConfirmation && requestedKeys == ViewKeys) {
+        THROW(APDU_CODE_INVALIDP1P2);
+    }
+
+    zxerr_t zxerr = app_fill_keys(requestedKeys);
+    if (zxerr != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    if (requireConfirmation) {
+        review_keys_menu(requestedKeys);
+        *flags |= IO_ASYNCH_REPLY;
+        return;
+    }
+
+    *tx = cmdResponseLen;
     THROW(APDU_CODE_OK);
 }
 
@@ -210,6 +241,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 case INS_SIGN: {
                     CHECK_PIN_VALIDATED()
                     handleSignTransaction(flags, tx, rx);
+                    break;
+                }
+
+                case INS_GET_KEYS: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetKeys(flags, tx, rx);
                     break;
                 }
 

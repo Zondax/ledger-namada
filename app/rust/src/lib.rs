@@ -20,7 +20,7 @@
 
 use core::panic::PanicInfo;
 
-use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR};
+use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR, KEY_DIVERSIFICATION_PERSONALIZATION, GH_FIRST_BLOCK};
 mod constants;
 use aes::Aes256;
 use aes::cipher::{
@@ -29,7 +29,7 @@ use aes::cipher::{
 };
 use binary_ff1::BinaryFF1;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
-
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 fn debug(_msg: &str) {}
 
@@ -106,13 +106,69 @@ pub fn get_diversifiers(
     }
 }
 
+#[inline(never)]
+fn diversifier_group_hash_light(tag: &[u8]) -> bool {
+    if tag == [0u8; 11] {
+        return false;
+    }
+    let h = Blake2sParams::new()
+        .hash_length(32)
+        .personal(KEY_DIVERSIFICATION_PERSONALIZATION)
+        .to_state()
+        .update(GH_FIRST_BLOCK)
+        .update(tag)
+        .finalize();
+
+    let u = AffinePoint::from_bytes(*h.as_array());
+    if u.is_some().unwrap_u8() == 1 {
+        let q = u.unwrap().mul_by_cofactor();
+        return q != ExtendedPoint::identity();
+    }
+
+    false
+}
+
+#[inline(never)]
+fn is_valid_diversifier(div_ptr: *const [u8; 11]) -> bool {
+    let div = unsafe { &*div_ptr };
+    diversifier_group_hash_light(div)
+}
+
 #[no_mangle]
-pub extern "C" fn get_default_diversifier_list_start_index(
+pub extern "C" fn get_default_diversifier(
     dk: &[u8; 32],
-    di: &mut [u8; 11],
+    start: &mut [u8; 11],
+    d: &mut [u8; 11],
+) -> ParserError {
+    let mut found = false;
+    let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
+
+    while !found {
+        get_diversifiers(dk, start, &mut div_list);
+        for i in 0..DIV_DEFAULT_LIST_LEN {
+            if !found
+                && is_valid_diversifier(
+                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                        .try_into()
+                        .unwrap(),
+                )
+            {
+                found = true;
+                d.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
+            }
+        }
+    }
+
+    ParserError::ParserOk
+}
+
+#[no_mangle]
+pub extern "C" fn get_default_diversifier_list(
+    dk: &[u8; 32],
+    start_index: &mut [u8; 11],
     d_l: &mut [u8; 44],
 ) -> ParserError {
-    let start = &mut *di;
+    let start = &mut *start_index;
     let diversifier =  &mut *d_l;
     get_diversifiers(dk,  start, diversifier);
     ParserError::ParserOk
@@ -121,11 +177,20 @@ pub extern "C" fn get_default_diversifier_list_start_index(
 #[no_mangle]
 pub extern "C" fn get_pkd(
     ivk_ptr: &[u8; 32],
-    div_hash: & [u8; 32],
+    d: & [u8; 11],
     pk_d: &mut [u8; 32],
 ) -> ParserError {
 
-    let extended = ExtendedPoint::from(AffinePoint::from_bytes(*div_hash).unwrap());
+    let h = Blake2sParams::new()
+        .hash_length(32)
+        .personal(KEY_DIVERSIFICATION_PERSONALIZATION)
+        .to_state()
+        .update(GH_FIRST_BLOCK)
+        .update(d)
+        .finalize();
+
+    let affine = AffinePoint::from_bytes(*h.as_array()).unwrap();
+    let extended = ExtendedPoint::from(affine);
     let cofactor = extended.mul_by_cofactor();
     let p = cofactor.to_niels().multiply_bits(ivk_ptr);
     *pk_d = AffinePoint::from(p).to_bytes();
@@ -138,7 +203,6 @@ pub extern "C" fn get_pkd(
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
-
 
 #[cfg(test)]
 mod tests {

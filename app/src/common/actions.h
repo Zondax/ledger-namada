@@ -26,30 +26,35 @@
 #include "parser_txdef.h"
 #include "zxformat.h"
 
-typedef struct {
-    address_kind_e kind;
-    uint16_t len;
-} address_state_t;
-
-typedef struct {
-    key_type_e kind;
-    uint16_t len;
-} key_state_t;
-
-extern address_state_t action_addrResponse;
-extern key_state_t key_state;
+extern uint16_t cmdResponseLen;
 
 __Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
     // Put data directly in the apdu buffer
     zemu_log("app_fill_address\n");
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
 
-    action_addrResponse.len = 0;
+    cmdResponseLen = 0;
     zxerr_t err = crypto_fillAddress(addressKind,
                                      G_io_apdu_buffer, IO_APDU_BUFFER_SIZE,
-                                     &action_addrResponse.len);
+                                     &cmdResponseLen);
 
-    if (err != zxerr_ok || action_addrResponse.len == 0) {
+    if (err != zxerr_ok || cmdResponseLen == 0) {
+        THROW(APDU_CODE_EXECUTION_ERROR);
+    }
+
+    return err;
+}
+
+__Z_INLINE zxerr_t app_fill_keys(key_kind_e requestedKey) {
+    // Put data directly in the apdu buffer
+    zemu_log("app_fill_keys\n");
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+
+    cmdResponseLen = 0;
+    zxerr_t err = crypto_fillMASP(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE,
+                                     &cmdResponseLen, requestedKey);
+
+    if (err != zxerr_ok || cmdResponseLen == 0) {
         THROW(APDU_CODE_EXECUTION_ERROR);
     }
 
@@ -77,9 +82,9 @@ __Z_INLINE void app_reject() {
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
-__Z_INLINE void app_reply_address() {
-    set_code(G_io_apdu_buffer, action_addrResponse.len, APDU_CODE_OK);
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, action_addrResponse.len + 2);
+__Z_INLINE void app_reply_cmd() {
+    set_code(G_io_apdu_buffer, cmdResponseLen, APDU_CODE_OK);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, cmdResponseLen + 2);
 }
 
 __Z_INLINE void app_reply_error() {
