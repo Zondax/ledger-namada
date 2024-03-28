@@ -15,15 +15,15 @@
  ******************************************************************************* */
 
 import { errorCodeToString } from './common'
-import { PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
-import { ISignature } from './types'
+import { KEY_LENGTH, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
+import { ISignature, KeyResponse, NamadaKeys } from './types'
 
 export function getSignatureResponse(response: Buffer): ISignature {
-  // App sign response: [ pubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
+  // App sign response: [ rawPubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
   // raw_indices_len(1) | wrapper_indices_len(1) | indices(wrapper_indices_len) ]
 
   let offset = 0;
-  const pubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
+  const rawPubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
 
   offset += PK_LEN_PLUS_TAG;
   const raw_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
@@ -47,7 +47,7 @@ export function getSignatureResponse(response: Buffer): ISignature {
   offset += wrapper_indices_len;
 
   return {
-    pubkey,
+    rawPubkey,
     raw_salt,
     raw_signature,
     wrapper_salt,
@@ -61,99 +61,81 @@ export function processGetAddrResponse(response: Buffer) {
   const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  const publicKey = Buffer.from(response.subarray(0, PK_LEN_PLUS_TAG))
-  const address = Buffer.from(response.subarray(PK_LEN_PLUS_TAG, -2))
+  const rawPubkey = response.subarray(0, PK_LEN_PLUS_TAG);
+  response = response.subarray(PK_LEN_PLUS_TAG);
+
+  const pubkeyLen = response[0];
+  const pubkey = response.subarray(1, pubkeyLen + 1);
+  response = response.subarray(pubkeyLen + 1);
+
+  const addressLen = response[0];
+  const address = response.subarray(1, addressLen + 1);
+
+  console.log(pubkey.toString())
+  console.log(address.toString())
 
   return {
-    publicKey,
+    rawPubkey,
+    pubkey,
     address,
     returnCode,
     errorMessage: errorCodeToString(returnCode),
   }
 }
 
-// Not used yet
-// function processGetShieldedAddrResponse(response: Buffer) {
-//   console.log("Processing get address response")
+export function processGetKeysResponse(response: Buffer, keyType: NamadaKeys): KeyResponse {
+    const errorCodeData = response.subarray(-2);
+    const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-//   let partialResponse = response
+    let requestedKey: KeyResponse = {
+        returnCode: returnCode,
+        errorMessage: errorCodeToString(returnCode),
+    }
 
-//   const errorCodeData = partialResponse.slice(-2)
-//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+    switch(keyType) {
+        case NamadaKeys.PublicAddress: {
+            const publicAddress = Buffer.from(response.subarray(0, KEY_LENGTH));
+            requestedKey = {
+                ...requestedKey,
+                publicAddress,
+            };
+            break;
+        }
 
-//   //get public key len (variable)
-//   const raw_pkd = Buffer.from(partialResponse.slice(0, 32))
+        case NamadaKeys.ViewKey: {
+            const viewKey = Buffer.from(response.subarray(0, 2 * KEY_LENGTH));
+            response = response.subarray(2 * KEY_LENGTH);
 
-//   //"advance" buffer
-//   partialResponse = partialResponse.slice(32)
+            const ivk = Buffer.from(response.subarray(0, KEY_LENGTH));
+            response = response.subarray(KEY_LENGTH);
 
-//   // get the length of the bech32m address
-//   const bech32m_len = partialResponse[0]
+            const ovk = Buffer.from(response.subarray(0, KEY_LENGTH));
+            response = response.subarray(KEY_LENGTH);
 
-//   //"advance" buffer
-//   partialResponse = partialResponse.slice(1)
+            requestedKey = {
+                ...requestedKey,
+                viewKey,
+                ivk,
+                ovk,
+            };
+            break;
+        }
 
-//   // get the bech32m encoding of the shielded address
-//   const bech32m_addr = Buffer.from(partialResponse.slice(0, bech32m_len))
+        case NamadaKeys.ProofGenerationKey: {
+            const ak = Buffer.from(response.subarray(0, KEY_LENGTH));
+            response = response.subarray(KEY_LENGTH);
 
-//   return {
-//     raw_pkd,
-//     bech32m_len,
-//     bech32m_addr,
-//     returnCode,
-//     errorMessage: errorCodeToString(returnCode),
-//   }
-// }
+            const nsk = Buffer.from(response.subarray(0, KEY_LENGTH));
+            response = response.subarray(KEY_LENGTH);
 
-// function processIncomingViewingKeyResponse(response: Buffer) {
-//   console.log("Processing get IVK response")
+            requestedKey = {
+                ...requestedKey,
+                ak,
+                nsk,
+            };
+            break;
+        }
+    }
 
-//   const partialResponse = response
-
-//   const errorCodeData = partialResponse.slice(-2)
-//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-//   //get public key len (variable)
-//   const raw_ivk = Buffer.from(partialResponse.slice(0, 32))
-
-//   return {
-//     raw_ivk,
-//     returnCode,
-//     errorMessage: errorCodeToString(returnCode),
-//   }
-// }
-
-// function processNullifierResponse(response: Buffer) {
-//   console.log("Processing get nullifier response")
-
-//   const partialResponse = response
-
-//   const errorCodeData = partialResponse.slice(-2)
-//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-//   const raw_nf = Buffer.from(partialResponse.slice(0, 32))
-
-//   return {
-//     raw_nf,
-//     returnCode,
-//     errorMessage: errorCodeToString(returnCode),
-//   }
-// }
-
-// function processOutgoingViewingKeyResponse(response: Buffer) {
-//   console.log("Processing get OVK response")
-
-//   const partialResponse = response
-
-//   const errorCodeData = partialResponse.slice(-2)
-//   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-//   //get public key len (variable)
-//   const raw_ovk = Buffer.from(partialResponse.slice(0, 32))
-
-//   return {
-//     raw_ovk,
-//     returnCode,
-//     errorMessage: errorCodeToString(returnCode),
-//   }
-// }
+    return requestedKey;
+  }

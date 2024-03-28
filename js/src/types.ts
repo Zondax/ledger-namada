@@ -5,8 +5,11 @@ export interface ResponseBase {
   returnCode: LedgerError
 }
 
+export type KeyResponse = ResponseAddress | ResponseViewKey | ResponseProofGenKey;
+
 export interface ResponseAddress extends ResponseBase {
-  publicKey: Buffer
+  rawPubkey: Buffer
+  pubkey: Buffer
   address: Buffer
 }
 
@@ -37,26 +40,23 @@ export interface ResponseDeviceInfo extends ResponseBase {
   mcuVersion: string
 }
 
-export interface ResponseShieldedAddress extends ResponseBase {
-  raw_pkd: Buffer
-  bech32m_len: number
-  bech32m_addr: Buffer
+export interface ResponseAddress extends ResponseBase {
+  publicAddress?: Buffer;
 }
 
-export interface ResponseIncomingViewingKey extends ResponseBase {
-  raw_ivk: Buffer
+export interface ResponseViewKey extends ResponseBase {
+  viewKey?: Buffer;
+  ivk?: Buffer;
+  ovk?: Buffer;
 }
 
-export interface ResponseOutgoingViewingKey extends ResponseBase {
-  raw_ovk: Buffer
-}
-
-export interface ResponseNullifier extends ResponseBase {
-  raw_nf: Buffer
+ export interface ResponseProofGenKey extends ResponseBase {
+  ak?: Buffer;
+  nsk?: Buffer;
 }
 
 export interface ISignature {
-  pubkey: Buffer
+  rawPubkey: Buffer
   raw_salt: Buffer
   raw_signature: Buffer
   wrapper_salt: Buffer
@@ -65,7 +65,7 @@ export interface ISignature {
   wrapper_indices: Buffer
 }
 export class Signature implements ISignature {
-  pubkey: Buffer
+  rawPubkey: Buffer
   raw_salt: Buffer
   raw_signature: Buffer
   wrapper_salt: Buffer
@@ -77,7 +77,7 @@ export class Signature implements ISignature {
   constructor(signature?: ISignature) {
     if (signature == null) {
       this.isFilled = false
-      this.pubkey = Buffer.from([])
+      this.rawPubkey = Buffer.from([])
       this.raw_salt = Buffer.from([])
       this.raw_signature = Buffer.from([])
       this.wrapper_salt = Buffer.from([])
@@ -86,7 +86,7 @@ export class Signature implements ISignature {
       this.wrapper_indices = Buffer.from([])
     } else {
       this.isFilled = true
-      this.pubkey = signature.pubkey
+      this.rawPubkey = signature.rawPubkey
       this.raw_salt = signature.raw_salt
       this.raw_signature = signature.raw_signature
       this.wrapper_salt = signature.wrapper_salt
@@ -99,4 +99,10 @@ export class Signature implements ISignature {
 
 export interface ResponseSign extends ResponseBase {
   signature?: Signature
+}
+
+export enum NamadaKeys {
+    PublicAddress = 0x00,
+    ViewKey = 0x01,
+    ProofGenerationKey = 0x02,
 }

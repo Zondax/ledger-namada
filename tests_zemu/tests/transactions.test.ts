@@ -150,21 +150,21 @@ describe.each(models)('Transactions', function (m) {
       expect(resp).toHaveProperty('signature')
 
       const signature = resp.signature ?? new Signature()
-      expect(signature.pubkey).toEqual(resp_addr.publicKey);
+      expect(signature.rawPubkey).toEqual(resp_addr.rawPubkey);
 
       // Verify raw signature
       const unsignedRawSigHash = hashSignatureSec([], signature.raw_salt, data.sectionHashes, signature.raw_indices, null, null)
-      const rawSig = ed25519.verify(signature.raw_signature.subarray(1), unsignedRawSigHash, signature.pubkey.subarray(1))
+      const rawSig = ed25519.verify(signature.raw_signature.subarray(1), unsignedRawSigHash, signature.rawPubkey.subarray(1))
 
       // Verify wrapper signature
       const prefix = new Uint8Array([0x03]);
-      const rawHash: Buffer = hashSignatureSec([signature.pubkey], signature.raw_salt, data.sectionHashes, signature.raw_indices, signature.raw_signature, prefix);
+      const rawHash: Buffer = hashSignatureSec([signature.rawPubkey], signature.raw_salt, data.sectionHashes, signature.raw_indices, signature.raw_signature, prefix);
       const tmpHashes = {...data.sectionHashes};
 
       tmpHashes[Object.keys(tmpHashes).length - 1] = rawHash;
 
       const unsignedWrapperSigHash = hashSignatureSec([], signature.wrapper_salt, tmpHashes, signature.wrapper_indices, null, null);
-      const wrapperSig = ed25519.verify(signature.wrapper_signature.subarray(1), unsignedWrapperSigHash, resp_addr.publicKey.subarray(1));
+      const wrapperSig = ed25519.verify(signature.wrapper_signature.subarray(1), unsignedWrapperSigHash, resp_addr.rawPubkey.subarray(1));
 
       expect(wrapperSig && rawSig).toEqual(true)
     } finally {

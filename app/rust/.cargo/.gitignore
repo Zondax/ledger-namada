@@ -1,0 +1,4 @@
+registry/
+.package-cache
+.package-cache-mutate
+

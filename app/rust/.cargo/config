@@ -1,0 +1,12 @@
+[build]
+
+[target.thumbv6m-none-eabi]
+rustflags = [
+    "--emit", "asm",
+	"-C", "relocation-model=ropi",
+    "-C", "link-arg=-nostartfiles",
+    "-C", "link-arg=-Tlink.ld",
+]
+[unstable]
+build-std=["core"]
+build-std-features=["panic_immediate_abort"]

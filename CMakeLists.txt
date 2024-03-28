@@ -126,6 +126,8 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/leb128.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_validator.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_delegation.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref/blake2b-ref.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/blake2s/blake2s-ref.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})
@@ -136,9 +138,63 @@ target_include_directories(app_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/common
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/picohash/
+       ###
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/rust/include
+        ###
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref
         )
 
 ##############################################################
+##############################################################
+## Rust library for CPP tests
+set(RUST_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/app/rust")
+
+# Determine the Rust target triple based on the host system
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(RUST_TARGET_TRIPLE "aarch64-unknown-linux-gnu")
+    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+        set(RUST_TARGET_TRIPLE "x86_64-unknown-linux-gnu")
+    else()
+        message(FATAL_ERROR "Unsupported processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    endif()
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
+        set(RUST_TARGET_TRIPLE "aarch64-apple-darwin")
+    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+        set(RUST_TARGET_TRIPLE "x86_64-apple-darwin")
+    else()
+        message(FATAL_ERROR "Unsupported processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    endif()
+else()
+    message(FATAL_ERROR "Unsupported host system: ${CMAKE_HOST_SYSTEM_NAME}")
+endif()
+
+# Use debug mode for debugging tests
+set(RUST_TARGET_DIR "${RUST_LIB_DIR}/target/${RUST_TARGET_TRIPLE}/debug")
+
+# Custom target for the Rust library
+add_custom_target(RustLibClean
+    COMMAND cargo clean
+    WORKING_DIRECTORY ${RUST_LIB_DIR}
+)
+add_custom_target(RustLibBuild
+    COMMAND cargo build --target ${RUST_TARGET_TRIPLE} --features cpp_tests
+    WORKING_DIRECTORY ${RUST_LIB_DIR}
+    DEPENDS RustLibClean
+)
+
+# Assuming the Rust library outputs a file named librslib.a
+set(RUST_LIB "${RUST_TARGET_DIR}/librslib.a")
+
+# Ensure the Rust library is built before the C++ project
+add_library(rslib STATIC IMPORTED)
+set_property(TARGET rslib PROPERTY IMPORTED_LOCATION ${RUST_LIB})
+add_dependencies(rslib RustLibBuild)
+
+# Ensure your C++ targets depend on the Rust library being built first
+# For example, for your app_lib static library:
+add_dependencies(app_lib rslib)
 ##############################################################
 #  Tests
 file(GLOB_RECURSE TESTS_SRC
@@ -152,11 +208,14 @@ target_include_directories(unittests PRIVATE
         ${CONAN_INCLUDE_DIRS_JSONCPP}
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
+        ###
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref
         )
 
 target_link_libraries(unittests PRIVATE
         gtest_main
         app_lib
+        rslib
         CONAN_PKG::fmt
         CONAN_PKG::jsoncpp)
 
