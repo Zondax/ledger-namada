@@ -112,10 +112,8 @@ TEST(Keys, AK_NK_IVK_NON_HARDENED) {
     uint8_t di[11] = {0};
     uint8_t d_index[11] = {0};
     uint8_t diversifier_list[44] = {0};
-    computeDiversifiers(keys.dk, d_index, diversifier_list);
-    uint8_t d0[11] = {0};
-    memcpy(d0, diversifier_list, 11);
-    const string d0_str = toHexString(d0, 11);
+    computeDiversifier(keys.dk, d_index, di);
+    const string d0_str = toHexString(di, 11);
     EXPECT_EQ(d0_str, tv_not_hardened.d0);
   }
 
