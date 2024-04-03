@@ -111,11 +111,8 @@ TEST(Keys, AK_NK_IVK_NON_HARDENED) {
     // compute diversifier d0
     uint8_t di[11] = {0};
     uint8_t d_index[11] = {0};
-    uint8_t diversifier_list[44] = {0};
-    computeDiversifiers(keys.dk, d_index, diversifier_list);
-    uint8_t d0[11] = {0};
-    memcpy(d0, diversifier_list, 11);
-    const string d0_str = toHexString(d0, 11);
+    computeDiversifier(keys.dk, d_index, di);
+    const string d0_str = toHexString(di, 11);
     EXPECT_EQ(d0_str, tv_not_hardened.d0);
   }
 
@@ -134,6 +131,15 @@ TEST(Keys, ADDRESS_NON_HARDENED) {
                 0xa1, 0xe0, 0xf5, 0x3c, 0x47, 0x3e, 0xd9, 0x8c, 0x17, 0xb6, 0xd0
     };
 
+    const uint8_t default_pkd[32] = {
+            0xb3, 0x23, 0xbb, 0x8b, 0x98, 0x03, 0x11, 0x44, 0x88, 0x26, 0x0f, 0x9f, 0x51, 0xe5,
+            0x46, 0xc2, 0xb4, 0x5f, 0x3d, 0x03, 0x6d, 0x03, 0x9b, 0x0f, 0x0c, 0xb2, 0x86, 0x13,
+            0x9d, 0x4c, 0x25, 0xb5
+    };
+
     uint8_t address[32] = {0};
     computePkd(ivk, default_d, address);
+    const string addr_str = toHexString(address, 32);
+    const string testvector_addr = toHexString(default_pkd, 32);
+    EXPECT_EQ(addr_str, testvector_addr);
 }
