@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import Transport from '@ledgerhq/hw-transport'
-import { ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion } from './types'
+import { KeyResponse, NamadaKeys, ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion } from './types'
 
 import {
   CHUNK_SIZE,
@@ -27,7 +27,7 @@ import {
 } from './common'
 
 import { CLA, INS } from './config'
-import { getSignatureResponse, processGetAddrResponse } from './processResponses'
+import { getSignatureResponse, processGetAddrResponse, processGetKeysResponse } from './processResponses'
 
 export { LedgerError }
 export * from './types'
@@ -213,43 +213,11 @@ export class NamadaApp {
     }, processErrorResponse)
   }
 
-  /* Not implemented yet
-  async getShieldedAddressAndPubKey(path: number, div: Buffer): Promise<ResponseShieldedAddress> {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
+  async retrieveKeys(path: string, keyType: NamadaKeys, showInDevice: boolean): Promise<KeyResponse> {
+    const serializedPath = serializePath(path);
+    const p1 = showInDevice ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
     return this.transport
-        .send(CLA, INS.GET_MASP_ADDRESS, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, div]), [LedgerError.NoErrors])
-        .then(processGetShieldedAddrResponse, processErrorResponse)
+        .send(CLA, INS.GET_KEYS, p1, keyType, serializedPath, [LedgerError.NoErrors])
+        .then(result => processGetKeysResponse(result, keyType) as KeyResponse, processErrorResponse)
   }
-
-  async showShieldedAddressAndPubKey(path: number, div: Buffer): Promise<ResponseShieldedAddress> {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-        .send(CLA, INS.GET_MASP_ADDRESS, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, div]), [LedgerError.NoErrors])
-        .then(processGetShieldedAddrResponse, processErrorResponse)
-  }
-
-  async getIncomingViewingKey(path: number): Promise<ResponseIncomingViewingKey> {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-        .send(CLA, INS.GET_IVK, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [LedgerError.NoErrors])
-        .then(processIncomingViewingKeyResponse, processErrorResponse)
-  }
-
-  async getOutgoingViewingKey(path: number): Promise<ResponseOutgoingViewingKey> {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-        .send(CLA, INS.GET_OVK, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [LedgerError.NoErrors])
-        .then(processOutgoingViewingKeyResponse, processErrorResponse)
-  }
-
-  async getNullifier(pos: Uint8Array, cm: Buffer): Promise<ResponseNullifier> {
-    return this.transport
-        .send(CLA, INS.GET_NF, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([pos, cm]), [LedgerError.NoErrors])
-        .then(processNullifierResponse, processErrorResponse)
-  }
-  */
 }

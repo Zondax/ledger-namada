@@ -5,6 +5,8 @@ export interface ResponseBase {
   returnCode: LedgerError
 }
 
+export type KeyResponse = ResponseAddress | ResponseViewKey | ResponseProofGenKey;
+
 export interface ResponseAddress extends ResponseBase {
   rawPubkey: Buffer
   pubkey: Buffer
@@ -38,22 +40,19 @@ export interface ResponseDeviceInfo extends ResponseBase {
   mcuVersion: string
 }
 
-export interface ResponseShieldedAddress extends ResponseBase {
-  raw_pkd: Buffer
-  bech32m_len: number
-  bech32m_addr: Buffer
+export interface ResponseAddress extends ResponseBase {
+  publicAddress?: Buffer;
 }
 
-export interface ResponseIncomingViewingKey extends ResponseBase {
-  raw_ivk: Buffer
+export interface ResponseViewKey extends ResponseBase {
+  viewKey?: Buffer;
+  ivk?: Buffer;
+  ovk?: Buffer;
 }
 
-export interface ResponseOutgoingViewingKey extends ResponseBase {
-  raw_ovk: Buffer
-}
-
-export interface ResponseNullifier extends ResponseBase {
-  raw_nf: Buffer
+ export interface ResponseProofGenKey extends ResponseBase {
+  ak?: Buffer;
+  nsk?: Buffer;
 }
 
 export interface ISignature {
@@ -100,4 +99,10 @@ export class Signature implements ISignature {
 
 export interface ResponseSign extends ResponseBase {
   signature?: Signature
+}
+
+export enum NamadaKeys {
+    PublicAddress = 0x00,
+    ViewKey = 0x01,
+    ProofGenerationKey = 0x02,
 }
