@@ -20,8 +20,9 @@ import { models, hdpath, defaultOptions } from './common'
 
 jest.setTimeout(120000)
 
-const expected_pubkey = '0039c1a4bea74c320ab04be5b218369d8c1ae21e41f27edee173ce5e6a51015a4d'
-const expected_address = "tnam1qq6qyugak0gd4up6lma8z8wr88w3pq9lgvfhw6yu"
+const expected_rawpubkey = '0039c1a4bea74c320ab04be5b218369d8c1ae21e41f27edee173ce5e6a51015a4d'
+const expected_pubkey = 'tpknam1qquurf975axryz4sf0jmyxpknkxp4cs7g8e8ahhpw089u6j3q9dy6qssdhz'
+const expected_address = 'tnam1qq6qyugak0gd4up6lma8z8wr88w3pq9lgvfhw6yu'
 
 describe('Standard', function () {
   test.concurrent.each(models)('can start and stop container', async function (m) {
@@ -75,14 +76,13 @@ describe('Standard', function () {
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('pubkey')
       expect(resp).toHaveProperty('address')
+      expect(resp).toHaveProperty('rawPubkey')
 
-      console.log(resp.address.toString())
-      console.log(resp.publicKey.toString('hex'))
-
-      expect(resp.publicKey.toString('hex')).toEqual(expected_pubkey)
+      expect(resp.rawPubkey.toString('hex')).toEqual(expected_rawpubkey)
       expect(resp.address.toString()).toEqual(expected_address)
+      expect(resp.pubkey.toString()).toEqual(expected_pubkey)
 
     } finally {
       await sim.close()
@@ -95,7 +95,7 @@ describe('Standard', function () {
       await sim.start({
         ...defaultOptions,
         model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveKeyword: m.name === 'stax' ? 'Pubkey' : '',
         approveAction: ButtonKind.ApproveTapButton,
       })
       const app = new NamadaApp(sim.getTransport())
@@ -110,14 +110,13 @@ describe('Standard', function () {
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      expect(resp).toHaveProperty('publicKey')
+      expect(resp).toHaveProperty('pubkey')
       expect(resp).toHaveProperty('address')
+      expect(resp).toHaveProperty('rawPubkey')
 
-      console.log(resp.address.toString())
-      console.log(resp.publicKey.toString('hex'))
-
-      expect(resp.publicKey.toString('hex')).toEqual(expected_pubkey)
+      expect(resp.rawPubkey.toString('hex')).toEqual(expected_rawpubkey)
       expect(resp.address.toString()).toEqual(expected_address)
+      expect(resp.pubkey.toString()).toEqual(expected_pubkey)
     } finally {
       await sim.close()
     }

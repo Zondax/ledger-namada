@@ -55,6 +55,7 @@ typedef enum {
     paser_unknown_transaction,
     parser_decimal_too_big,
     parser_invalid_output_buffer,
+    parser_diversifier_not_found,
 } parser_error_t;
 
 typedef struct {

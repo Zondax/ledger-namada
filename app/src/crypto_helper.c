@@ -20,17 +20,29 @@
 #include "leb128.h"
 #include "zxmacros.h"
 
+#include "keys_personalizations.h"
+#include "rslib.h"
+
 #ifdef LEDGER_SPECIFIC
 #include "bolos_target.h"
 #endif
 
+#define MAINNET_ADDRESS_T_HRP "tnam"
+#define MAINNET_PUBKEY_T_HRP "tpknam"
+
+#define TESTNET_ADDRESS_T_HRP "testtnam"
+#define TESTNET_PUBKEY_T_HRP "testtpknam"
+
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     #include "cx.h"
     #include "cx_sha256.h"
+    #include "cx_blake2b.h"
 #else
     #include "picohash.h"
+    #include "blake2.h"
     #define CX_SHA256_SIZE 32
 #endif
+#include "blake2.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -71,35 +83,57 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
     return zxerr_ok;
 }
 
-uint8_t crypto_encodePubkey_ed25519(uint8_t *buffer, uint16_t bufferLen, const uint8_t *pubkey) {
-    if (buffer == NULL || pubkey == NULL) {
-        return 0;
+zxerr_t crypto_encodeRawPubkey(const uint8_t* rawPubkey, uint16_t rawPubkeyLen, uint8_t *output, uint16_t outputLen) {
+    if (rawPubkey == NULL || rawPubkeyLen != PK_LEN_25519_PLUS_TAG || output == NULL) {
+        return zxerr_encoding_failed;
+    }
+    MEMZERO(output, outputLen);
+    // Response [len(1) | pubkey(?)]
+
+    char HRP[15] = MAINNET_PUBKEY_T_HRP;
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_PUBKEY_T_HRP);
     }
 
-    if (bufferLen < ADDRESS_LEN_TESTNET) {
-        return 0;
+    char pubkey[100] = {0};
+    CHECK_ZXERR(bech32EncodeFromBytes(pubkey, sizeof(pubkey), HRP,
+                                      rawPubkey, PK_LEN_25519_PLUS_TAG, 1, BECH32_ENCODING_BECH32M));
+
+    const uint16_t pubkeyLen = strnlen(pubkey, sizeof(pubkey));
+    if (pubkeyLen > 255 || pubkeyLen >= outputLen) {
+        return zxerr_out_of_bounds;
+    }
+    *output = (uint8_t)pubkeyLen;
+    memcpy(output + 1, pubkey, pubkeyLen);
+    return zxerr_ok;
+}
+
+zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t *output, uint16_t outputLen) {
+    if (output == NULL || pubkey == NULL || pubkeyLen != PK_LEN_25519) {
+        return zxerr_encoding_failed;
     }
 
     // Step 1:  Compute the hash of the Ed25519 public key
     uint8_t publicKeyHash[21] = {0};
-    crypto_publicKeyHash_ed25519(publicKeyHash, pubkey);
+    CHECK_ZXERR(crypto_publicKeyHash_ed25519(publicKeyHash, pubkey));
 
-    // Step 2. Encode the public key hash with bech32m
-    char addr_out[79] = {0};
-    zxerr_t err = bech32EncodeFromBytes(addr_out,
-                                        sizeof(addr_out),
-                                        "tnam",
-                                        publicKeyHash,
-                                        sizeof(publicKeyHash),
-                                        1,
-                                        BECH32_ENCODING_BECH32M);
-
-    if (err != zxerr_ok){
-        return 0;
+    char HRP[10] = MAINNET_ADDRESS_T_HRP;
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_ADDRESS_T_HRP);
     }
 
-    memcpy(buffer, addr_out, ADDRESS_LEN_TESTNET);
-    return ADDRESS_LEN_TESTNET;
+    // Step 2. Encode the public key hash with bech32m
+    char address[100] = {0};
+    CHECK_ZXERR(bech32EncodeFromBytes(address, sizeof(address), HRP,
+                                      publicKeyHash, sizeof(publicKeyHash), 1, BECH32_ENCODING_BECH32M));
+
+    const uint16_t addressLen = strnlen(address, sizeof(address));
+    if (addressLen > 255 || addressLen >= outputLen) {
+        return zxerr_out_of_bounds;
+    }
+    *output = (uint8_t)addressLen;
+    memcpy(output + 1, address, addressLen);
+    return zxerr_ok;
 }
 
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, uint16_t outputLen) {
@@ -257,4 +291,156 @@ zxerr_t crypto_serializeData(const uint64_t dataSize, uint8_t *buffer, uint16_t 
 
     (*dataInfoSize)++;
     return zxerr_ok;
+}
+
+// MASP Section
+parser_error_t convertKey(const uint8_t spendingKey[KEY_LENGTH], const uint8_t modifier, uint8_t outputKey[KEY_LENGTH],
+                          bool reduceWideByte) {
+    uint8_t output[64] = {0};
+#if defined(LEDGER_SPECIFIC)
+    cx_blake2b_t ctx = {0};
+    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)EXPANDED_SPEND_BLAKE2_KEY,
+                                           sizeof(EXPANDED_SPEND_BLAKE2_KEY)));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, spendingKey, KEY_LENGTH));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, &modifier, 1));
+    cx_blake2b_final(&ctx, output);
+#else
+    blake2b_state state = {0};
+    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)EXPANDED_SPEND_BLAKE2_KEY,
+                                      sizeof(EXPANDED_SPEND_BLAKE2_KEY));
+    blake2b_update(&state, spendingKey, KEY_LENGTH);
+    blake2b_update(&state, &modifier, 1);
+    blake2b_final(&state, output, sizeof(output));
+#endif
+
+     if (reduceWideByte) {
+         from_bytes_wide(output, outputKey);
+     } else {
+        memcpy(outputKey, output, KEY_LENGTH);
+    }
+
+    return parser_ok;
+}
+
+parser_error_t generate_key(const uint8_t expandedKey[KEY_LENGTH], constant_key_t keyType, uint8_t output[KEY_LENGTH]) {
+    if (keyType >= InvalidKey) {
+        return parser_value_out_of_range;
+    }
+    uint8_t tmpExpandedKey[KEY_LENGTH] = {0};
+    memcpy(tmpExpandedKey, expandedKey, KEY_LENGTH);
+    scalar_multiplication(tmpExpandedKey, keyType, output);
+
+    return parser_ok;
+}
+
+parser_error_t computeIVK(const ak_t ak, const nk_t nk, ivk_t ivk) {
+    blake2s_state state = {0};
+    blake2s_init_with_personalization(&state, 32, (const uint8_t *)CRH_IVK_PERSONALIZATION, sizeof(CRH_IVK_PERSONALIZATION));
+    blake2s_update(&state, ak, KEY_LENGTH);
+    blake2s_update(&state, nk, KEY_LENGTH);
+    blake2s_final(&state, ivk, KEY_LENGTH);
+
+    ivk[31] &= 0x07;
+
+    return parser_ok;
+}
+
+parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[EXTENDED_KEY_LENGTH]) {
+#if defined(LEDGER_SPECIFIC)
+    cx_blake2b_t ctx = {0};
+    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SAPLING_MASTER_PERSONALIZATION,
+                                           sizeof(SAPLING_MASTER_PERSONALIZATION)));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, seed, KEY_LENGTH));
+    cx_blake2b_final(&ctx, master_sk);
+#else
+    blake2b_state state = {0};
+    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SAPLING_MASTER_PERSONALIZATION,
+                                      sizeof(SAPLING_MASTER_PERSONALIZATION));
+    blake2b_update(&state, seed, KEY_LENGTH);
+    blake2b_final(&state, master_sk, EXTENDED_KEY_LENGTH);
+#endif
+
+    return parser_ok;
+}
+
+bool check_diversifier(const uint8_t d[DIVERSIFIER_LENGTH]) {
+    if(d == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t hash[32] = {0};
+
+    blake2s_state state = {0};
+    blake2s_init_with_personalization(&state, 32, (const uint8_t *)KEY_DIVERSIFICATION_PERSONALIZATION, sizeof(KEY_DIVERSIFICATION_PERSONALIZATION));
+    blake2s_update(&state, (const uint8_t *)GH_FIRST_BLOCK, sizeof(GH_FIRST_BLOCK));
+    blake2s_update(&state, d, DIVERSIFIER_LENGTH);
+    blake2s_final(&state, hash, KEY_LENGTH);
+
+    return is_valid_diversifier(hash);
+}
+
+// Return list with 4 diversifiers, starting computing form start_index
+parser_error_t computeDiversifiersList(const uint8_t dk[KEY_LENGTH], uint8_t start_index[DIVERSIFIER_LENGTH], uint8_t diversifier_list[DIVERSIFIER_LIST_LENGTH]) {
+    if(dk == NULL || start_index == NULL || diversifier_list == NULL) {
+        return parser_unexpected_error;
+    }
+
+   return get_default_diversifier_list(dk, start_index, diversifier_list);
+}
+
+static bool reached_max_index(uint8_t diversifier_index[DIVERSIFIER_LENGTH]) {
+    for (int i = 0; i < DIVERSIFIER_LENGTH; i++) {
+        if (diversifier_index[i] != UINT8_MAX) {
+            return false;
+        }
+    }
+    return true;
+}
+// Return a valid diversifier from the diversifier list, if not found, compute a new list, strating from the incremented
+// start_index
+parser_error_t computeDiversifier(const uint8_t dk[KEY_LENGTH], uint8_t start_index[DIVERSIFIER_LENGTH], uint8_t diversifier[DIVERSIFIER_LENGTH]) {
+    bool found = false;
+    uint8_t diversifier_list[DIVERSIFIER_LIST_LENGTH] = {0};
+
+    while (!found)
+    {
+        CHECK_ERROR(computeDiversifiersList(dk, start_index, diversifier_list));
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            uint8_t d[DIVERSIFIER_LENGTH] = {0};
+            memcpy(d, diversifier_list + i*DIVERSIFIER_LENGTH, DIVERSIFIER_LENGTH);
+            if (check_diversifier(d) && !found)
+            {
+               memcpy(diversifier, d, DIVERSIFIER_LENGTH);
+               found = true;
+               break;
+            }
+        }
+
+        if (reached_max_index(start_index))
+        {
+            return parser_diversifier_not_found;
+        }
+    }
+
+    return parser_ok;
+}
+
+parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifier[DIVERSIFIER_LENGTH], uint8_t pk_d[KEY_LENGTH]) {
+    if(ivk == NULL || diversifier == NULL || pk_d == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t hash[32] = {0};
+
+    blake2s_state state = {0};
+    blake2s_init_with_personalization(&state, 32, (const uint8_t *)KEY_DIVERSIFICATION_PERSONALIZATION, sizeof(KEY_DIVERSIFICATION_PERSONALIZATION));
+    blake2s_update(&state, (const uint8_t *)GH_FIRST_BLOCK, sizeof(GH_FIRST_BLOCK));
+    blake2s_update(&state, diversifier, DIVERSIFIER_LENGTH);
+    blake2s_final(&state, hash, KEY_LENGTH);
+
+    zemu_log_stack("computePkd got hash");
+    CHECK_ERROR(get_pkd(ivk, hash, pk_d));
+    zemu_log_stack("computePkd after get_pkd");
+    return parser_ok;
 }

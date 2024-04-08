@@ -16,15 +16,13 @@
 export const CLA = 0x57
 export const INS = {
   GET_VERSION: 0x00,
-  GET_PUBLIC_KEY: 0x01,
+  GET_TRANSPARENT_ADDRESS: 0x01,
   SIGN: 0x02,
 
-  GET_MASP_ADDRESS: 0x03,
-  GET_IVK: 0x04,
-  GET_OVK: 0x05,
-  GET_NF: 0x06,
+  GET_KEYS: 0x03,
 }
 export const SALT_LEN = 8
 export const HASH_LEN = 32
 export const PK_LEN_PLUS_TAG = 33
 export const SIG_LEN_PLUS_TAG = 65
+export const KEY_LENGTH = 32;
