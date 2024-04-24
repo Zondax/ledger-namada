@@ -299,9 +299,6 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
     MEMZERO(&v->initProposal, sizeof(v->initProposal));
 
-    // Check if the proposal has an ID
-    CHECK_ERROR(readUint64(&ctx, &v->initProposal.proposal_id));
-
     // Read content section hash
     v->initProposal.content_sechash.len = HASH_LEN;
     CHECK_ERROR(readBytes(&ctx, &v->initProposal.content_sechash.ptr, v->initProposal.content_sechash.len))
@@ -311,16 +308,16 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     CHECK_ERROR(readBytes(&ctx, &v->initProposal.author.ptr, v->initProposal.author.len))
 
     // Proposal type
-    v->initProposal.has_proposal_code = 0;
     CHECK_ERROR(readByte(&ctx, &v->initProposal.proposal_type))
+    
     switch (v->initProposal.proposal_type) {
         case Default: {
-            // Proposal type 0 is Default(Option<Hash>), where Hash is the proposal code.
-            CHECK_ERROR(readByte(&ctx, &v->initProposal.has_proposal_code))
-            if (v->initProposal.has_proposal_code) {
-                v->initProposal.proposal_code_sechash.len = HASH_LEN;
-                CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
-            }
+            break;
+        }
+
+        case DefaultWithWasm: {
+            v->initProposal.proposal_code_sechash.len = HASH_LEN;
+            CHECK_ERROR(readBytes(&ctx, &v->initProposal.proposal_code_sechash.ptr, v->initProposal.proposal_code_sechash.len))
             break;
         }
 
@@ -367,8 +364,8 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
     // Voting end epoch
     CHECK_ERROR(readUint64(&ctx, &v->initProposal.voting_end_epoch))
 
-    // Grace epoch
-    CHECK_ERROR(readUint64(&ctx, &v->initProposal.grace_epoch))
+    // Activation epoch
+    CHECK_ERROR(readUint64(&ctx, &v->initProposal.activation_epoch))
 
     bool found_content = false, found_code = false;
     // Load the linked to data from the extra data sections
@@ -386,7 +383,7 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
             v->initProposal.content_hash.len = HASH_LEN;
             found_content = true;
         }
-        if (v->initProposal.proposal_type == Default && v->initProposal.has_proposal_code &&
+        if (v->initProposal.proposal_type == DefaultWithWasm &&
             !memcmp(extraDataHash, v->initProposal.proposal_code_sechash.ptr, HASH_LEN)) {
             // If this section contains the proposal code
             v->initProposal.proposal_code_secidx = extra_data[i].idx;
@@ -397,7 +394,7 @@ static parser_error_t readInitProposalTxn(const bytes_t *data, const section_t *
         }
     }
 
-    const bool code_condition = (v->initProposal.proposal_type == Default) && (v->initProposal.has_proposal_code && !found_code);
+    const bool code_condition = (v->initProposal.proposal_type == DefaultWithWasm) && !found_code;
     if (!found_content || code_condition) {
         return parser_missing_field;
     } else if (ctx.offset != ctx.bufferLen) {

@@ -254,7 +254,7 @@ parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t dis
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "Proposal type");
         switch (initProposal->proposal_type) {
-            case Default:
+            case Default: case DefaultWithWasm:
                 snprintf(outVal, outValLen, "Default");
                 break;
 
@@ -270,7 +270,7 @@ parser_error_t printProposal(const tx_init_proposal_t *initProposal, uint8_t dis
         return parser_ok;
     }
 
-    if (initProposal->proposal_type == Default) {
+    if (initProposal->proposal_type == Default || initProposal->proposal_type == DefaultWithWasm) {
         snprintf(outKey, outKeyLen, "Proposal hash");
         pageStringHex(outVal, outValLen, (const char*)initProposal->proposal_code_hash.ptr,
                       initProposal->proposal_code_hash.len, pageIdx, pageCount);
