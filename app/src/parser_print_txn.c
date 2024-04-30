@@ -300,7 +300,9 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
     uint32_t proposalElements = 1;
     switch (initProposal->proposal_type) {
         case Default:
-            proposalElements += initProposal->has_proposal_code;
+            break;
+        case DefaultWithWasm:
+            proposalElements += 1;
             break;
         case PGFSteward:
             proposalElements += initProposal->pgf_steward_actions_num;
@@ -310,14 +312,14 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             break;
     }
 
-    if (displayIdx >= 2 && displayIdx < 2 + proposalElements) {
-        adjustedIdx = 2;
+    if (displayIdx >= 1 && displayIdx < 1 + proposalElements) {
+        adjustedIdx = 1;
     }
-    if (displayIdx >= 2 + proposalElements) {
+    if (displayIdx >= 1 + proposalElements) {
         adjustedIdx = displayIdx - proposalElements + 1;
     }
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (adjustedIdx >= 8 && !hasMemo) {
+    if (adjustedIdx >= 7 && !hasMemo) {
         adjustedIdx++;
     }
     // Less than 20 characters are epochs are uint64
@@ -332,47 +334,36 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             }
             break;
 
-        case 1:
-            snprintf(outKey, outKeyLen, "ID");
-            // Less than 20 characters as proposal_id is an u64
-            char idString[25] = {0};
-            if (uint64_to_str(idString, sizeof(idString), ctx->tx_obj->initProposal.proposal_id) != NULL) {
-                return parser_unexpected_error;
-            }
-            snprintf(outVal, outValLen, "%s", idString);
-            break;
-
-        case 2: {
-            CHECK_ERROR(printProposal(&ctx->tx_obj->initProposal, (displayIdx - 2), outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+        case 1: {
+            CHECK_ERROR(printProposal(&ctx->tx_obj->initProposal, (displayIdx - 1), outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
         }
-
-        case 3:
+        case 2:
             snprintf(outKey, outKeyLen, "Author");
             CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
             break;
-        case 4:
+        case 3:
             snprintf(outKey, outKeyLen, "Voting start epoch");
             if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.voting_start_epoch) != NULL) {
                 return parser_unexpected_error;
             }
             pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
             break;
-        case 5:
+        case 4:
             snprintf(outKey, outKeyLen, "Voting end epoch");
             if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.voting_end_epoch) != NULL) {
                 return parser_unexpected_error;
             }
             pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
             break;
-        case 6:
-            snprintf(outKey, outKeyLen, "Grace epoch");
-            if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.grace_epoch) != NULL) {
+        case 5:
+            snprintf(outKey, outKeyLen, "Activation epoch");
+            if (uint64_to_str(strEpoch, sizeof(strEpoch), ctx->tx_obj->initProposal.activation_epoch) != NULL) {
                 return parser_unexpected_error;
             }
             pageString(outVal, outValLen, strEpoch, pageIdx, pageCount);
             break;
-        case 7:
+        case 6:
             snprintf(outKey, outKeyLen, "Content");
             char strContent[65] = {0};
             const bytes_t *content = &ctx->tx_obj->initProposal.content_hash;
@@ -380,7 +371,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             pageString(outVal, outValLen, (const char*) &strContent, pageIdx, pageCount);
             break;
 
-        case 8:
+        case 7:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -388,7 +379,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            adjustedIdx -= 9;
+            adjustedIdx -= 8;
             return printExpert(ctx, adjustedIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -439,20 +430,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             snprintf(outKey, outKeyLen, "Vote");
             switch (voteProposal->proposal_vote) {
                 case Yay:
-                    switch (voteProposal->vote_type) {
-                        case Default:
-                            snprintf(outVal, outValLen, "yay");
-                            break;
-                        case PGFSteward:
-                            snprintf(outVal, outValLen, "yay for PGF steward");
-                            break;
-                        case PGFPayment:
-                            snprintf(outVal, outValLen, "yay for PGF payment");
-                            break;
-
-                        default:
-                            return parser_unexpected_value;
-                    }
+                    snprintf(outVal, outValLen, "yay");
                     break;
 
                 case Nay:

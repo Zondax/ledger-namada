@@ -63,8 +63,9 @@ typedef enum {
 
 typedef enum {
     Default = 0,
-    PGFSteward = 1,
-    PGFPayment = 2,
+    DefaultWithWasm = 1,
+    PGFSteward = 2,
+    PGFPayment = 3,
 } yay_vote_type_e;
 
 typedef enum {
@@ -126,17 +127,15 @@ typedef struct {
 } pgf_payment_action_t;
 
 typedef struct {
-    uint64_t proposal_id;
     bytes_t content_hash;
     bytes_t content_sechash;
     bytes_t author;
     uint64_t voting_start_epoch;
     uint64_t voting_end_epoch;
-    uint64_t grace_epoch;
+    uint64_t activation_epoch;
     uint8_t proposal_type;
     union {
         struct {
-            uint8_t has_proposal_code;
             bytes_t proposal_code_sechash;
             bytes_t proposal_code_hash;
         };
@@ -169,7 +168,6 @@ typedef struct {
 typedef struct {
     uint64_t proposal_id;
     proposal_vote_e proposal_vote;
-    yay_vote_type_e vote_type;
     uint32_t number_of_councils;
     bytes_t councils;
     bytes_t eth_bridge_signature;

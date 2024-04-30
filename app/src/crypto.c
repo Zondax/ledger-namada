@@ -274,7 +274,7 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
             MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initProposal.content_sechash.ptr, HASH_LEN);
             hashes->indices.ptr[hashes->hashesLen] = txObj->initProposal.content_secidx;
             hashes->hashesLen++;
-            if (txObj->initProposal.has_proposal_code) {
+            if (txObj->initProposal.proposal_type == DefaultWithWasm) {
                 MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->initProposal.proposal_code_sechash.ptr, HASH_LEN);
                 hashes->indices.ptr[hashes->hashesLen] = txObj->initProposal.proposal_code_secidx;
                 hashes->hashesLen++;
