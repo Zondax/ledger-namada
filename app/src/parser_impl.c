@@ -60,7 +60,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         }
         case InitProposal: {
             *numItems = (app_mode_expert() ? INIT_PROPOSAL_EXPERT_PARAMS : INIT_PROPOSAL_NORMAL_PARAMS);
-            if (ctx->tx_obj->initProposal.proposal_type == Default && ctx->tx_obj->initProposal.has_proposal_code) {
+            if (ctx->tx_obj->initProposal.proposal_type == DefaultWithWasm) {
                 (*numItems)++;
             } else if (ctx->tx_obj->initProposal.proposal_type == PGFSteward) {
                 *numItems += ctx->tx_obj->initProposal.pgf_steward_actions_num;
