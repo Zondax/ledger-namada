@@ -21,6 +21,8 @@
 #include "coin.h"
 #include "timeutils.h"
 #include "bech32.h"
+#include "parser_address.h"
+#include "bech32_encoding.h"
 
 #include "txn_delegation.h"
 
@@ -56,11 +58,11 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Source");
-            CHECK_ERROR(printAddress(ctx->tx_obj->bond.source, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->bond.source, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->bond.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Amount");
@@ -103,7 +105,7 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Steward");
-            CHECK_ERROR(printAddress(ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->resignSteward.steward, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -145,11 +147,11 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Sender");
-            CHECK_ERROR(printAddress(ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(printAddress(ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             if(ctx->tx_obj->transfer.symbol != NULL) {
@@ -159,7 +161,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                     outVal, outValLen, pageIdx, pageCount))
             } else {
                 snprintf(outKey, outKeyLen, "Token");
-                CHECK_ERROR(printAddress(ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
             }
             break;
         case 4:
@@ -177,6 +179,219 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                return parser_display_idx_out_of_range;
             }
             displayIdx -= 6;
+            return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    return parser_ok;
+}
+
+static parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
+
+    for (uint32_t i = 0; i < index; i++) {
+        spend->ptr += EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN;
+        uint8_t tmp_len = spend->ptr[0];
+        spend->ptr++;
+        spend->ptr += (tmp_len * (32 + 1)) + sizeof(uint64_t);
+    }
+
+    return parser_ok;
+}
+
+static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
+
+    for (uint32_t i = 0; i < index; i++) {
+        uint8_t has_ovk = out->ptr[0];
+        if(has_ovk) {
+            out->ptr += 33;
+        } else {
+            out->ptr++;
+        }
+        out->ptr += DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN;
+    }
+
+    return parser_ok;
+}
+
+uint16_t spend_index = 0;
+uint16_t out_index = 0;
+
+static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
+                                        uint8_t displayIdx,
+                                        char *outKey, uint16_t outKeyLen,
+                                        char *outVal, uint16_t outValLen,
+                                        uint8_t pageIdx, uint8_t *pageCount) {
+    // Compute number of spends/outs in the builder tx , and number of itemns to be printer for each
+    uint32_t n_spends = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends;
+    uint32_t n_outs = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs;
+    uint32_t n_send_items = n_spends > 0 ? n_spends * 3 : 3;
+    uint32_t n_dest_items = n_outs > 0 ? n_outs * 3 : 3;
+
+    // Its possible for the source or target addres in the transfer body to have a Masp type
+    // but the number of spends/outs in the builder tx be 0. this means we will not print the items
+    if(displayIdx >= 1 && n_spends == 0 && ctx->tx_obj->transfer.source_address.tag == 2) {
+        displayIdx += 3;
+    }
+    if(displayIdx >= 4 && n_outs == 0 && ctx->tx_obj->transfer.target_address.tag == 2) {
+        displayIdx += 3;
+    }
+
+    // Reset the index used for jumping outs/spends when we are in the item 0
+    if(displayIdx == 0) {
+        out_index = 0;
+        spend_index = 0;
+    }
+
+    // Display Idx will be manipulated, so save the original for further use
+    uint8_t orig_idx = displayIdx;
+
+    // Get pointer to the spends
+    bytes_t spend = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.spends;
+
+    // For each spend, we will print 3 items, if we have more then 3 items we need to rebase the display Idx to keep printing the spends
+    if(n_send_items > 3 ) {
+        if(displayIdx >= 4 && displayIdx <= n_send_items) {
+            displayIdx = displayIdx % 3;
+            displayIdx = displayIdx == 0 ? 3 : displayIdx;
+            if (displayIdx == 1 && pageIdx == 0) {
+                // If displayIdx was rebase to first item to be printed, we need to increment the spend index
+                spend_index ++;
+            }
+        } else if(displayIdx > n_send_items) { // If we are done printing the spends, we need to keep rebasing the display idx so we can enter the corrent case
+            displayIdx -= (n_send_items - 3);
+            spend_index = 0;
+        }
+        // Get new spend pointer
+        getSpendfromIndex(spend_index, &spend);
+    }
+
+    uint8_t tmp_idx = 0;
+    // Get pointer to the outputs
+    bytes_t out = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.outputs;
+
+    // For each output, we will print 3 items, if we have more then 3 items we need to rebase the display Idx to keep printing the outputs
+    if(n_dest_items > 3 ) {
+        if(displayIdx >= 7 && displayIdx <= n_send_items + n_dest_items && orig_idx <= (n_send_items + n_dest_items)) {
+            tmp_idx = displayIdx;
+            displayIdx = (displayIdx % 6) + 3;
+            if (displayIdx == 4 && pageIdx == 0) {
+                // If displayIdx was rebase to first item to be printed, we need to increment the out index
+                out_index ++;
+            }
+        } else if(displayIdx > n_dest_items) {
+            displayIdx -= (n_dest_items - 3);
+            out_index = 0;
+        }
+        // Get new output pointer
+        getOutputfromIndex(out_index, &out);
+    }
+
+    // Check if Memo needs to be printed or not
+    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    if (displayIdx >= 7 && !hasMemo) {
+        displayIdx++;
+    }
+
+    char tmp_buf[500] = {0};
+    uint8_t tmp_amount[32] = {0};
+    bytes_t amount_bytes = {tmp_amount, 32};
+    const uint8_t *amount = {0};
+
+    switch (displayIdx) {
+        case 0:
+            snprintf(outKey, outKeyLen, "Type");
+            snprintf(outVal, outValLen, "Transfer");
+            if (app_mode_expert()) {
+                CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
+                                          outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 1:
+            snprintf(outKey, outKeyLen, "Sender");
+            if (ctx->tx_obj->transfer.source_address.tag != 2) {
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
+            } else {
+                const char *hrp = "zvknam";
+                bech32EncodeFromLargeBytes(tmp_buf,
+                            sizeof(tmp_buf),
+                            hrp,
+                            (uint8_t*) spend.ptr,
+                            EXTENDED_FVK_LEN,
+                            1,
+                            BECH32_ENCODING_BECH32M);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
+
+            break;
+        case 2:
+            snprintf(outKey, outKeyLen, "Sending Token");
+            if (ctx->tx_obj->transfer.source_address.tag != 2) {
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+            } else {     
+                const uint8_t *token = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN;
+                array_to_hexstr(tmp_buf, sizeof(tmp_buf), token, ASSET_ID_LEN);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
+            break;
+        case 3:
+            snprintf(outKey, outKeyLen, "Sending Amount");
+            if (ctx->tx_obj->transfer.source_address.tag != 2) {
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, false, ctx->tx_obj->transfer.amount_denom,
+                                        "",
+                                        outVal, outValLen, pageIdx, pageCount))
+            } else {
+                amount = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
+                // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
+                MEMCPY(tmp_amount + (ctx->tx_obj->transaction.sections.maspBuilder.asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, ctx->tx_obj->transaction.sections.maspBuilder.asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            }
+            break;
+        case 4:
+            snprintf(outKey, outKeyLen, "Destination");
+            if(ctx->tx_obj->transfer.target_address.tag != 2) {
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
+            } else {
+                const char *hrp = "znam";
+                bech32EncodeFromLargeBytes(tmp_buf,
+                            sizeof(tmp_buf),
+                            hrp,
+                            (uint8_t*) out.ptr,
+                            PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + 1,
+                            1,
+                            BECH32_ENCODING_BECH32M);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
+            break;
+        case 5:
+            snprintf(outKey, outKeyLen, "Receiving Token");
+            if (ctx->tx_obj->transfer.target_address.tag != 2) {
+                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+            } else {
+                const uint8_t *rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
+                array_to_hexstr(tmp_buf, sizeof(tmp_buf), rtoken, ASSET_ID_LEN);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
+            break;
+        case 6:
+            snprintf(outKey, outKeyLen, "Receiving Amount");
+            if (ctx->tx_obj->transfer.target_address.tag != 2) {
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, false, ctx->tx_obj->transfer.amount_denom,
+                                        "",
+                                        outVal, outValLen, pageIdx, pageCount))
+            } else {
+                amount = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
+                MEMCPY(tmp_amount + (ctx->tx_obj->transaction.sections.maspBuilder.asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, ctx->tx_obj->transaction.sections.maspBuilder.asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            }
+            break;
+        case 7:
+            CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            break;
+
+        default:
+            if (!app_mode_expert()) {
+               return parser_display_idx_out_of_range;
+            }
+            displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
@@ -340,7 +555,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
         }
         case 2:
             snprintf(outKey, outKeyLen, "Author");
-            CHECK_ERROR(printAddress(ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->initProposal.author, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voting start epoch");
@@ -447,7 +662,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             break;
         case 3:
             snprintf(outKey, outKeyLen, "Voter");
-            CHECK_ERROR(printAddress(voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
             if (voteProposal->number_of_delegations == 0) {
@@ -457,9 +672,13 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             if (displayIdx - adjustedDisplayIdx >= voteProposal->number_of_delegations) {
                 return parser_value_out_of_range;
             }
-            const uint16_t delegationOffset = (displayIdx - adjustedDisplayIdx) * ADDRESS_LEN_BYTES;
-            const bytes_t tmpProposal = {.ptr = voteProposal->delegations.ptr + delegationOffset, .len = ADDRESS_LEN_BYTES};
-            CHECK_ERROR(printAddress(tmpProposal, outVal, outValLen, pageIdx, pageCount))
+            parser_context_t tmpCtx = {.buffer = voteProposal->delegations.ptr, .bufferLen = voteProposal->delegations.len, .offset = 0};
+            AddressAlt tmpProposal;
+            for(uint32_t i = 0; i <= displayIdx - adjustedDisplayIdx; i++) {
+              CHECK_ERROR(readAddressAlt(&tmpCtx, &tmpProposal))
+            }
+
+            CHECK_ERROR(printAddressAlt(&tmpProposal, outVal, outValLen, pageIdx, pageCount))
             break;
         case 5:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -542,7 +761,7 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->consensusKeyChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -580,7 +799,7 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->unjailValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -620,7 +839,7 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->activateValidator.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->activateValidator.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -677,7 +896,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Address");
-            CHECK_ERROR(printAddress(updateVp->address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&updateVp->address, outVal, outValLen, pageIdx, pageCount))
             break;
 
         case 2: {
@@ -761,7 +980,7 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             break;
         case 1: {
             snprintf(outKey, outKeyLen, "Address");
-            CHECK_ERROR(printAddress(ctx->tx_obj->becomeValidator.address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->becomeValidator.address, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 2: {
@@ -876,11 +1095,11 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                 return parser_unexpected_value;
             }
             snprintf(outKey, outKeyLen, "Source");
-            CHECK_ERROR(printAddress(withdraw->source, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&withdraw->source, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(withdraw->validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&withdraw->validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -923,7 +1142,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
             break;
         case 2:
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->commissionChange.validator, outVal, outValLen, pageIdx, pageCount))
             break;
         case 3:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
@@ -1049,7 +1268,7 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
 
     if (displayIdx == 1) {
         snprintf(outKey, outKeyLen, "Steward");
-        CHECK_ERROR(printAddress(ctx->tx_obj->updateStewardCommission.steward, outVal, outValLen, pageIdx, pageCount))
+        CHECK_ERROR(printAddressAlt(&ctx->tx_obj->updateStewardCommission.steward, outVal, outValLen, pageIdx, pageCount))
         return parser_ok;
     }
 
@@ -1057,19 +1276,19 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
     if (displayIdx >= 2 &&  displayIdx < (2 + 2 * updateStewardCommission->commissionLen)) {
         const bool printValidator = displayIdx % 2 == 0;
 
-        bytes_t address = {.ptr = NULL, .len = ADDRESS_LEN_BYTES};
+        AddressAlt address;
         bytes_t amount = {.ptr = NULL, .len = 32};
         parser_context_t tmpCtx = { .buffer = updateStewardCommission->commission.ptr,
                                     .bufferLen = updateStewardCommission->commission.len,
                                     .offset = 0};
         for (uint8_t i = 0; i < displayIdx / 2; i++) {
-            CHECK_ERROR(readBytes(&tmpCtx, &address.ptr, address.len))
+            CHECK_ERROR(readAddressAlt(&tmpCtx, &address))
             CHECK_ERROR(readBytes(&tmpCtx, &amount.ptr, amount.len))
         }
 
         if (printValidator) {
             snprintf(outKey, outKeyLen, "Validator");
-            CHECK_ERROR(printAddress(address, outVal, outValLen, pageIdx, pageCount));
+            CHECK_ERROR(printAddressAlt(&address, outVal, outValLen, pageIdx, pageCount));
         } else {
             snprintf(outKey, outKeyLen, "Commission Rate");
             CHECK_ERROR(printAmount(&amount, true, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
@@ -1135,7 +1354,7 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
             break;
         case 1: {
             snprintf(outKey, outKeyLen, "Validator");
-            printAddress(metadataChange->validator, outVal, outValLen, pageIdx, pageCount);
+            printAddressAlt(&metadataChange->validator, outVal, outValLen, pageIdx, pageCount);
             break;
         }
         case 2: {
@@ -1217,7 +1436,7 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
         }
         case 2: {
             snprintf(outKey, outKeyLen, "Transfer Sender");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->sender, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->sender, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 3: {
@@ -1243,12 +1462,12 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
         }
           case 6: {
             snprintf(outKey, outKeyLen, "Gas Payer");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->gasPayer, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->gasPayer, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 7: {
             snprintf(outKey, outKeyLen, "Gas Token");
-            CHECK_ERROR(printAddress(bridgePoolTransfer->gasToken, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&bridgePoolTransfer->gasToken, outVal, outValLen, pageIdx, pageCount))
             break;
         }
         case 8: {
@@ -1287,6 +1506,9 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
             return printCustomTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case Transfer:
+            if(ctx->tx_obj->transaction.isMasp) {
+                return printMaspTransferTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            }
             return printTransferTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case InitAccount:
