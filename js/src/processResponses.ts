@@ -15,36 +15,36 @@
  ******************************************************************************* */
 
 import { errorCodeToString } from './common'
-import { KEY_LENGTH, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
-import { ISignature, KeyResponse, NamadaKeys } from './types'
+import { KEY_LENGTH, PK_LEN_PLUS_TAG, RANDOMNESS_LENGTH, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
+import { ISignature, KeyResponse, NamadaKeys, ResponseGetRandomness, ResponseSignMasp } from './types'
 
 export function getSignatureResponse(response: Buffer): ISignature {
   // App sign response: [ rawPubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
   // raw_indices_len(1) | wrapper_indices_len(1) | indices(wrapper_indices_len) ]
 
-  let offset = 0;
-  const rawPubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG));
+  let offset = 0
+  const rawPubkey = Buffer.from(response.subarray(offset, offset + PK_LEN_PLUS_TAG))
 
-  offset += PK_LEN_PLUS_TAG;
-  const raw_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
-  offset += SALT_LEN;
-  const raw_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG));
+  offset += PK_LEN_PLUS_TAG
+  const raw_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN))
+  offset += SALT_LEN
+  const raw_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG))
 
-  offset += SIG_LEN_PLUS_TAG;
-  const wrapper_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN));
-  offset += SALT_LEN;
-  const wrapper_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG));
+  offset += SIG_LEN_PLUS_TAG
+  const wrapper_salt = Buffer.from(response.subarray(offset, offset + SALT_LEN))
+  offset += SALT_LEN
+  const wrapper_signature = Buffer.from(response.subarray(offset, offset + SIG_LEN_PLUS_TAG))
 
-  offset += SIG_LEN_PLUS_TAG;
-  const raw_indices_len = response[offset];
-  offset += 1;
+  offset += SIG_LEN_PLUS_TAG
+  const raw_indices_len = response[offset]
+  offset += 1
   const raw_indices = Buffer.from(response.subarray(offset, offset + raw_indices_len))
-  offset += raw_indices_len;
+  offset += raw_indices_len
 
-  const wrapper_indices_len = response[offset];
-  offset += 1;
+  const wrapper_indices_len = response[offset]
+  offset += 1
   const wrapper_indices = Buffer.from(response.subarray(offset, offset + wrapper_indices_len))
-  offset += wrapper_indices_len;
+  offset += wrapper_indices_len
 
   return {
     rawPubkey,
@@ -61,15 +61,15 @@ export function processGetAddrResponse(response: Buffer) {
   const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-  const rawPubkey = response.subarray(0, PK_LEN_PLUS_TAG);
-  response = response.subarray(PK_LEN_PLUS_TAG);
+  const rawPubkey = response.subarray(0, PK_LEN_PLUS_TAG)
+  response = response.subarray(PK_LEN_PLUS_TAG)
 
-  const pubkeyLen = response[0];
-  const pubkey = response.subarray(1, pubkeyLen + 1);
-  response = response.subarray(pubkeyLen + 1);
+  const pubkeyLen = response[0]
+  const pubkey = response.subarray(1, pubkeyLen + 1)
+  response = response.subarray(pubkeyLen + 1)
 
-  const addressLen = response[0];
-  const address = response.subarray(1, addressLen + 1);
+  const addressLen = response[0]
+  const address = response.subarray(1, addressLen + 1)
 
   console.log(pubkey.toString())
   console.log(address.toString())
@@ -84,58 +84,111 @@ export function processGetAddrResponse(response: Buffer) {
 }
 
 export function processGetKeysResponse(response: Buffer, keyType: NamadaKeys): KeyResponse {
-    const errorCodeData = response.subarray(-2);
-    const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+  const errorCodeData = response.subarray(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
 
-    let requestedKey: KeyResponse = {
-        returnCode: returnCode,
-        errorMessage: errorCodeToString(returnCode),
-    }
-
-    switch(keyType) {
-        case NamadaKeys.PublicAddress: {
-            const publicAddress = Buffer.from(response.subarray(0, KEY_LENGTH));
-            requestedKey = {
-                ...requestedKey,
-                publicAddress,
-            };
-            break;
-        }
-
-        case NamadaKeys.ViewKey: {
-            const viewKey = Buffer.from(response.subarray(0, 2 * KEY_LENGTH));
-            response = response.subarray(2 * KEY_LENGTH);
-
-            const ivk = Buffer.from(response.subarray(0, KEY_LENGTH));
-            response = response.subarray(KEY_LENGTH);
-
-            const ovk = Buffer.from(response.subarray(0, KEY_LENGTH));
-            response = response.subarray(KEY_LENGTH);
-
-            requestedKey = {
-                ...requestedKey,
-                viewKey,
-                ivk,
-                ovk,
-            };
-            break;
-        }
-
-        case NamadaKeys.ProofGenerationKey: {
-            const ak = Buffer.from(response.subarray(0, KEY_LENGTH));
-            response = response.subarray(KEY_LENGTH);
-
-            const nsk = Buffer.from(response.subarray(0, KEY_LENGTH));
-            response = response.subarray(KEY_LENGTH);
-
-            requestedKey = {
-                ...requestedKey,
-                ak,
-                nsk,
-            };
-            break;
-        }
-    }
-
-    return requestedKey;
+  let requestedKey: KeyResponse = {
+    returnCode: returnCode,
+    errorMessage: errorCodeToString(returnCode),
   }
+
+  switch (keyType) {
+    case NamadaKeys.PublicAddress: {
+      const publicAddress = Buffer.from(response.subarray(0, KEY_LENGTH))
+      requestedKey = {
+        ...requestedKey,
+        publicAddress,
+      }
+      break
+    }
+
+    case NamadaKeys.ViewKey: {
+      const viewKey = Buffer.from(response.subarray(0, 2 * KEY_LENGTH))
+      response = response.subarray(2 * KEY_LENGTH)
+
+      const ivk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      response = response.subarray(KEY_LENGTH)
+
+      const ovk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      response = response.subarray(KEY_LENGTH)
+
+      requestedKey = {
+        ...requestedKey,
+        viewKey,
+        ivk,
+        ovk,
+      }
+      break
+    }
+
+    case NamadaKeys.ProofGenerationKey: {
+      const ak = Buffer.from(response.subarray(0, KEY_LENGTH))
+      response = response.subarray(KEY_LENGTH)
+
+      const nsk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      response = response.subarray(KEY_LENGTH)
+
+      requestedKey = {
+        ...requestedKey,
+        ak,
+        nsk,
+      }
+      break
+    }
+  }
+
+  return requestedKey
+}
+
+export function processRandomnessResponse(
+  response: Buffer,
+  spend_len: number,
+  output_len: number,
+  convert_len: number,
+): ResponseGetRandomness {
+  const errorCodeData = response.subarray(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+  let spend_randomness = Buffer.alloc(0)
+  let output_randomness = Buffer.alloc(0)
+  let convert_randomness = Buffer.alloc(0)
+
+  let offset = 0
+
+  // Handle the randomness for spend_len
+  if (spend_len > 0) {
+    spend_randomness = response.subarray(offset, offset + (2 * spend_len * RANDOMNESS_LENGTH))
+    offset += 2 * spend_len * RANDOMNESS_LENGTH
+  }
+
+  // Handle the randomness for output_len
+  if (output_len > 0) {
+    output_randomness = response.subarray(offset, offset + (2 * output_len * RANDOMNESS_LENGTH))
+    offset += 2 * output_len * RANDOMNESS_LENGTH
+  }
+
+  // Handle the randomness for convert_len
+  if (convert_len > 0) {
+    convert_randomness = response.subarray(offset, offset + (convert_len * RANDOMNESS_LENGTH))
+  }
+
+  return {
+    spend_randomness,
+    output_randomness,
+    convert_randomness,
+    returnCode,
+    errorMessage: errorCodeToString(returnCode),
+  }
+}
+
+export function processMaspSign(
+  signatures: Buffer,
+): ResponseSignMasp {
+  const errorCodeData = signatures.subarray(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+ 
+  return {
+    signatures,
+    returnCode,
+    errorMessage: errorCodeToString(returnCode),
+  }
+}

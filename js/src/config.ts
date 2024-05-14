@@ -20,9 +20,12 @@ export const INS = {
   SIGN: 0x02,
 
   GET_KEYS: 0x03,
+  GET_RANDOMNESS: 0x04,
+  SIGN_MASP: 0x05,
 }
 export const SALT_LEN = 8
 export const HASH_LEN = 32
 export const PK_LEN_PLUS_TAG = 33
 export const SIG_LEN_PLUS_TAG = 65
-export const KEY_LENGTH = 32;
+export const KEY_LENGTH = 32
+export const RANDOMNESS_LENGTH = 32
