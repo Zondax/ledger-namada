@@ -257,10 +257,12 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_spends))
+#if defined(LEDGER_SPECIFIC)
     uint32_t rnd_spends = (uint32_t)transaction_get_n_spends();
     if (rnd_spends != builder->n_spends) {
         return parser_invalid_number_of_spends;
     }
+#endif
 
     // Get start pointer and offset to later calculate the size of the spends
     builder->spends.ptr = ctx->buffer + ctx->offset;
@@ -312,11 +314,12 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_converts))
-
+#if defined(LEDGER_SPECIFIC)
     uint32_t rnd_converts = (uint32_t)transaction_get_n_converts();
     if (rnd_converts != builder->n_converts) {
         return parser_invalid_number_of_converts;
     }
+#endif
 
     // Get start pointer and offset to later calculate the size of the converts
     builder->converts.ptr = ctx->buffer + ctx->offset;
@@ -352,10 +355,12 @@ static parser_error_t readSaplingOutputDescriptionInfo(parser_context_t *ctx, ma
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_outputs))
+#if defined(LEDGER_SPECIFIC)
     uint32_t rnd_outputs = (uint32_t)transaction_get_n_outputs();
     if (rnd_outputs != builder->n_outputs) {
         return parser_invalid_number_of_outputs;
     }
+#endif
 
     // Get start pointer and offset to later calculate the size of the outputs
     builder->outputs.ptr = ctx->buffer + ctx->offset;
