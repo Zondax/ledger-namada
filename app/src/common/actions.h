@@ -63,6 +63,7 @@ __Z_INLINE zxerr_t app_fill_keys(key_kind_e requestedKey) {
 
 __Z_INLINE void app_sign() {
     const parser_tx_t *txObj = tx_get_txObject();
+
     const zxerr_t err = crypto_sign(txObj, G_io_apdu_buffer, sizeof(G_io_apdu_buffer) - 2);
 
     if (err != zxerr_ok) {
@@ -71,6 +72,21 @@ __Z_INLINE void app_sign() {
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
     } else {
         const uint16_t responseLen = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG + 2 + 10;
+        set_code(G_io_apdu_buffer, responseLen, APDU_CODE_OK);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, responseLen + 2);
+    }
+}
+
+__Z_INLINE void app_sign_masp() {
+    const parser_tx_t *txObj = tx_get_txObject();
+    uint16_t responseLen = 0;
+    const zxerr_t err = crypto_sign_masp(txObj, G_io_apdu_buffer, sizeof(G_io_apdu_buffer) - 2, &responseLen);
+
+    if (err != zxerr_ok) {
+        MEMZERO(G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+        set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+    } else {
         set_code(G_io_apdu_buffer, responseLen, APDU_CODE_OK);
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, responseLen + 2);
     }

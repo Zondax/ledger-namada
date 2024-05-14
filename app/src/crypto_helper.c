@@ -345,7 +345,7 @@ parser_error_t computeIVK(const ak_t ak, const nk_t nk, ivk_t ivk) {
     return parser_ok;
 }
 
-parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[EXTENDED_KEY_LENGTH]) {
+parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[KEY_LENGTH]) {
 #if defined(LEDGER_SPECIFIC)
     cx_blake2b_t ctx = {0};
     ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SAPLING_MASTER_PERSONALIZATION,

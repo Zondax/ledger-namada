@@ -146,6 +146,37 @@ pub extern "C" fn get_pkd(
     ParserError::ParserOk
 }
 
+#[no_mangle]
+pub extern "C" fn randomized_secret_from_seed(
+    ask:  &[u8; 32],
+    alpha:  &[u8; 32],
+    output:  &mut [u8; 32],
+) -> ParserError{
+
+    let mut skfr = Fr::from_bytes(ask).unwrap();
+    let alphafr = Fr::from_bytes(alpha).unwrap();
+    skfr += alphafr;
+    output.copy_from_slice(&skfr.to_bytes());
+
+    ParserError::ParserOk
+}
+
+#[no_mangle]
+pub extern "C" fn compute_sbar(
+    s:  &[u8; 32],
+    r:  &[u8; 32],
+    rsk:  &[u8; 32],
+    sbar:  &mut [u8; 32],
+) -> ParserError{
+    let s_point = Fr::from_bytes(s).unwrap();
+    let r_point = Fr::from_bytes(r).unwrap();
+    let rsk_point = Fr::from_bytes(rsk).unwrap();
+
+    let sbar_tmp = r_point + s_point * rsk_point;
+    sbar.copy_from_slice(&sbar_tmp.to_bytes());
+    ParserError::ParserOk
+}
+
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {

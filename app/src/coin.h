@@ -65,6 +65,7 @@ extern "C" {
 #define SIG_S_LEN   32
 #define SIG_ED25519_LEN (SIG_R_LEN + SIG_S_LEN)
 #define SIG_SECP256K1_LEN 65
+#define MASP_SIG_LEN 64
 
 #define MAX_BECH32_HRP_LEN  83u
 
@@ -95,7 +96,10 @@ typedef enum {
 } key_kind_e;
 
 #define INS_GET_KEYS                    0x03
+#define INS_INIT_MASP_TX                0x04
+#define INS_SIGN_MASP                   0x05
 
+#define APDU_CODE_CHECK_SIGN_TR_FAIL 0x6999
 #ifdef __cplusplus
 }
 #endif

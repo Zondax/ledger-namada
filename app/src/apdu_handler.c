@@ -124,6 +124,29 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     *flags |= IO_ASYNCH_REPLY;
 }
 
+__Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignMasp\n")
+    if (!process_chunk(tx, rx)) {
+        THROW(APDU_CODE_OK);
+    }
+    CHECK_APP_CANARY()
+
+    const char *error_msg = tx_parse();
+    CHECK_APP_CANARY()
+    ZEMU_LOGF(50, "Parser| parsed \n");
+    if (error_msg != NULL) {
+        const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
+        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
+        *tx += (error_msg_length);
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    CHECK_APP_CANARY()
+    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp);
+    view_review_show(REVIEW_TXN);
+    *flags |= IO_ASYNCH_REPLY;
+}
+
 // For wrapper transactions, address is derived from Ed25519 pubkey
 __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     zemu_log("handleGetAddr\n");
@@ -174,6 +197,32 @@ __Z_INLINE void handleGetKeys(volatile uint32_t *flags, volatile uint32_t *tx, u
 
     *tx = cmdResponseLen;
     THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void handleComputeMaspRand(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleComputeMaspRand\n")
+    if (!process_chunk(tx, rx)) {
+        THROW(APDU_CODE_OK);
+    }
+    ZEMU_LOGF(50, "handleComputeMaspRand 2\n")
+    CHECK_APP_CANARY()
+
+    *tx = 0;
+    uint16_t replyLen = 0;
+    const uint8_t *message = tx_get_buffer();
+    const uint16_t messageLength = tx_get_buffer_length();
+
+    zxerr_t err = crypto_computeRandomness(message, messageLength, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, &replyLen);
+    if (err != zxerr_ok) {
+        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+        G_io_apdu_buffer[0] = err;
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+  }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
+
 }
 
 __Z_INLINE void handle_getversion(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx)
@@ -250,8 +299,19 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+                case INS_INIT_MASP_TX: {
+                    CHECK_PIN_VALIDATED()
+                    handleComputeMaspRand(flags, tx, rx);
+                    break;
+                }
+
+                case INS_SIGN_MASP: {
+                    CHECK_PIN_VALIDATED()
+                    handleSignMasp(flags, tx, rx);
+                    break;
+                }
 #if defined(APP_TESTING)
-                    case INS_TEST: {
+                case INS_TEST: {
                     handleTest(flags, tx, rx);
                     THROW(APDU_CODE_OK);
                     break;

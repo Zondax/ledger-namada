@@ -29,11 +29,12 @@ typedef enum {
     PublicKeyGenerator,
 } constant_key_t;
 
+#define RNG_LEN 80
 #define KEY_LENGTH 32
 #define EXTENDED_KEY_LENGTH 64
 #define DIVERSIFIER_LENGTH 11
 #define DIVERSIFIER_LIST_LENGTH 44
-typedef uint8_t spending_key_t[EXTENDED_KEY_LENGTH];
+typedef uint8_t spending_key_t[KEY_LENGTH];
 typedef uint8_t ask_t[KEY_LENGTH];
 typedef uint8_t nsk_t[KEY_LENGTH];
 
@@ -49,10 +50,8 @@ typedef uint8_t public_address_t[KEY_LENGTH];
 
 typedef struct {
     spending_key_t spendingKey;
-    union {
-        ask_t ask;
-        ak_t ak;
-    };
+    ask_t ask;
+    ak_t ak;
     nsk_t nsk;
     nk_t nk;
     dk_t dk;
