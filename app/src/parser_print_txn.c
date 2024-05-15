@@ -264,14 +264,12 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
         getSpendfromIndex(spend_index, &spend);
     }
 
-    uint8_t tmp_idx = 0;
     // Get pointer to the outputs
     bytes_t out = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.outputs;
 
     // For each output, we will print 3 items, if we have more then 3 items we need to rebase the display Idx to keep printing the outputs
     if(n_dest_items > 3 ) {
         if(displayIdx >= 7 && displayIdx <= n_send_items + n_dest_items && orig_idx <= (n_send_items + n_dest_items)) {
-            tmp_idx = displayIdx;
             displayIdx = (displayIdx % 6) + 3;
             if (displayIdx == 4 && pageIdx == 0) {
                 // If displayIdx was rebase to first item to be printed, we need to increment the out index
