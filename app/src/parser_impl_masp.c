@@ -308,6 +308,53 @@ parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len) {
     return parser_ok;
 }
 
+parser_error_t getOutputDescriptionLen(const uint8_t *spend, uint16_t *len) {
+    if (spend == NULL || len == NULL) {
+        return parser_unexpected_error;
+    }
+    uint8_t has_ovk = spend[0];
+    *len = (has_ovk ? 33 : 1) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN;
+
+    return parser_ok;
+}
+
+
+parser_error_t getConvertLen(const uint8_t *convert, uint64_t *len) {
+    if (convert == NULL || len == NULL) {
+        return parser_unexpected_error;
+    }
+    uint64_t allowed_size = 0;
+    uint8_t offset = 0;
+    uint8_t tag = convert[offset];
+    offset++;
+
+    switch(tag) {
+    case 253:
+        MEMCPY(&allowed_size, convert + offset, sizeof(uint16_t));
+        offset += 2; 
+        break;
+    case 254:
+        MEMCPY(&allowed_size, convert + offset, sizeof(uint32_t));
+        offset += 4; 
+        break;
+    case 255:
+        MEMCPY(&allowed_size, convert + offset, sizeof(uint64_t));
+        offset += 8; 
+        break;
+    default:
+        allowed_size = (uint64_t)tag;
+    }
+
+    offset += allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t);
+
+    uint64_t merkel_size = (uint64_t)convert[offset];
+    offset++;
+    offset += merkel_size * (32 + 1) + sizeof(uint64_t);
+
+    *len = offset;
+    return parser_ok;
+}
+
 static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sapling_builder_t *builder) {
     if (ctx == NULL || builder == NULL) {
         return parser_unexpected_error;

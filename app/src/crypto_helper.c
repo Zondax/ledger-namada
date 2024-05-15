@@ -444,3 +444,49 @@ parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifi
     zemu_log_stack("computePkd after get_pkd");
     return parser_ok;
 }
+
+static void u64_to_bytes(uint64_t value, uint8_t array[32]) {
+    MEMZERO(array, 32);
+
+    // Fill the first 8 bytes with the uint64_t value in little-endian order
+    for (int i = 0; i < 8; i++) {
+        array[i] = (value >> (i * 8)) & 0xFF;
+    }
+}
+
+//https://github.com/anoma/masp/blob/main/masp_primitives/src/sapling.rs#L194
+parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *identifier, uint8_t *cv) {
+    if(rcv == NULL || identifier == NULL || cv == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t value_bytes[32] = {0};
+    u64_to_bytes(value, value_bytes);
+
+    uint8_t hash[32] = {0};
+    blake2s_state state = {0};
+    blake2s_init_with_personalization(&state, 32, (const uint8_t *)VALUE_COMMITMENT_GENERATOR_PERSONALIZATION, sizeof(VALUE_COMMITMENT_GENERATOR_PERSONALIZATION));
+    blake2s_update(&state, identifier, KEY_LENGTH);
+    blake2s_final(&state, hash, KEY_LENGTH);
+
+    uint8_t scalar[32] = {0};
+    CHECK_ERROR(scalar_multiplication(rcv, ValueCommitmentRandomnessGenerator, scalar));
+    CHECK_ERROR(add_points(hash, value_bytes, scalar, cv));
+
+    return parser_ok;
+}
+
+
+parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk) {
+    if(keys == NULL || alpha == NULL || rk == NULL) {
+        return parser_unexpected_error;
+    }
+    uint8_t rsk[KEY_LENGTH] = {0};
+    // get randomized secret
+    CHECK_ERROR(randomized_secret_from_seed(keys->ask, alpha, rsk));
+
+    //rsk to rk
+    CHECK_ERROR(scalar_multiplication(rsk, SpendingKeyGenerator, rk));
+
+    return parser_ok;
+}

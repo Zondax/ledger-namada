@@ -30,6 +30,8 @@ extern "C" {
 parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx);
 parser_error_t readMaspBuilder(parser_context_t *ctx, masp_builder_section_t *maspBuilder) ;
 parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len);
+parser_error_t getOutputDescriptionLen(const uint8_t *spend, uint16_t *len);
+parser_error_t getConvertLen(const uint8_t *convert, uint64_t *len);
 #ifdef __cplusplus
 }
 #endif

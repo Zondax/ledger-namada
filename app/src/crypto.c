@@ -678,6 +678,7 @@ static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t *alpha, uint8_t *sign_ha
 
     return zxerr_ok;
 }
+
 zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen, uint16_t *responseLen) {
     zemu_log_stack("crypto_signspends_sapling");
     if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends == 0) {
@@ -720,10 +721,123 @@ zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, uint8_t *output, ui
     return zxerr_ok;
 }
 
+
+zxerr_t checkSpends(const parser_tx_t *txObj, keys_t *keys) {
+    uint8_t *builder_spend = (uint8_t *)txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.ptr;
+    uint8_t *tx_spend = (uint8_t *)txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.ptr;
+    uint16_t spendLen = 0;
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+        builder_spend += spendLen;
+        tx_spend += SHIELDED_SPENDS_LEN;
+
+        //check rk
+        uint8_t alpha[KEY_LENGTH] = {0};
+        MEMCPY(alpha, builder_spend + ALPHA_OFFSET, KEY_LENGTH);
+        uint8_t rk[KEY_LENGTH] = {0};
+        CHECK_PARSER_OK(computeRk(keys, alpha, rk));
+        if(MEMCMP(rk, tx_spend + CV_LEN + NULLIFIER_LEN, RK_LEN) != 0) {
+            return zxerr_invalid_crypto_settings;
+        }
+
+        //check cv (computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t *note = builder_spend + EXTENDED_FVK_LEN + DIVERSIFIER_LEN;
+        uint8_t *rcv = (uint8_t*)txObj->transaction.sections.maspBuilder.metadata.spend_rcvs.ptr + (i * KEY_LENGTH);
+        uint64_t value = 0;
+        MEMCPY(&value, note + IDENTIFIER_LEN, sizeof(uint64_t));
+        CHECK_PARSER_OK(computeValueCommitment(value, rcv, note, cv));
+        if(MEMCMP(cv, tx_spend, CV_LEN) != 0) {
+            return zxerr_invalid_crypto_settings;
+        }
+    
+        CHECK_PARSER_OK(getSpendDescriptionLen(builder_spend, &spendLen));
+    }
+    return zxerr_ok;
+}
+
+zxerr_t checkOutputs(const parser_tx_t *txObj) {
+    uint8_t *builder_output = (uint8_t *)txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.ptr;
+    uint8_t *tx_output = (uint8_t *)txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.ptr;
+    uint16_t outputLen = 0;
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; i++) {
+        builder_output += outputLen;
+        tx_output += SHIELDED_OUTPUTS_LEN;
+
+        //check cv (computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t has_ovk = builder_output[0];
+        uint8_t *note = builder_output + (has_ovk ? 33 : 1) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN;
+        uint64_t value = 0;
+        MEMCPY(&value, note + IDENTIFIER_LEN, sizeof(uint64_t));
+        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.output_rcvs.ptr + (i * KEY_LENGTH);
+        CHECK_PARSER_OK(computeValueCommitment( value, rcv, note,cv));
+        if(MEMCMP(cv, tx_output, CV_LEN) != 0) {
+            return zxerr_invalid_crypto_settings;
+        }
+    
+        CHECK_PARSER_OK(getOutputDescriptionLen(builder_output, &outputLen));
+    }
+    return zxerr_ok;
+}
+
+zxerr_t checkConverts(const parser_tx_t *txObj) {
+    uint8_t *builder_convert = (uint8_t *)txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.ptr;
+    const uint8_t *tx_convert = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_converts.ptr;
+    uint64_t convertLen = 0;
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
+        builder_convert += convertLen;
+        tx_convert += SHIELDED_CONVERTS_LEN;
+
+        //check cv (computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.convert_rcvs.ptr + (i * KEY_LENGTH);
+        uint8_t *identifier = builder_convert + TAG_LEN;
+        uint64_t value = 0;
+        MEMCPY(&value, builder_convert + TAG_LEN + ASSET_ID_LEN + INT_128_LEN, sizeof(uint64_t));
+        CHECK_PARSER_OK(computeValueCommitment(value, rcv, identifier, cv));
+        if(MEMCMP(cv, tx_convert, CV_LEN) != 0) {
+            return zxerr_invalid_crypto_settings;
+        }
+    
+        CHECK_PARSER_OK(getConvertLen(builder_convert, &convertLen));
+    }
+    return zxerr_ok;
+}
+
+zxerr_t crypto_check_masp(const parser_tx_t *txObj) {
+    if (txObj == NULL) {
+        return zxerr_unknown;
+    }
+    // Get keys to use ask
+    uint8_t sapling_seed[KEY_LENGTH] = {0};
+    keys_t keys = {0};
+    CHECK_ZXERR(crypto_computeSaplingSeed(sapling_seed));
+    CHECK_PARSER_OK(computeMasterFromSeed(sapling_seed, keys.spendingKey));
+    CHECK_ZXERR(computeKeys(&keys));
+
+#if !defined(LEDGER_SPECIFIC)
+    // For now verify cv and rk https://github.com/anoma/masp/blob/main/masp_proofs/src/sapling/prover.rs#L278    
+    // Check Spends
+    CHECK_ZXERR(checkSpends(txObj, &keys));
+
+    // Check outputs
+    CHECK_ZXERR(checkOutputs(txObj));
+
+    // Check converts
+    CHECK_ZXERR(checkConverts(txObj));
+#endif
+    return zxerr_ok;
+}
+
 zxerr_t crypto_sign_masp(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen, uint16_t *responseLen) {
     if (txObj == NULL || output == NULL || outputLen < 2 * ED25519_SIGNATURE_SIZE) {
         return zxerr_unknown;
     }
+
+    CHECK_ZXERR(crypto_check_masp(txObj));
 
     // Sign Sapling spends
     CHECK_ZXERR(crypto_sign_spends_sapling(txObj, output, outputLen, responseLen));

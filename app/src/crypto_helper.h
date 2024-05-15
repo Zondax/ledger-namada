@@ -64,7 +64,8 @@ parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t ma
 parser_error_t computeDiversifiersList(const uint8_t dk[KEY_LENGTH], uint8_t div_start_index[DIVERSIFIER_LENGTH], uint8_t diversifier_list[DIVERSIFIER_LIST_LENGTH]);
 parser_error_t computeDiversifier(const uint8_t dk[KEY_LENGTH], uint8_t start_index[DIVERSIFIER_LENGTH], uint8_t diversifier[DIVERSIFIER_LENGTH]);
 parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifier[DIVERSIFIER_LENGTH], uint8_t pk_d[KEY_LENGTH]);
-
+parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *identifier, uint8_t *cv);
+parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk);
 #ifdef __cplusplus
 }
 #endif

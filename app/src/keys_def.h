@@ -27,6 +27,7 @@ typedef enum {
     SpendingKeyGenerator,
     ProofGenerationKeyGenerator,
     PublicKeyGenerator,
+    ValueCommitmentRandomnessGenerator,
 } constant_key_t;
 
 #define RNG_LEN 80

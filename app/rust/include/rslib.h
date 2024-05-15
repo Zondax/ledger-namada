@@ -14,3 +14,4 @@ parser_error_t get_pkd(const uint8_t ivk_ptr[32], const uint8_t hash[32], uint8_
 bool is_valid_diversifier(const uint8_t hash[32]);
 parser_error_t randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]);
 parser_error_t compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t rsk[32], uint8_t sbar[32]);
+parser_error_t add_points(const uint8_t hash[32], const uint8_t value[32], const uint8_t scalar[32], uint8_t cv[32]);

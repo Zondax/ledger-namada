@@ -61,6 +61,8 @@ extern "C" {
 #define NOTE_PLAINTEXT_SIZE 564
 #define POSITION_LEN 8
 #define RANDOM_LEN 32
+#define IDENTIFIER_LEN 32
+#define TAG_LEN 1
 
 #define CMU_OFFSET CV_LEN
 #define EPK_OFFSET CMU_OFFSET + CMU_LEN
