@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,6 @@
 #include "addr.h"
 #include "crypto.h"
 #include "coin.h"
-#include "transparent.h"
 #include "zxmacros.h"
 #include "view_internal.h"
 #include "review_keys.h"

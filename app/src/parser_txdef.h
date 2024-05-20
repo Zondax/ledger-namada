@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2023 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ extern "C" {
 #define PAYMENT_ADDR_LEN 32
 #define OVK_LEN 32
 #define VOUT_LEN 60
+#define VIN_LEN 60
 #define CV_LEN 32
 #define NULLIFIER_LEN 32
 #define RK_LEN 32
