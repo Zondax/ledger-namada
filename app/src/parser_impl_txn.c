@@ -28,9 +28,9 @@
 #define DISCRIMINANT_EXTRA_DATA 0x01
 #define DISCRIMINANT_CODE 0x02
 #define DISCRIMINANT_SIGNATURE 0x03
-#define DISCRIMINANT_CIPHERTEXT 0x04
-#define DISCRIMINANT_MASP_TX 0x05
-#define DISCRIMINANT_MASP_BUILDER 0x06
+#define DISCRIMINANT_MASP_TX 0x04
+#define DISCRIMINANT_MASP_BUILDER 0x05
+#define DISCRIMINANT_HEADER 0x06
 
 // Update VP types
 static const vp_types_t vp_user = { "vp_user.wasm", "User"};
@@ -419,15 +419,6 @@ static parser_error_t readVoteProposalTxn(const bytes_t *data, parser_tx_t *v) {
     v->voteProposal.voter.len = ADDRESS_LEN_BYTES;
     CHECK_ERROR(readBytes(&ctx, &v->voteProposal.voter.ptr, v->voteProposal.voter.len))
 
-    // Delegators
-    v->voteProposal.number_of_delegations = 0;
-    CHECK_ERROR(readUint32(&ctx, &v->voteProposal.number_of_delegations))
-    v->voteProposal.delegations.len = 0;
-    if (v->voteProposal.number_of_delegations > 0 ){
-        v->voteProposal.delegations.len = ADDRESS_LEN_BYTES*v->voteProposal.number_of_delegations;
-        CHECK_ERROR(readBytes(&ctx, &v->voteProposal.delegations.ptr, v->voteProposal.delegations.len))
-    }
-
     if ((ctx.offset != ctx.bufferLen)) {
         return parser_unexpected_characters;
     }
@@ -574,18 +565,6 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // Amount denomination
     CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
 
-    uint32_t tmpValue = 0;
-    // Key, check if it is there
-    CHECK_ERROR(readByte(&ctx, &v->transfer.has_key))
-    if (v->transfer.has_key){
-        CHECK_ERROR(readUint32(&ctx, &tmpValue));
-        if (tmpValue > UINT16_MAX) {
-            return parser_value_out_of_range;
-        }
-        v->transfer.key.len = (uint16_t)tmpValue;
-        // we are not displaying these bytes
-        ctx.offset += v->transfer.key.len;
-    }
     // shielded hash, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
     if (v->transfer.has_shielded_hash){
@@ -736,6 +715,20 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
         }
         metadataChange->avatar.len = (uint16_t)tmpValue;
         CHECK_ERROR(readBytes(&ctx, &metadataChange->avatar.ptr, metadataChange->avatar.len))
+    }
+
+    /// The validator's name
+    metadataChange->name.ptr = NULL;
+    metadataChange->name.len = 0;
+    uint8_t has_name;
+    CHECK_ERROR(readByte(&ctx, &has_name))
+    if (has_name) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        metadataChange->name.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &metadataChange->name.ptr, metadataChange->name.len))
     }
 
     // Commission rate
@@ -932,6 +925,13 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.timestamp.len = (uint16_t)tmpValue;
     CHECK_ERROR(readBytes(ctx, &v->transaction.timestamp.ptr, v->transaction.timestamp.len))
 
+    // Batch length
+    CHECK_ERROR(readUint32(ctx, &v->transaction.header.batchLen))
+    // Only singleton batches are supported currently
+    if (v->transaction.header.batchLen != 1) {
+        return parser_unexpected_value;
+    }
+
     // Code hash
     v->transaction.header.codeHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.codeHash.ptr, v->transaction.header.codeHash.len))
@@ -943,6 +943,9 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     // Memo hash
     v->transaction.header.memoHash.len = HASH_LEN;
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.memoHash.ptr, v->transaction.header.memoHash.len))
+
+    // Atomic
+    CHECK_ERROR(readByte(ctx, &v->transaction.header.atomic))
 
     v->transaction.header.bytes.len = ctx->offset - tmpOffset;
 
@@ -968,19 +971,8 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     v->transaction.header.pubkey.len = 1 + (pkType == key_ed25519 ? PK_LEN_25519 : COMPRESSED_SECP256K1_PK_LEN);
     CHECK_ERROR(readBytes(ctx, &v->transaction.header.pubkey.ptr, v->transaction.header.pubkey.len))
 
-    // Epoch
-    CHECK_ERROR(readUint64(ctx, &v->transaction.header.epoch))
     // GasLimit
     CHECK_ERROR(readUint64(ctx, &v->transaction.header.gasLimit))
-
-
-    // Unshielded section hash
-    uint8_t has_unshield_section_hash = 0;
-    CHECK_ERROR(readByte(ctx, &has_unshield_section_hash))
-    if (has_unshield_section_hash){
-        v->transaction.header.unshieldSectionHash.len = HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &v->transaction.header.unshieldSectionHash.ptr, v->transaction.header.unshieldSectionHash.len))
-    }
 
     v->transaction.header.extBytes.len = ctx->offset - tmpOffset;
 
@@ -1269,10 +1261,6 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 break;
             }
 #if(0)
-            case DISCRIMINANT_CIPHERTEXT:
-                CHECK_ERROR(readCiphertext(ctx, &v->transaction.sections.ciphertext))
-                break;
-
             case DISCRIMINANT_MASP_TX:
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
                 break;

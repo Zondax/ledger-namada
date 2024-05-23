@@ -144,13 +144,13 @@ typedef struct {
     bytes_t bytes;
     fees_t fees;
     bytes_t pubkey;
-    uint64_t epoch;
     uint64_t gasLimit;
-    bytes_t unshieldSectionHash;
+    uint32_t batchLen;
     bytes_t dataHash;
     bytes_t codeHash;
     bytes_t memoHash;
     const section_t *memoSection;
+    uint8_t atomic;
 } header_t;
 typedef struct {
     uint32_t sectionLen;

@@ -394,21 +394,11 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                                              uint8_t pageIdx, uint8_t *pageCount) {
     tx_vote_proposal_t *voteProposal = &ctx->tx_obj->voteProposal;
 
-    const uint32_t delegations_num = voteProposal->number_of_delegations;
-    const uint8_t delegations_first_field_idx = 4;
-    uint8_t adjustedDisplayIdx = \
-        (displayIdx < delegations_first_field_idx) \
-            ? displayIdx
-            : ((displayIdx < delegations_first_field_idx + delegations_num) \
-                ? delegations_first_field_idx
-                : displayIdx - delegations_num + 1);
-    *pageCount = 1;
-
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (adjustedDisplayIdx >= 5 && !hasMemo) {
-        adjustedDisplayIdx++;
+    if (displayIdx >= 4 && !hasMemo) {
+        displayIdx++;
     }
-    switch (adjustedDisplayIdx) {
+    switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Vote Proposal");
@@ -450,18 +440,6 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             CHECK_ERROR(printAddress(voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
-            if (voteProposal->number_of_delegations == 0) {
-                return parser_unexpected_value;
-            }
-            snprintf(outKey, outKeyLen, "Delegation");
-            if (displayIdx - adjustedDisplayIdx >= voteProposal->number_of_delegations) {
-                return parser_value_out_of_range;
-            }
-            const uint16_t delegationOffset = (displayIdx - adjustedDisplayIdx) * ADDRESS_LEN_BYTES;
-            const bytes_t tmpProposal = {.ptr = voteProposal->delegations.ptr + delegationOffset, .len = ADDRESS_LEN_BYTES};
-            CHECK_ERROR(printAddress(tmpProposal, outVal, outValLen, pageIdx, pageCount))
-            break;
-        case 5:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -469,7 +447,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= (5 + voteProposal->number_of_delegations - (hasMemo ? 0 : 1));
+            displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 

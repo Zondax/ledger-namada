@@ -402,7 +402,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
                                    char *outVal, uint16_t outValLen,
                                    uint8_t pageIdx, uint8_t *pageCount) {
 
-    if(displayIdx >= 5 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
+    if(displayIdx >= 4 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
         displayIdx++;
     }
 
@@ -418,20 +418,14 @@ parser_error_t printExpert( const parser_context_t *ctx,
             CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
-        case 2:
-            snprintf(outKey, outKeyLen, "Epoch");
-            if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.epoch) != NULL) {
-                return parser_unexpected_error;
-            }
-            break;
-        case 3: {
+        case 2: {
             snprintf(outKey, outKeyLen, "Gas limit");
             if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.gasLimit) != NULL) {
                 return parser_unexpected_error;
             }
             break;
         }
-        case 4: {
+        case 3: {
             if(ctx->tx_obj->transaction.header.fees.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Fees/gas unit");
                 CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
@@ -441,7 +435,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
             }
             break;
         }
-        case 5: {
+        case 4: {
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
             break;

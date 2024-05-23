@@ -25,6 +25,7 @@
 #include "leb128.h"
 #include "cx_sha256.h"
 
+#define DISCRIMINANT_HEADER 0x06
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
 
@@ -166,7 +167,7 @@ static zxerr_t crypto_hashFeeHeader(const header_t *header, uint8_t *output, uin
     }
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    const uint8_t discriminant = 0x07;
+    const uint8_t discriminant = DISCRIMINANT_HEADER;
     CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
     CHECK_CX_OK(cx_sha256_update(&sha256, header->extBytes.ptr, header->extBytes.len));
     CHECK_CX_OK(cx_sha256_final(&sha256, output));
@@ -180,7 +181,7 @@ static zxerr_t crypto_hashRawHeader(const header_t *header, uint8_t *output, uin
     }
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    const uint8_t discriminant = 0x07;
+    const uint8_t discriminant = DISCRIMINANT_HEADER;
     CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
     CHECK_CX_OK(cx_sha256_update(&sha256, header->bytes.ptr, header->bytes.len));
     const uint8_t header_discriminant = 0x00;
