@@ -93,8 +93,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         }
         case VoteProposal: {
-            const uint32_t delegations = ctx->tx_obj->voteProposal.number_of_delegations;
-            *numItems = (uint8_t) ((app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + delegations);
+            *numItems = (uint8_t) (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS);
             break;
         }
         case RevealPubkey:

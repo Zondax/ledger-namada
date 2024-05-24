@@ -113,6 +113,20 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
         CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.avatar.ptr, v->becomeValidator.avatar.len))
     }
 
+    /// The validator's name
+    v->becomeValidator.name.ptr = NULL;
+    v->becomeValidator.name.len = 0;
+    uint8_t has_name;
+    CHECK_ERROR(readByte(&ctx, &has_name))
+    if (has_name) {
+        CHECK_ERROR(readUint32(&ctx, &tmpValue));
+        if (tmpValue > UINT16_MAX) {
+            return parser_value_out_of_range;
+        }
+        v->becomeValidator.name.len = (uint16_t)tmpValue;
+        CHECK_ERROR(readBytes(&ctx, &v->becomeValidator.name.ptr, v->becomeValidator.name.len))
+    }
+
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
     }

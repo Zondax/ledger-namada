@@ -241,9 +241,6 @@ typedef struct {
     bytes_t eth_bridge_signature;
     // proposal author address
     AddressAlt voter;
-    // Delegator addresses
-    uint32_t number_of_delegations;
-    bytes_t delegations;
 } tx_vote_proposal_t;
 
 typedef struct {
@@ -306,6 +303,7 @@ typedef struct {
     bytes_t website;
     bytes_t discord_handle;
     bytes_t avatar;
+    bytes_t name;
 } tx_become_validator_t;
 
 typedef struct {
@@ -331,8 +329,6 @@ typedef struct {
     bytes_t amount;
     uint8_t amount_denom;
     const char* symbol;
-    uint8_t has_key;
-    bytes_t key;
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;
@@ -385,6 +381,7 @@ typedef struct {
     bytes_t discord_handle;
     bytes_t avatar;
     uint8_t has_commission_rate;
+    bytes_t name;
     bytes_t commission_rate;
   } tx_metadata_change_t;
 
