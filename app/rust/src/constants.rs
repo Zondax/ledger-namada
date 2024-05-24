@@ -48,6 +48,23 @@ pub const PROOF_GENERATION_KEY_GENERATOR: AffineNielsPoint = AffinePoint::from_r
 )
 .to_niels();
 
+
+pub const VALUE_COMMITMENT_RANDOMNESS_GENERATOR: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0xdd93d364cb8cec7e,
+        0x91cc3e3835675450,
+        0xcfa86026b8d99be9,
+        0x1c6da0ce9a5e5fdb,
+    ]),
+    Fq::from_raw([
+        0x28e5fce99ce692d0,
+        0xf94c2daa360302fe,
+        0xbc900cd4b8ae1150,
+        0x555f11f9b720d50b,
+    ]),
+)
+.to_niels();
+
 pub const DIV_SIZE:             usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
 pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"MASP__gd";

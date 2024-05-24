@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 #include "zxformat.h"
 #include "leb128.h"
 #include "zxmacros.h"
+#include "bech32_encoding.h"
+#include "parser_address.h"
 
 #include "keys_personalizations.h"
 #include "rslib.h"
@@ -32,6 +34,11 @@
 
 #define TESTNET_ADDRESS_T_HRP "testtnam"
 #define TESTNET_PUBKEY_T_HRP "testtpknam"
+
+#define MAINNET_EXT_FULL_VIEWING_KEY_HRP "zvknam"
+#define MAINNET_PAYMENT_ADDR_HRP "znam"
+#define TESTNET_EXT_FULL_VIEWING_KEY_HRP "testzvknam"
+#define TESTNET_PAYMENT_ADDR_HRP "testznam"
 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     #include "cx.h"
@@ -134,6 +141,119 @@ zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t 
     *output = (uint8_t)addressLen;
     memcpy(output + 1, address, addressLen);
     return zxerr_ok;
+}
+
+parser_error_t crypto_encodeLargeBech32(const uint8_t *address, size_t addressLen, uint8_t *output, size_t outputLen, bool paymentAddr) {
+    if (output == NULL || address == NULL) {
+        return parser_unexpected_value;
+    }
+
+    char HRP[12] = MAINNET_PAYMENT_ADDR_HRP;
+    if (!paymentAddr) {
+        strcpy(HRP, MAINNET_EXT_FULL_VIEWING_KEY_HRP);
+    }
+
+#if defined(LEDGER_SPECIFIC)
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_PAYMENT_ADDR_HRP);
+        if (!paymentAddr) {
+            strcpy(HRP, TESTNET_EXT_FULL_VIEWING_KEY_HRP);
+        }
+    }
+#endif
+
+    if(bech32EncodeFromLargeBytes((char *)output, outputLen, HRP, (uint8_t*) address, addressLen, 1, BECH32_ENCODING_BECH32M) != zxerr_ok) {
+        return parser_unexpected_value;
+    };
+    return parser_ok;
+}
+
+parser_error_t crypto_encodeAltAddress(const AddressAlt *addr, char *address, uint16_t addressLen) {
+    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
+
+    switch (addr->tag) {
+        case 0:
+            tmpBuffer[0] = PREFIX_ESTABLISHED;
+            MEMCPY(tmpBuffer + 1, addr->Established.hash.ptr, 20);
+            break;
+        case 1:
+            tmpBuffer[0] = PREFIX_IMPLICIT;
+            MEMCPY(tmpBuffer + 1, addr->Implicit.pubKeyHash.ptr, 20);
+            break;
+        case 2:
+            switch (addr->Internal.tag) {
+            case 0:
+              tmpBuffer[0] = PREFIX_POS;
+              break;
+            case 1:
+              tmpBuffer[0] = PREFIX_SLASH_POOL;
+              break;
+            case 2:
+              tmpBuffer[0] = PREFIX_PARAMETERS;
+              break;
+            case 3:
+              tmpBuffer[0] = PREFIX_IBC;
+              break;
+            case 4:
+              tmpBuffer[0] = PREFIX_IBC_TOKEN;
+              MEMCPY(tmpBuffer + 1, addr->Internal.IbcToken.ibcTokenHash.ptr, 20);
+              break;
+            case 5:
+              tmpBuffer[0] = PREFIX_GOVERNANCE;
+              break;
+            case 6:
+              tmpBuffer[0] = PREFIX_ETH_BRIDGE;
+              break;
+            case 7:
+              tmpBuffer[0] = PREFIX_BRIDGE_POOL;
+              break;
+            case 8:
+              tmpBuffer[0] = PREFIX_ERC20;
+              MEMCPY(tmpBuffer + 1, addr->Internal.Erc20.erc20Addr.ptr, 20);
+              break;
+            case 9:
+              tmpBuffer[0] = PREFIX_NUT;
+              MEMCPY(tmpBuffer + 1, addr->Internal.Nut.ethAddr.ptr, 20);
+              break;
+            case 10:
+              tmpBuffer[0] = PREFIX_MULTITOKEN;
+              break;
+            case 11:
+              tmpBuffer[0] = PREFIX_PGF;
+              break;
+            case 12:
+              tmpBuffer[0] = PREFIX_MASP;
+              break;
+            case 13:
+              tmpBuffer[0] = PREFIX_TMP_STORAGE;
+              break;
+            }
+            break;
+
+        default:
+            return parser_value_out_of_range;
+    }
+
+    char HRP[12] = MAINNET_ADDRESS_T_HRP;
+    // Check HRP for mainnet/testnet
+#if defined(LEDGER_SPECIFIC)
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_ADDRESS_T_HRP);
+    }
+#endif
+
+    const zxerr_t err = bech32EncodeFromBytes(address,
+                                addressLen,
+                                HRP,
+                                (uint8_t*) tmpBuffer,
+                                ADDRESS_LEN_BYTES,
+                                1,
+                                BECH32_ENCODING_BECH32M);
+
+    if (err != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    return parser_ok;
 }
 
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, uint16_t outputLen) {
@@ -345,7 +465,10 @@ parser_error_t computeIVK(const ak_t ak, const nk_t nk, ivk_t ivk) {
     return parser_ok;
 }
 
-parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[EXTENDED_KEY_LENGTH]) {
+parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[KEY_LENGTH]) {
+    if(seed == NULL || master_sk == NULL) {
+        return parser_unexpected_error;
+    }
 #if defined(LEDGER_SPECIFIC)
     cx_blake2b_t ctx = {0};
     ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SAPLING_MASTER_PERSONALIZATION,
@@ -442,5 +565,51 @@ parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifi
     zemu_log_stack("computePkd got hash");
     CHECK_ERROR(get_pkd(ivk, hash, pk_d));
     zemu_log_stack("computePkd after get_pkd");
+    return parser_ok;
+}
+
+static void u64_to_bytes(uint64_t value, uint8_t array[32]) {
+    MEMZERO(array, 32);
+
+    // Fill the first 8 bytes with the uint64_t value in little-endian order
+    for (int i = 0; i < 8; i++) {
+        array[i] = (value >> (i * 8)) & 0xFF;
+    }
+}
+
+//https://github.com/anoma/masp/blob/main/masp_primitives/src/sapling.rs#L194
+parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *identifier, uint8_t *cv) {
+    if(rcv == NULL || identifier == NULL || cv == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t value_bytes[32] = {0};
+    u64_to_bytes(value, value_bytes);
+
+    uint8_t hash[32] = {0};
+    blake2s_state state = {0};
+    blake2s_init_with_personalization(&state, 32, (const uint8_t *)VALUE_COMMITMENT_GENERATOR_PERSONALIZATION, sizeof(VALUE_COMMITMENT_GENERATOR_PERSONALIZATION));
+    blake2s_update(&state, identifier, KEY_LENGTH);
+    blake2s_final(&state, hash, KEY_LENGTH);
+
+    uint8_t scalar[32] = {0};
+    CHECK_ERROR(scalar_multiplication(rcv, ValueCommitmentRandomnessGenerator, scalar));
+    CHECK_ERROR(add_points(hash, value_bytes, scalar, cv));
+
+    return parser_ok;
+}
+
+
+parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk) {
+    if(keys == NULL || alpha == NULL || rk == NULL) {
+        return parser_unexpected_error;
+    }
+    uint8_t rsk[KEY_LENGTH] = {0};
+    // get randomized secret
+    CHECK_ERROR(randomized_secret_from_seed(keys->ask, alpha, rsk));
+
+    //rsk to rk
+    CHECK_ERROR(scalar_multiplication(rsk, SpendingKeyGenerator, rk));
+
     return parser_ok;
 }

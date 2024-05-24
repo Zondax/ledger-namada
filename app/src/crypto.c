@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -24,6 +24,24 @@
 #include "crypto_helper.h"
 #include "leb128.h"
 #include "cx_sha256.h"
+#include "parser_impl_common.h"
+#include "parser_impl_masp.h"
+#include "signhash.h"
+#include "rslib.h"
+#include "keys_def.h"
+#include "keys_personalizations.h"
+#include "nvdata.h"
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+    #include "cx.h"
+    #include "cx_sha256.h"
+    #include "cx_blake2b.h"
+#else
+    #include "picohash.h"
+    #include "blake2.h"
+    #define CX_SHA256_SIZE 32
+#endif
+#include "blake2.h"
 
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
@@ -223,7 +241,7 @@ zxerr_t crypto_hashSigSection(const signature_section_t *signature_section, cons
             break;
         }
         case Address:
-            CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->address.ptr, signature_section->address.len));
+            CHECK_CX_OK(cx_sha256_update(&sha256, signature_section->addressBytes.ptr, signature_section->addressBytes.len));
             break;
 
         default:
@@ -522,6 +540,31 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
     return zxerr_ok;
 }
 
+zxerr_t crypto_computeSaplingSeed(uint8_t spendingKey[static KEY_LENGTH]) {
+    if (spendingKey == NULL ) {
+        return zxerr_no_data;
+    }
+    zxerr_t error = zxerr_unknown;
+    uint8_t privateKeyData[2*KEY_LENGTH] = {0};
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
+                                                     CX_CURVE_Ed25519,
+                                                     hdPath,
+                                                     HDPATH_LEN_DEFAULT,
+                                                     privateKeyData,
+                                                     NULL, NULL, 0));
+    memcpy(spendingKey, privateKeyData, KEY_LENGTH);
+    error = zxerr_ok;
+
+catch_cx_error: 
+    MEMZERO(privateKeyData, sizeof(privateKeyData));
+
+    if(error != zxerr_ok) {
+        MEMZERO(spendingKey, KEY_LENGTH);
+    }
+
+    return error;
+}
+
 zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind_e requestedKey) {
     if (output == NULL || outputLen < 3 * KEY_LENGTH) {
         return zxerr_buffer_too_small;
@@ -530,18 +573,16 @@ zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind
     zxerr_t error = zxerr_unknown;
     MEMZERO(output, outputLen);
 
-    // Generate Sapling seed
-    cx_ecfp_private_key_t cx_privateKey = {0};
-    uint8_t sk[EXTENDED_KEY_LENGTH] = {0};
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
-                                                     CX_CURVE_Ed25519,
-                                                     hdPath,
-                                                     HDPATH_LEN_DEFAULT,
-                                                     sk,
-                                                     NULL, NULL, 0));
-
     keys_t saplingKeys = {0};
-    CHECK_PARSER_OK(computeMasterFromSeed(sk, saplingKeys.spendingKey));
+    uint8_t sk[KEY_LENGTH] = {0};
+
+    // sk erased inside in case of error
+    CHECK_ZXERR(crypto_computeSaplingSeed(sk))
+
+    if (computeMasterFromSeed((const uint8_t*) sk, saplingKeys.spendingKey) != parser_ok) {
+        MEMZERO(sk, sizeof(sk));
+        return zxerr_unknown;
+    }
 
     error = computeKeys(&saplingKeys);
 
@@ -550,11 +591,8 @@ zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind
         error = copyKeys(&saplingKeys, requestedKey, output, outputLen);
     }
 
-catch_cx_error:
-    MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
-    MEMZERO(sk, EXTENDED_KEY_LENGTH);
+    MEMZERO(sk, sizeof(sk));
     MEMZERO(&saplingKeys, sizeof(saplingKeys));
-
     return error;
 }
 
@@ -582,5 +620,359 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
             return zxerr_out_of_bounds;
     }
 
+    return zxerr_ok;
+}
+
+static parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_len, uint8_t *output) {
+    if (a == NULL || b == NULL || output == NULL) {
+        return parser_no_data;
+    }
+
+    uint8_t hash[BLAKE2B_OUTPUT_LEN] = {0};
+#if defined(LEDGER_SPECIFIC)
+    cx_blake2b_t ctx = {0};
+    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SINGNING_REGJUBJUB,
+                                           sizeof(SINGNING_REGJUBJUB)));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, a, a_len));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, b, b_len));
+    cx_blake2b_final(&ctx, hash);
+#else
+    blake2b_state state = {0};
+    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SINGNING_REGJUBJUB,
+                                      sizeof(SINGNING_REGJUBJUB));
+    blake2b_update(&state, a, a_len);
+    blake2b_update(&state, b, b_len);
+    blake2b_final(&state, hash, BLAKE2B_OUTPUT_LEN);
+#endif
+
+    from_bytes_wide(hash, output);
+
+    return parser_ok;
+}
+static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH], uint8_t sign_hash[static KEY_LENGTH], uint8_t *signature) {
+    if (alpha == NULL || sign_hash == NULL || signature == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t data_to_be_signed[2 * HASH_LEN] = {0};
+    uint8_t rsk[KEY_LENGTH] = {0};
+    uint8_t rk[KEY_LENGTH] = {0};
+
+    // get randomized secret
+    randomized_secret_from_seed(keys->ask, alpha, rsk);
+
+    //rsk to rk
+    scalar_multiplication(rsk, SpendingKeyGenerator, rk);
+
+    // sign
+    MEMCPY(data_to_be_signed, rk, KEY_LENGTH);
+    MEMCPY(data_to_be_signed + KEY_LENGTH, sign_hash, HASH_LEN);
+
+    // Get rng
+    uint8_t rng[RNG_LEN] = {0};
+    cx_rng_no_throw(rng, RNG_LEN);
+
+    // Compute r and rbar
+    uint8_t r[32] = {0};
+    uint8_t rbar[32] = {0};
+    CHECK_PARSER_OK(h_star(rng, sizeof(rng), data_to_be_signed, sizeof(data_to_be_signed), r));
+    CHECK_PARSER_OK(scalar_multiplication(r, SpendingKeyGenerator, rbar));
+
+    //compute s and sbar
+    uint8_t s[32] = {0};
+    uint8_t sbar[32] = {0};
+    CHECK_PARSER_OK(h_star(rbar, sizeof(rbar), data_to_be_signed, sizeof(data_to_be_signed), s));
+    CHECK_PARSER_OK(compute_sbar(s, r, rsk, sbar));
+
+    MEMCPY(signature, rbar, HASH_LEN);
+    MEMCPY(signature + HASH_LEN, sbar, HASH_LEN);
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, keys_t *keys) {
+    zemu_log_stack("crypto_signspends_sapling");
+    if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends == 0) {
+        return zxerr_ok;
+    }
+
+    // Get Signature hash
+    uint8_t sign_hash[HASH_LEN] = {0};
+    signature_hash(txObj, sign_hash);
+
+    uint8_t signature[2 * HASH_LEN] = {0};
+    uint8_t alpha[KEY_LENGTH] = {0};
+    const uint8_t *spend = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.ptr;
+    uint16_t spendLen = 0;
+
+    for (uint64_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+        // Get spend description and alpha
+        spend += spendLen;
+        MEMCPY(alpha, spend + ALPHA_OFFSET, KEY_LENGTH);
+
+        CHECK_ZXERR(sign_sapling_spend(keys, alpha, sign_hash, signature));
+
+        // Save signature in flash
+        CHECK_ZXERR(spend_signatures_append(signature));
+
+        // Get this spend lenght to get next one
+        getSpendDescriptionLen(spend, &spendLen);
+    }
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen) {
+    if (!spend_signatures_more_extract()) {
+        zemu_log_stack("crypto_extract_spend_signature: no more signatures");
+        return zxerr_unknown;
+    }
+
+    MEMZERO(buffer, bufferLen);
+    *cmdResponseLen = SIGNATURE_SIZE;
+    return get_next_spend_signature(buffer);
+}
+
+parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx) {
+    if (txObj == NULL || keys == NULL) {
+        return parser_unexpected_error;
+    }
+
+    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends) {
+        return parser_invalid_number_of_spends;
+    }
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+
+        //check rk
+        uint8_t alpha[KEY_LENGTH] = {0};
+        CHECK_ERROR(readBytesSize(builder_spends_ctx, alpha, KEY_LENGTH));
+
+        uint8_t rk[KEY_LENGTH] = {0};
+        CHECK_ERROR(computeRk(keys, alpha, rk));
+
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, CV_LEN + NULLIFIER_LEN + RK_LEN);
+        if (MEMCMP(rk, tx_spends_ctx->buffer + tx_spends_ctx->offset, RK_LEN) != 0) {
+            return parser_invalid_rk;
+        }
+
+        //check cv computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t identifier[IDENTIFIER_LEN] = {0};
+        uint64_t value = 0;
+        uint8_t *rcv = (uint8_t*)txObj->transaction.sections.maspBuilder.metadata.spend_rcvs.ptr + (i * KEY_LENGTH);
+        
+        CTX_CHECK_AND_ADVANCE(builder_spends_ctx, EXTENDED_FVK_LEN + DIVERSIFIER_LEN)
+        CHECK_ERROR(readBytesSize(builder_spends_ctx, identifier, IDENTIFIER_LEN));
+
+        CTX_CHECK_AND_ADVANCE(builder_spends_ctx, IDENTIFIER_LEN);
+        CHECK_ERROR(readUint64(builder_spends_ctx, &value));
+
+        CHECK_ERROR(computeValueCommitment(value, rcv, identifier, cv));
+        if(MEMCMP(cv, tx_spends_ctx->buffer + tx_spends_ctx->offset, CV_LEN) != 0) {
+            return parser_invalid_cv;
+        }
+
+        CHECK_ERROR(getNextSpendDescription(builder_spends_ctx));
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN);
+    }
+    return parser_ok;
+}
+
+parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_outputs_ctx, parser_context_t *tx_outputs_ctx) {
+    if (txObj == NULL) {
+        return parser_unexpected_error;
+    }
+    if(txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
+        return parser_invalid_number_of_outputs;
+    }
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; i++) {
+        //check cv (computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t identifier[IDENTIFIER_LEN] = {0};
+        uint64_t value = 0;
+        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.output_rcvs.ptr + (i * KEY_LENGTH);
+
+        uint8_t has_ovk = 0;
+        CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
+        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 33 : 1) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
+        CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
+
+        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, IDENTIFIER_LEN);
+        CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
+        CHECK_ERROR(computeValueCommitment( value, rcv, identifier, cv));
+
+        if(MEMCMP(cv, tx_outputs_ctx->buffer + tx_outputs_ctx->offset, CV_LEN) != 0) {
+            return parser_invalid_cv;
+        }
+
+        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx));
+        CTX_CHECK_AND_ADVANCE(tx_outputs_ctx, SHIELDED_OUTPUTS_LEN);
+    }
+    return parser_ok;
+}
+
+parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder_converts_ctx, parser_context_t *tx_converts_ctx) {
+    if (txObj == NULL) {
+        return parser_unexpected_error;
+    }
+    if(txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
+        return parser_invalid_number_of_outputs;
+    }
+
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
+        //check cv (computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
+        uint8_t identifier[IDENTIFIER_LEN] = {0};
+        uint64_t value = 0;
+        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.convert_rcvs.ptr + (i * KEY_LENGTH);
+
+        CTX_CHECK_AND_ADVANCE(builder_converts_ctx, TAG_LEN);
+        CHECK_ERROR(readBytesSize(builder_converts_ctx, identifier, IDENTIFIER_LEN));
+
+        CTX_CHECK_AND_ADVANCE(builder_converts_ctx, ASSET_ID_LEN + INT_128_LEN + sizeof(uint64_t));
+        CHECK_ERROR(readUint64(builder_converts_ctx, &value));
+        CHECK_ERROR(computeValueCommitment(value, rcv, identifier, cv));
+
+        if(MEMCMP(cv, tx_converts_ctx->buffer + tx_converts_ctx->offset, CV_LEN) != 0) {
+            return parser_invalid_cv;
+        }
+    
+        CHECK_ERROR(getNextConvertDescription(builder_converts_ctx));
+        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN);
+    }
+    return parser_ok;
+}
+
+zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
+    if (txObj == NULL || keys == NULL) {
+        return zxerr_unknown;
+    }
+
+#if !defined(LEDGER_SPECIFIC)
+    // For now verify cv and rk https://github.com/anoma/masp/blob/main/masp_proofs/src/sapling/prover.rs#L278    
+    // Check Spends
+    parser_context_t builder_spends_ctx =  {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.ptr,
+                                            .bufferLen = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.len,
+                                            .offset = 0, 
+                                            .tx_obj = NULL};
+    parser_context_t tx_spends_ctx = {.buffer = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.ptr,
+                                      .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.len,
+                                      .offset = 0, 
+                                      .tx_obj = NULL};
+    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx));
+
+    // Check outputs
+    parser_context_t builder_outputs_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.ptr,
+                                           .bufferLen = txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.len,
+                                           .offset = 0, 
+                                           .tx_obj = NULL};
+    parser_context_t tx_outputs_ctx = {.buffer = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.ptr,
+                                     .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.len,
+                                     .offset = 0, 
+                                     .tx_obj = NULL};
+    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx));
+
+    // Check converts
+    parser_context_t builder_converts_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.ptr,
+                                           .bufferLen = txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.len,
+                                           .offset = 0, 
+                                           .tx_obj = NULL};
+    parser_context_t tx_converts_ctx = {.buffer = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_converts.ptr,
+                                        .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_converts.len,
+                                        .offset = 0, 
+                                        .tx_obj = NULL};
+    CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx));
+#endif
+    return zxerr_ok;
+}
+
+zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen,
+                                  const uint8_t *txdata, uint16_t txdataLen) {
+  if (bufferLen < CX_SHA256_SIZE) {
+    return zxerr_unknown;
+  }
+  cx_hash_sha256(txdata, txdataLen, buffer, CX_SHA256_SIZE);  // SHA256
+  return zxerr_ok;
+}
+
+zxerr_t crypto_sign_masp(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen) {
+    if (txObj == NULL || output == NULL || outputLen < ED25519_SIGNATURE_SIZE) {
+        return zxerr_unknown;
+    }
+
+    // Get keys
+    uint8_t sapling_seed[KEY_LENGTH] = {0};
+    keys_t keys = {0};
+    CHECK_ZXERR(crypto_computeSaplingSeed(sapling_seed));
+    if (computeMasterFromSeed(sapling_seed, keys.spendingKey)) {
+        MEMZERO(sapling_seed, sizeof(sapling_seed));
+        return zxerr_unknown;
+    }
+
+    if (computeKeys(&keys) != zxerr_ok || crypto_check_masp(txObj, &keys) != zxerr_ok || 
+        crypto_sign_spends_sapling(txObj, &keys) != zxerr_ok) {
+        MEMZERO(sapling_seed, sizeof(sapling_seed));
+        MEMZERO(&keys, sizeof(keys));
+        return zxerr_invalid_crypto_settings;
+    }
+
+    //Hash buffer and retreive for verify purpose
+    zxerr_t err = crypto_hash_messagebuffer(output, outputLen, tx_get_buffer(), tx_get_buffer_length());
+
+    MEMZERO(sapling_seed, sizeof(sapling_seed));
+    MEMZERO(&keys, sizeof(keys));
+    return err;
+}
+
+static zxerr_t random_fr(uint8_t *buffer, uint16_t bufferLen) {
+    if (buffer == NULL || bufferLen < 32) {
+        return zxerr_unknown;
+    }
+
+    uint8_t rnd_data[64] = {0};
+    cx_trng_get_random_data(rnd_data, 64);
+    CHECK_PARSER_OK(from_bytes_wide(rnd_data, buffer));
+
+    return zxerr_ok;
+}
+
+zxerr_t crypto_computeRandomness(masp_type_e type, uint8_t *out, uint16_t outLen, uint16_t *replyLen) {
+    if(out == NULL ||replyLen == NULL || outLen < (2 * RANDOM_LEN)) {
+        return zxerr_unknown;
+    }
+    MEMZERO(out, outLen);
+    uint8_t tmp_rnd[RANDOM_LEN] = {0};
+
+    transaction_add(type);
+
+    switch(type){
+        case spend:
+            for (uint8_t i = 0; i < 2; i++) {
+                CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
+                MEMCPY(out + (i * RANDOM_LEN), tmp_rnd, RANDOM_LEN);
+            }
+            *replyLen = 2 * RANDOM_LEN;
+            break;
+        case output:
+            for (uint8_t i = 0; i < 2; i++) {
+                if (i % 2 == 0) {
+                    CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
+                } else {
+                    cx_rng(tmp_rnd, RANDOM_LEN);
+                }
+                MEMCPY(out + (i * RANDOM_LEN), tmp_rnd, RANDOM_LEN);
+            }
+            *replyLen = 2 * RANDOM_LEN;
+            break;
+        case convert:
+            CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
+            MEMCPY(out, tmp_rnd, RANDOM_LEN);
+            *replyLen = RANDOM_LEN;
+            break;
+        default:
+            return zxerr_unknown;
+    }
     return zxerr_ok;
 }

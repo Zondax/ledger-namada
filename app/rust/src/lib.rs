@@ -44,6 +44,7 @@ pub enum ParserError {
 pub enum ConstantKey {
     SpendingKeyGenerator,
     ProofGenerationKeyGenerator,
+    ValueCommitmentRandomnessGenerator,
 }
 
 #[no_mangle]
@@ -62,6 +63,7 @@ pub extern "C" fn scalar_multiplication(
     let key_point = match key {
         ConstantKey::SpendingKeyGenerator => constants::SPENDING_KEY_GENERATOR,
         ConstantKey::ProofGenerationKeyGenerator => constants::PROOF_GENERATION_KEY_GENERATOR,
+        ConstantKey::ValueCommitmentRandomnessGenerator => constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR,
     };
 
     let extended_point = key_point.multiply_bits(input);
@@ -143,6 +145,59 @@ pub extern "C" fn get_pkd(
     let p = cofactor.to_niels().multiply_bits(ivk_ptr);
     *pk_d = AffinePoint::from(p).to_bytes();
 
+    ParserError::ParserOk
+}
+
+#[no_mangle]
+pub extern "C" fn randomized_secret_from_seed(
+    ask:  &[u8; 32],
+    alpha:  &[u8; 32],
+    output:  &mut [u8; 32],
+) -> ParserError{
+
+    let mut skfr = Fr::from_bytes(ask).unwrap();
+    let alphafr = Fr::from_bytes(alpha).unwrap();
+    skfr += alphafr;
+    output.copy_from_slice(&skfr.to_bytes());
+
+    ParserError::ParserOk
+}
+
+#[no_mangle]
+pub extern "C" fn compute_sbar(
+    s:  &[u8; 32],
+    r:  &[u8; 32],
+    rsk:  &[u8; 32],
+    sbar:  &mut [u8; 32],
+) -> ParserError{
+    let s_point = Fr::from_bytes(s).unwrap();
+    let r_point = Fr::from_bytes(r).unwrap();
+    let rsk_point = Fr::from_bytes(rsk).unwrap();
+
+    let sbar_tmp = r_point + s_point * rsk_point;
+    sbar.copy_from_slice(&sbar_tmp.to_bytes());
+    ParserError::ParserOk
+}
+
+#[no_mangle]
+pub extern "C" fn add_points(
+    hash:  &[u8; 32],
+    value: &[u8; 32],
+    scalar:  &[u8; 32],
+    cv:  &mut [u8; 32]) -> ParserError{
+
+    let hash_point = AffinePoint::from_bytes(*hash).unwrap();
+    let hash_point_ex = ExtendedPoint::from(hash_point);
+    let cofactor = hash_point_ex.mul_by_cofactor();
+
+    let val = Fr::from_bytes(value).unwrap();
+    
+    let scale = AffinePoint::from_bytes(*scalar).unwrap();
+    let scale_extended = ExtendedPoint::from(scale);
+
+    let s = cofactor*val + scale_extended;
+    let vcm = AffinePoint::from(s).to_bytes();
+    cv.copy_from_slice(&vcm);
     ParserError::ParserOk
 }
 

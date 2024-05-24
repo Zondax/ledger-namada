@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ typedef enum {
     parser_decimal_too_big,
     parser_invalid_output_buffer,
     parser_diversifier_not_found,
+    parser_invalid_number_of_spends,
+    parser_invalid_number_of_outputs,
+    parser_invalid_number_of_converts,
+    parser_invalid_rk,
+    parser_invalid_cv,
 } parser_error_t;
 
 typedef struct {

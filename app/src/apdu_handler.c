@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,6 @@
 #include "addr.h"
 #include "crypto.h"
 #include "coin.h"
-#include "transparent.h"
 #include "zxmacros.h"
 #include "view_internal.h"
 #include "review_keys.h"
@@ -124,6 +123,29 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     *flags |= IO_ASYNCH_REPLY;
 }
 
+__Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignMasp\n")
+    if (!process_chunk(tx, rx)) {
+        THROW(APDU_CODE_OK);
+    }
+    CHECK_APP_CANARY()
+
+    const char *error_msg = tx_parse();
+    CHECK_APP_CANARY()
+
+    if (error_msg != NULL) {
+        const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
+        memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
+        *tx += (error_msg_length);
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    CHECK_APP_CANARY()
+    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp);
+    view_review_show(REVIEW_TXN);
+    *flags |= IO_ASYNCH_REPLY;
+}
+
 // For wrapper transactions, address is derived from Ed25519 pubkey
 __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     zemu_log("handleGetAddr\n");
@@ -172,6 +194,29 @@ __Z_INLINE void handleGetKeys(volatile uint32_t *flags, volatile uint32_t *tx, u
         return;
     }
 
+    *tx = cmdResponseLen;
+    THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void handleComputeMaspRand(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx, __Z_UNUSED uint32_t rx, masp_type_e type) {
+    *tx = 0;
+    zxerr_t zxerr = app_fill_randomness(type);
+    if (zxerr != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    *tx = cmdResponseLen;
+    THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void handleExtractSpendSign(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx, __Z_UNUSED uint32_t rx) {
+    *tx = 0;
+    zxerr_t zxerr = app_fill_spend_sig();
+    
+    if (zxerr != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
     *tx = cmdResponseLen;
     THROW(APDU_CODE_OK);
 }
@@ -250,8 +295,37 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+                case INS_GET_SPEND_RAND: {
+                    CHECK_PIN_VALIDATED()
+                    handleComputeMaspRand(flags, tx, rx, spend);
+                    break;
+                }
+
+                case INS_GET_OUTPUT_RAND: {
+                    CHECK_PIN_VALIDATED()
+                    handleComputeMaspRand(flags, tx, rx, output);
+                    break;
+                }
+
+                case INS_GET_CONVERT_RAND: {
+                    CHECK_PIN_VALIDATED()
+                    handleComputeMaspRand(flags, tx, rx, convert);
+                    break;
+                }
+
+                case INS_SIGN_MASP: {
+                    CHECK_PIN_VALIDATED()
+                    handleSignMasp(flags, tx, rx);
+                    break;
+                }
+
+                case INS_EXTRACT_SPEND_SIGN: {
+                    CHECK_PIN_VALIDATED()
+                    handleExtractSpendSign(flags, tx, rx);
+                    break;
+                }
 #if defined(APP_TESTING)
-                    case INS_TEST: {
+                case INS_TEST: {
                     handleTest(flags, tx, rx);
                     THROW(APDU_CODE_OK);
                     break;

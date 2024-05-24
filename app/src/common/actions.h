@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include "zxerror.h"
 #include "parser_txdef.h"
 #include "zxformat.h"
+#include "nvdata.h"
 
 extern uint16_t cmdResponseLen;
 
@@ -61,8 +62,41 @@ __Z_INLINE zxerr_t app_fill_keys(key_kind_e requestedKey) {
     return err;
 }
 
+__Z_INLINE zxerr_t app_fill_randomness(masp_type_e type) {
+    // Put data directly in the apdu buffer
+    zemu_log("app_fill_randomness\n");
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+
+    cmdResponseLen = 0;
+    zxerr_t err = crypto_computeRandomness(type, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, &cmdResponseLen);
+
+    if (err != zxerr_ok || cmdResponseLen == 0) {
+        transaction_reset();
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    return err;
+}
+
+__Z_INLINE zxerr_t app_fill_spend_sig() {
+    // Put data directly in the apdu buffer
+    zemu_log("app_fill_spend_sig\n");
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+
+    cmdResponseLen = 0;
+    zxerr_t err = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, &cmdResponseLen);
+
+    if (err != zxerr_ok || cmdResponseLen == 0) {
+        transaction_reset();
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    return err;
+}
+
 __Z_INLINE void app_sign() {
     const parser_tx_t *txObj = tx_get_txObject();
+
     const zxerr_t err = crypto_sign(txObj, G_io_apdu_buffer, sizeof(G_io_apdu_buffer) - 2);
 
     if (err != zxerr_ok) {
@@ -76,7 +110,23 @@ __Z_INLINE void app_sign() {
     }
 }
 
+__Z_INLINE void app_sign_masp() {
+    const parser_tx_t *txObj = tx_get_txObject();
+    const zxerr_t err = crypto_sign_masp(txObj, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
+
+    if (err != zxerr_ok) {
+        transaction_reset();
+        MEMZERO(G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
+        set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+    } else {
+        set_code(G_io_apdu_buffer, HASH_LEN, APDU_CODE_OK);
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, HASH_LEN + 2);
+    }
+}
+
 __Z_INLINE void app_reject() {
+    transaction_reset();
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);

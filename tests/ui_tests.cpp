@@ -29,5 +29,17 @@ INSTANTIATE_TEST_SUITE_P
     ::testing::ValuesIn(GetJsonTestCases("testvectors.json")),
     JsonTestsA::PrintToStringParamName()
 );
+
+INSTANTIATE_TEST_SUITE_P
+(
+    JsonTestCasesMASP,
+    JsonTestsB,
+    ::testing::ValuesIn(GetJsonTestCases("testvectors_masp.json")),
+    JsonTestsB::PrintToStringParamName()
+);
+
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Normal) { check_testcase(GetParam(), false); }
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }
+
+TEST_P(JsonTestsB, CheckUIOutput_MASP_Normal) { check_testcase(GetParam(), false); }
+TEST_P(JsonTestsB, CheckUIOutput_MASP_Expert) { check_testcase(GetParam(), true); }

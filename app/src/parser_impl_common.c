@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2023 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -72,6 +72,16 @@ parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t
     }
 
     *output = ctx->buffer + ctx->offset;
+    ctx->offset += outputLen;
+    return parser_ok;
+}
+
+parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t outputLen) {
+    if (ctx->offset + outputLen > ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+
+    MEMCPY(output, (ctx->buffer + ctx->offset), outputLen);
     ctx->offset += outputLen;
     return parser_ok;
 }

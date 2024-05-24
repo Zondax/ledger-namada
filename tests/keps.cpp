@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "crypto_helper.h"
+#include "crypto.h"
 #include "gmock/gmock.h"
 #include "keys_def.h"
 #include "parser_txdef.h"
@@ -34,6 +35,7 @@ struct NamadaKeys {
   string nk;
   string ivk;
   string d0;
+  string cv;
 };
 
 string toHexString(const uint8_t* data, size_t length) {
@@ -54,6 +56,7 @@ NamadaKeys tv_not_hardened = {
     "2b41553f32a2b660e1726c313319d35533166ccf52c15ac23cbde3d20d55cb01",
     "8c90b787364dd12911b64b1ebf8bfc04bdc55f97ae851eb3962775564242a102",
     "993f455b74159e49f9cf33",
+    "739683cbda183c651ac3db8cc55bac1d179c7f0efa09bf64484120168705f4a5"
 };
 
 TEST(Keys, AK_NK_IVK_NON_HARDENED) {
@@ -142,4 +145,22 @@ TEST(Keys, ADDRESS_NON_HARDENED) {
     const string addr_str = toHexString(address, 32);
     const string testvector_addr = toHexString(default_pkd, 32);
     EXPECT_EQ(addr_str, testvector_addr);
+}
+
+TEST(Keys, COMPUTE_CV) {
+
+    uint64_t value = 74;
+    uint8_t rcv[32] = {
+        0x6b, 0xb4, 0xa0, 0x7b, 0x8e, 0x82, 0x61, 0x2b, 0x93, 0xef, 0x5c, 0xe1, 0xd5, 0x8f, 0x62, 0x4b, 0xec, 0x77, 0xd6, 0x8b, 0xd4, 0x83, 0xc9, 0xff, 0x5d, 0x12, 0xf1, 0xc0,
+        0xef, 0xa4, 0x6f, 0x08
+    };
+    uint8_t identifier[32] = {
+      0xD4, 0xAB, 0x86, 0x5E, 0xD9, 0xFA, 0x5E, 0xC5, 0x22, 0xC7, 0xED, 0x2C, 0xF1, 0xEC, 0x0F, 0xE8,
+      0xC6, 0x77, 0xD8, 0xF9, 0x4B, 0xEC, 0x4A, 0x15, 0x78, 0xF0, 0x28, 0x10, 0x0A, 0x2F, 0xF2, 0xE1
+    };
+
+    uint8_t cv[32] = {0};
+    computeValueCommitment(value, rcv,identifier, cv);
+    const string cv_str = toHexString(cv, sizeof(cv));
+    EXPECT_EQ(cv_str, tv_not_hardened.cv);
 }

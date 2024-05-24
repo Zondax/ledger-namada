@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2023 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -28,6 +28,51 @@ extern "C" {
 #define MAX_EXTRA_DATA_SECS 4
 #define MAX_SIGNATURE_SECS 3
 
+#define ASSET_ID_LEN 32
+#define ANCHOR_LEN 32
+#define SHIELDED_OUTPUTS_LEN 788
+#define INT_128_LEN 16
+#define ZKPROFF_LEN 192
+#define AUTH_SIG_LEN 64
+#define SHIELDED_SPENDS_LEN 96
+#define SHIELDED_CONVERTS_LEN 32
+#define TXIN_AUTH_LEN 60
+#define TXOUT_AUTH_LEN 60
+#define ESTABLISHED_ADDR_LEN 20
+#define IMPLICIT_ADDR_LEN 20
+// depth (1 byte) + parent FVK (4 bytes) + child index (4 bytes) + chain code (32 bytes) + fvk (32 bytes) + nullifier deriving key (32 bytes) + outgoing viewing key (32 bytes) + diversifier key (32 bytes)
+#define EXTENDED_FVK_LEN 169
+// note asset type (32 bytes) + note value (8 bytes) + note g_d (32 bytes) + note pk_d (32 bytes) + note rseed (1 byte + 32 bytes)
+#define NOTE_LEN 137
+#define DIVERSIFIER_LEN 11
+#define ALPHA_LEN 32
+#define MEMO_LEN 512
+#define PAYMENT_ADDR_LEN 32
+#define OVK_LEN 32
+#define VOUT_LEN 60
+#define VIN_LEN 60
+#define CV_LEN 32
+#define NULLIFIER_LEN 32
+#define RK_LEN 32
+#define CMU_LEN 32
+#define EPK_LEN 32
+#define ENC_CIPHER_LEN 612
+#define OUT_CIPHER_LEN 80
+#define COMPACT_NOTE_SIZE 52
+#define NOTE_PLAINTEXT_SIZE 564
+#define POSITION_LEN 8
+#define RANDOM_LEN 32
+#define IDENTIFIER_LEN 32
+#define TAG_LEN 1
+
+#define CMU_OFFSET CV_LEN
+#define EPK_OFFSET CMU_OFFSET + CMU_LEN
+#define ENC_CIPHER_OFFSET EPK_OFFSET + EPK_LEN
+#define OUT_CIPHER_OFFSET ENC_CIPHER_OFFSET + ENC_CIPHER_LEN
+#define ALPHA_OFFSET EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN
+
+#define VIN_VALUE_OFFSET ASSET_ID_LEN
+#define VIN_ADDR_OFFSET VIN_VALUE_OFFSET + 8
 
 typedef struct {
     uint8_t address[ADDRESS_LEN_TESTNET];
@@ -54,59 +99,59 @@ typedef enum {
     Address = 0,
     PubKeys = 1
 } signer_discriminant_e;
-// -----------------------------------------------------------------
 typedef struct {
     bytes_t salt;
     uint8_t idx;
     concatenated_hashes_t hashes;
     signer_discriminant_e signerDiscriminant;
-    bytes_t address;
+    AddressAlt address;
+    bytes_t addressBytes;
     uint32_t pubKeysLen;
     bytes_t pubKeys;
     uint32_t signaturesLen;
     bytes_t indexedSignatures;
 } signature_section_t;
-#if(0)
 typedef struct {
-    bytes_t cv; // 160 bytes: Extended Point, i.e. 5 elements in Fq, each of which are represented by 32 bytes
-    bytes_t anchor; // 32 bytes: bls12_381::Scalar
-    bytes_t nullifier; // 32 bytes:  [u8; 32]
-    bytes_t rk; // 160 bytes: Extended Point, i.e. 5 elements in Fq, each of which are represented by 32
-    bytes_t zkproof; // [u8; GROTH_PROOF_SIZE] where GROTH_PROOF_SSIZE = 48 + 96 + 48 = 192
-    bytes_t spend_auth_sig; // 64 bytes:    rbar: [u8; 32], sbar: [u8; 32],
-} spend_description_t; // 640 bytes
+    uint8_t token_discriminant;
+    bytes_t token;
+    uint8_t denom;
+    uint8_t position;
+    uint8_t has_epoch;
+    uint64_t epoch;
+} masp_asset_data_t;
 
 typedef struct {
-    bytes_t cv; // 160 bytes: Extended Point, i.e. 5 elements in Fq, each of which are represented by 32 bytes
-    bytes_t cmu; // 32 bytes: bls12_381::Scalar
-    bytes_t ephemeral_key; // 32 bytes:  [u8; 32]
-} output_description_t; // 224 bytes
-
+    bytes_t asset_type_id; // [u8;32]
+    uint64_t value;
+    bytes_t transparent_address; // [u8;20]
+} masp_asset_type_t;
 typedef struct {
-    spend_description_t* shielded_spends;
-    bytes_t shielded_converts;
-    output_description_t* shielded_outputs;
-    uint64_t value_balance;
-    bytes_t authorization;
-    // nothing? or (unauth) a Vec<TransparentInputInfo>
-    // for shielded a redjubjub::Signature
+    uint64_t n_shielded_spends;
+    uint64_t n_shielded_converts;
+    uint64_t n_shielded_outputs;
+    bytes_t shielded_spends; // [u8;96]
+    bytes_t shielded_converts; // [u8;32]
+    bytes_t shielded_outputs; // [u8;788]
+
+    uint64_t n_value_sum_asset_type;
+    bytes_t value_sum_asset_type; // [u8; 32] + 8 bytes
+
+    bytes_t anchor_shielded_spends; // 32 bytes: bls12_381::Scalar
+    bytes_t anchor_shielded_converts; // 32 bytes: bls12_381::Scalar
+
+    bytes_t zkproof_shielded_spends;  // [u8; GROTH_PROOF_SIZE] where GROTH_PROOF_SSIZE = 48 + 96 + 48 = 192
+    bytes_t auth_sig_shielded_spends; // 64 bytes:    rbar: [u8; 32], sbar: [u8; 32],
+    bytes_t zkproof_shielded_converts;  // [u8; GROTH_PROOF_SIZE] where GROTH_PROOF_SSIZE = 48 + 96 + 48 = 192
+    bytes_t zkproof_shielded_outputs;  // [u8; GROTH_PROOF_SIZE] where GROTH_PROOF_SSIZE = 48 + 96 + 48 = 192
+
+    bytes_t authorization; // 64 bytes: rbar: [u8; 32], sbar: [u8; 32],
 } masp_sapling_bundle_t;
 
-
-typedef struct{
-    bytes_t asset_type_id; // [u8;32]
-    uint8_t has_asset_type_nonce;
-    uint8_t asset_type_nonce; // 1 byte
-    int64_t value; // 8 bytes
-    bytes_t transparent_address; // [u8;20]
-    //bytes_t transparent_sig; // this seems to always be empty
-} masp_vin_t;
-
-// https://github.com/anoma/masp/blob/0d7dc07d24b878e9162c25260ed744265dd2f748/masp_primitives/src/transaction/components/transparent.rs#L32
 typedef struct {
-    bytes_t vin;
-    bytes_t vout;
-    bytes_t authorization; // nothing if Auth;  for unauth a Vec<TransparentInputInfo>
+    uint64_t n_vin;
+    bytes_t vin; // [u8;60]
+    uint64_t n_vout;
+    bytes_t vout; // [u8;60]
 } masp_transparent_bundle_t;
 
 // For masp TxData definition, see:
@@ -114,12 +159,12 @@ typedef struct {
 typedef struct {
     uint32_t tx_version;
     uint32_t version_group_id;
-    uint32_t consensus_branch_id; // this is an enum with at the moment only 0 -> MASP
+    uint32_t consensus_branch_id;
     uint32_t lock_time;
     uint32_t expiry_height;
-    uint8_t has_transparent_bundle;
+    uint16_t has_transparent_bundle;
     masp_transparent_bundle_t transparent_bundle;
-    uint8_t has_sapling_bundle;
+    uint16_t has_sapling_bundle;
     masp_sapling_bundle_t sapling_bundle;
 } masp_tx_data_t;
 
@@ -127,7 +172,62 @@ typedef struct {
     bytes_t tx_id; // [u8;32]
     masp_tx_data_t data;
 } masp_tx_section_t;
-#endif
+
+typedef struct {
+    uint32_t n_spends_indices;
+    uint32_t n_converts_indices;
+    uint32_t n_outputs_indices;
+    bytes_t spends_indices;
+    bytes_t converts_indices;
+    bytes_t outputs_indices;
+
+    uint32_t n_spend_rcvs;
+    uint32_t n_convert_rcvs;
+    uint32_t n_output_rcvs;
+    bytes_t spend_rcvs;
+    bytes_t convert_rcvs;
+    bytes_t output_rcvs;
+} masp_sapling_metadata_t;
+
+typedef struct{
+    uint32_t n_inputs;
+    bytes_t inputs; // [u8;60]
+    uint32_t n_vout;
+    bytes_t vout; // [u8;60]
+}masp_transparent_builder_t;
+
+typedef struct{
+    uint8_t has_spend_anchor;
+    bytes_t spend_anchor; // [u8;32]
+    uint32_t target_height;
+    uint64_t n_value_sum_asset_type;
+    bytes_t value_sum_asset_type; // [u8; 32] + 8 bytes
+    uint8_t has_convert_anchor;
+    bytes_t convert_anchor; // [u8;32]
+    uint8_t has_ovk;
+
+    uint32_t n_spends;
+    uint32_t n_converts;
+    uint32_t n_outputs;
+    bytes_t spends;
+    bytes_t converts;
+    bytes_t outputs;
+}masp_sapling_builder_t;
+
+typedef struct {
+    uint32_t target_height;
+    uint32_t expiry_height;
+    masp_transparent_builder_t transparent_builder;
+    masp_sapling_builder_t sapling_builder;
+} masp_builder_t;
+
+typedef struct {
+    bytes_t target_hash;
+    uint32_t n_asset_type;
+    masp_asset_data_t asset_data;
+    masp_sapling_metadata_t metadata;
+    masp_builder_t builder;
+} masp_builder_section_t;
 
 typedef struct {
     uint8_t discriminant;
@@ -160,17 +260,16 @@ typedef struct {
     section_t data;
     section_t extraData[MAX_EXTRA_DATA_SECS];
     signature_section_t signatures[MAX_SIGNATURE_SECS];
-#if(0)
     section_t ciphertext; // todo: if we need to parse this in future, it will not be a section_t
     masp_tx_section_t maspTx;
-    section_t maspBuilder; // todo: if we need to parse this in future, it will not be a section_t
-#endif
+    masp_builder_section_t maspBuilder;
 } sections_t;
 
 typedef struct {
     bytes_t timestamp;
     header_t header;
     sections_t sections;
+    bool isMasp;
 } transaction_t;
 
 

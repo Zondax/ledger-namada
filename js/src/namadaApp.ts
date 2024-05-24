@@ -14,20 +14,33 @@
  *  limitations under the License.
  ******************************************************************************* */
 import Transport from '@ledgerhq/hw-transport'
-import { KeyResponse, NamadaKeys, ResponseAddress, ResponseAppInfo, ResponseBase, ResponseSign, ResponseVersion } from './types'
-
 import {
-  CHUNK_SIZE,
-  errorCodeToString,
-  LedgerError,
-  P1_VALUES,
-  PAYLOAD_TYPE,
-  processErrorResponse,
-  serializePath,
-} from './common'
+  KeyResponse,
+  NamadaKeys,
+  ResponseAddress,
+  ResponseAppInfo,
+  ResponseBase,
+  ResponseGetConvertRandomness,
+  ResponseGetOutputRandomness,
+  ResponseGetSpendRandomness,
+  ResponseSign,
+  ResponseSignMasp,
+  ResponseVersion,
+} from './types'
+
+import { CHUNK_SIZE, errorCodeToString, LedgerError, P1_VALUES, PAYLOAD_TYPE, processErrorResponse, serializePath } from './common'
 
 import { CLA, INS } from './config'
-import { getSignatureResponse, processGetAddrResponse, processGetKeysResponse } from './processResponses'
+import {
+  getSignatureResponse,
+  processConvertRandomnessResponse,
+  processGetAddrResponse,
+  processGetKeysResponse,
+  processMaspSign,
+  processOutputRandomnessResponse,
+  processSpendRandomnessResponse,
+  processSpendSignResponse,
+} from './processResponses'
 
 export { LedgerError }
 export * from './types'
@@ -182,13 +195,54 @@ export class NamadaApp {
             signature: getSignatureResponse(response),
             returnCode,
             errorMessage,
-          };
+          }
         }
 
         return {
           returnCode: returnCode,
           errorMessage: errorMessage,
         } as ResponseSign
+      }, processErrorResponse)
+  }
+
+  async signSendMaspChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, ins: number): Promise<ResponseBase> {
+    let payloadType = PAYLOAD_TYPE.ADD
+    const p2 = 0
+    if (chunkIdx === 1) {
+      payloadType = PAYLOAD_TYPE.INIT
+    }
+    if (chunkIdx === chunkNum) {
+      payloadType = PAYLOAD_TYPE.LAST
+    }
+
+    return this.transport
+      .send(CLA, ins, payloadType, p2, chunk, [
+        LedgerError.NoErrors,
+        LedgerError.DataIsInvalid,
+        LedgerError.BadKeyHandle,
+        LedgerError.SignVerifyError,
+      ])
+      .then((response: Buffer) => {
+        const errorCodeData = response.subarray(-2)
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+        let errorMessage = errorCodeToString(returnCode)
+
+        if (
+          returnCode === LedgerError.BadKeyHandle ||
+          returnCode === LedgerError.DataIsInvalid ||
+          returnCode === LedgerError.SignVerifyError
+        ) {
+          errorMessage = `${errorMessage} : ${response.subarray(0, response.length - 2).toString('ascii')}`
+        }
+
+        if (returnCode === LedgerError.NoErrors && response.length > 2) {
+          return processMaspSign(response);
+        }
+
+        return {
+          returnCode: returnCode,
+          errorMessage: errorMessage,
+        } as ResponseSignMasp
       }, processErrorResponse)
   }
 
@@ -214,10 +268,54 @@ export class NamadaApp {
   }
 
   async retrieveKeys(path: string, keyType: NamadaKeys, showInDevice: boolean): Promise<KeyResponse> {
-    const serializedPath = serializePath(path);
+    const serializedPath = serializePath(path)
     const p1 = showInDevice ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
     return this.transport
-        .send(CLA, INS.GET_KEYS, p1, keyType, serializedPath, [LedgerError.NoErrors])
-        .then(result => processGetKeysResponse(result, keyType) as KeyResponse, processErrorResponse)
+      .send(CLA, INS.GET_KEYS, p1, keyType, serializedPath, [LedgerError.NoErrors])
+      .then(result => processGetKeysResponse(result, keyType) as KeyResponse, processErrorResponse)
+  }
+
+  async signMasp(path: string, masp: Buffer): Promise<ResponseSignMasp> {
+    const serializedPath = serializePath(path)
+    return this.prepareChunks(serializedPath, masp).then(chunks => {
+      return this.signSendMaspChunk(1, chunks.length, chunks[0], INS.SIGN_MASP).then(async response => {
+        let result: ResponseSign = {
+          returnCode: response.returnCode,
+          errorMessage: response.errorMessage,
+        }
+
+        for (let i = 1; i < chunks.length; i++) {
+          result = await this.signSendMaspChunk(1 + i, chunks.length, chunks[i], INS.SIGN_MASP)
+          if (result.returnCode !== LedgerError.NoErrors) {
+            break
+          }
+        }
+        return result
+      }, processErrorResponse)
+    }, processErrorResponse)
+  }
+
+  async getSpendRandomness(): Promise<ResponseGetSpendRandomness> {
+    return this.transport
+      .send(CLA, INS.GET_SPEND_RAND, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(processSpendRandomnessResponse, processErrorResponse);
+  }
+
+  async getOutputRandomness(): Promise<ResponseGetOutputRandomness> {
+    return this.transport
+      .send(CLA, INS.GET_OUTPUT_RAND, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(processOutputRandomnessResponse, processErrorResponse);
+  }
+
+  async getConvertRandomness(): Promise<ResponseGetConvertRandomness> {
+    return this.transport
+      .send(CLA, INS.GET_CONVERT_RAND, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(processConvertRandomnessResponse, processErrorResponse);
+  }
+
+  async getSpendSignature() {
+    return this.transport
+      .send(CLA, INS.EXTRACT_SPEND_SIGN, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(processSpendSignResponse, processErrorResponse);
   }
 }

@@ -18,6 +18,9 @@ This project contains the Namada app for Ledger Nano S Nano S+ and X.
 - C++ unit tests
 - Zemu tests
 
+## Disclaimer
+MASP Key generation and signing not supported in NanoS
+
 ## ATTENTION
 
 Please:

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -87,10 +87,23 @@ extern "C" {
 #define CTX_CHECK_AVAIL(CTX, SIZE) \
     if ( (CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->bufferLen) { return parser_unexpected_buffer_end; }
 
+#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
+    CTX_CHECK_AVAIL((CTX), (SIZE))   \
+    (CTX)->offset += (SIZE);
+
 bool isAllZeroes(const void *buf, size_t n);
+
+#define DISCRIMINANT_DATA 0x00
+#define DISCRIMINANT_EXTRA_DATA 0x01
+#define DISCRIMINANT_CODE 0x02
+#define DISCRIMINANT_SIGNATURE 0x03
+#define DISCRIMINANT_CIPHERTEXT 0x04
+#define DISCRIMINANT_MASP_TX 0x05
+#define DISCRIMINANT_MASP_BUILDER 0x06
 
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
+parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
@@ -100,8 +113,7 @@ parser_error_t readFieldSizeU16(parser_context_t *ctx, uint16_t *size);
 parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag);
 parser_error_t readPubkey(parser_context_t *ctx, bytes_t *pubkey);
 
-parser_error_t readToken(const bytes_t *token, const char **symbol);
-parser_error_t readAddress(bytes_t pubkeyHash, char *address, uint16_t addressLen);
+parser_error_t readToken(const AddressAlt *token, const char **symbol);
 parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint16_t strVoteLen);
 
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);

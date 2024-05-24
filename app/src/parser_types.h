@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2023 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -105,7 +105,75 @@ typedef struct {
 } mut_bytes_t;
 
 typedef struct {
-    bytes_t address;
+  bytes_t hash;
+} EstablishedAddress;
+
+typedef struct {
+  bytes_t pubKeyHash;
+} ImplicitAddress;
+
+typedef struct {
+  bytes_t erc20Addr;
+} InternalAddressErc20;
+
+typedef struct {} InternalAddressEthBridge;
+
+typedef struct {} InternalAddressEthBridgePool;
+
+typedef struct {} InternalAddressGovernance;
+
+typedef struct {} InternalAddressIbc;
+
+typedef struct {
+  bytes_t ibcTokenHash;
+} InternalAddressIbcToken;
+
+typedef struct {} InternalAddressMasp;
+
+typedef struct {} InternalAddressMultitoken;
+
+typedef struct {
+  bytes_t ethAddr;
+} InternalAddressNut;
+
+typedef struct {} InternalAddressParameters;
+
+typedef struct {} InternalAddressPgf;
+
+typedef struct {} InternalAddressPoS;
+
+typedef struct {} InternalAddressPosSlashPool;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  InternalAddressPoS PoS;
+  InternalAddressPosSlashPool PosSlashPool;
+  InternalAddressParameters Parameters;
+  InternalAddressIbc Ibc;
+  InternalAddressIbcToken IbcToken;
+  InternalAddressGovernance Governance;
+  InternalAddressEthBridge EthBridge;
+  InternalAddressEthBridgePool EthBridgePool;
+  InternalAddressErc20 Erc20;
+  InternalAddressNut Nut;
+  InternalAddressMultitoken Multitoken;
+  InternalAddressPgf Pgf;
+  InternalAddressMasp Masp;
+  };
+} InternalAddress;
+
+typedef struct {
+  uint8_t tag;
+  union {
+  EstablishedAddress Established;
+  ImplicitAddress Implicit;
+  InternalAddress Internal;
+  };
+} AddressAlt;
+
+typedef struct {
+    AddressAlt address;
     bytes_t amount;
 } pgf_internal_t;
 
@@ -129,7 +197,7 @@ typedef struct {
 typedef struct {
     bytes_t content_hash;
     bytes_t content_sechash;
-    bytes_t author;
+    AddressAlt author;
     uint64_t voting_start_epoch;
     uint64_t voting_end_epoch;
     uint64_t activation_epoch;
@@ -172,7 +240,7 @@ typedef struct {
     bytes_t councils;
     bytes_t eth_bridge_signature;
     // proposal author address
-    bytes_t voter;
+    AddressAlt voter;
     // Delegator addresses
     uint32_t number_of_delegations;
     bytes_t delegations;
@@ -189,16 +257,16 @@ typedef struct {
 } tx_init_account_t;
 
 typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
     bytes_t amount;
     uint8_t has_source;
-    bytes_t source;
+    AddressAlt source;
 } tx_bond_t;
 
 typedef struct {
-    bytes_t src_validator;
-    bytes_t dest_validator;
-    bytes_t owner;
+    AddressAlt src_validator;
+    AddressAlt dest_validator;
+    AddressAlt owner;
     bytes_t amount;
 } tx_redelegation_t;
 
@@ -209,24 +277,24 @@ typedef struct {
 } tx_reveal_pubkey_t;
 
 typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
     uint8_t has_source;
-    bytes_t source;
+    AddressAlt source;
 } tx_withdraw_t;
 
 typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
 } tx_unjail_validator_t;
 
 typedef tx_unjail_validator_t tx_activate_validator_t;
 
 typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
     bytes_t new_rate;
 } tx_commission_change_t;
 
 typedef struct {
-    bytes_t address;
+    AddressAlt address;
     bytes_t consensus_key;
     bytes_t eth_cold_key;
     bytes_t eth_hot_key;
@@ -241,7 +309,7 @@ typedef struct {
 } tx_become_validator_t;
 
 typedef struct {
-    bytes_t address;
+    AddressAlt address;
     uint32_t number_of_pubkeys;
     bytes_t pubkeys;
     uint8_t has_threshold;
@@ -254,10 +322,10 @@ typedef struct {
 } tx_update_vp_t;
 
 typedef struct {
-    bytes_t source_address;
-    bytes_t target_address;
+    AddressAlt source_address;
+    AddressAlt target_address;
     // Transferred token address
-    bytes_t token;
+    AddressAlt token;
     uint8_t has_sub_prefix;
     bytes_t sub_prefix;
     bytes_t amount;
@@ -283,16 +351,16 @@ typedef struct {
 } tx_ibc_t;
 
 typedef struct {
-    bytes_t steward;
+    AddressAlt steward;
 } tx_resign_steward_t;
 
 typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
     bytes_t consensus_key;
 } tx_consensus_key_change_t;
 
 typedef struct {
-    bytes_t steward;
+    AddressAlt steward;
     uint32_t commissionLen;
     bytes_t commission;
 } tx_update_steward_commission_t;
@@ -301,16 +369,16 @@ typedef struct {
     uint8_t kind;
     bytes_t asset;
     bytes_t recipient;
-    bytes_t sender;
+    AddressAlt sender;
     bytes_t amount;
 
-    bytes_t gasToken;
+    AddressAlt gasToken;
     bytes_t gasAmount;
-    bytes_t gasPayer;
+    AddressAlt gasPayer;
 } tx_bridge_pool_transfer_t;
 
   typedef struct {
-    bytes_t validator;
+    AddressAlt validator;
     bytes_t email;
     bytes_t description;
     bytes_t website;
@@ -321,7 +389,7 @@ typedef struct {
   } tx_metadata_change_t;
 
 typedef struct {
-    bytes_t address;
+    AddressAlt address;
     bytes_t amount;
     uint8_t denom;
     const char *symbol;

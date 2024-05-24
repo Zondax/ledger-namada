@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 - 2022 Zondax AG
+*   (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ extern "C" {
 #define SIG_S_LEN   32
 #define SIG_ED25519_LEN (SIG_R_LEN + SIG_S_LEN)
 #define SIG_SECP256K1_LEN 65
+#define MASP_SIG_LEN 64
 
 #define MAX_BECH32_HRP_LEN  83u
 
@@ -94,8 +95,20 @@ typedef enum {
     InvalidKey,
 } key_kind_e;
 
-#define INS_GET_KEYS                    0x03
+typedef enum {
+    spend = 0,
+    output,
+    convert
+} masp_type_e;
 
+#define INS_GET_KEYS                    0x03
+#define INS_GET_SPEND_RAND              0x04
+#define INS_GET_OUTPUT_RAND             0x05
+#define INS_GET_CONVERT_RAND            0x06
+#define INS_SIGN_MASP                   0x07
+#define INS_EXTRACT_SPEND_SIGN          0x08
+
+#define APDU_CODE_CHECK_SIGN_TR_FAIL 0x6999
 #ifdef __cplusplus
 }
 #endif

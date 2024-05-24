@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2018 - 2023 Zondax AG
+*  (c) 2018 - 2024 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -47,7 +47,30 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
 
         case Transfer:
+            if(ctx->tx_obj->transaction.isMasp) {
+                uint8_t items = 0;
+                uint8_t source_is_masp = ctx->tx_obj->transfer.source_address.tag == 2 ? 1 : 0;
+                uint8_t target_is_masp = ctx->tx_obj->transfer.target_address.tag == 2 ? 1 : 0;
+                if (!source_is_masp) {
+                    items += 3; // print  only sender from transfer source
+                    if(target_is_masp) {
+                        items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
+                    } else {
+                        items += 3; // print  only receiver from transfer target
+                    }
+                } else {
+                    items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
+                    if(!target_is_masp) {
+                        items += 3; // print  only receiver from transfer target
+                    } else {
+                        items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
+                    }
+                }
+
+                *numItems = (app_mode_expert() ? items + 5 : items);
+            } else {
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
+            }
             if(!ctx->tx_obj->transfer.symbol) {
                 (*numItems)++;
             }
