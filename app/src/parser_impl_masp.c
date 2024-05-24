@@ -154,23 +154,6 @@ static parser_error_t readSaplingMetadata(parser_context_t *ctx, masp_sapling_me
         CHECK_ERROR(readBytes(ctx, &metadata->outputs_indices.ptr, metadata->outputs_indices.len))
     }
 
-    CHECK_ERROR(readUint32(ctx, &metadata->n_spend_rcvs))
-    if (metadata->n_spend_rcvs != 0) {
-        metadata->spend_rcvs.len = metadata->n_spend_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->spend_rcvs.ptr, metadata->spend_rcvs.len))
-    }
-
-    CHECK_ERROR(readUint32(ctx, &metadata->n_convert_rcvs))
-    if (metadata->n_convert_rcvs != 0) {
-        metadata->convert_rcvs.len = metadata->n_convert_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->convert_rcvs.ptr, metadata->convert_rcvs.len))
-    }
-
-    CHECK_ERROR(readUint32(ctx, &metadata->n_output_rcvs))
-    if (metadata->n_output_rcvs != 0) {
-        metadata->output_rcvs.len = metadata->n_output_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->output_rcvs.ptr, metadata->output_rcvs.len))
-    }
     return parser_ok;
 }
 
@@ -281,9 +264,6 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
         //parse note
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, NOTE_LEN))
 
-        //parse alpha
-        CHECK_ERROR(readBytes(ctx, &tmp.ptr, ALPHA_LEN))
-
         // Parse Merkle path
         CHECK_ERROR(readByte(ctx, &tmp_8))
         tmp.len = tmp_8 * (32 + 1);
@@ -300,7 +280,7 @@ parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len) {
         return parser_unexpected_error;
     }
 
-    uint16_t offset = EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN;
+    uint16_t offset = EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN;
     spend += offset;
     uint8_t auth_path_len = *spend;
     *len = offset + 1 + (auth_path_len * (32 + 1)) + POSITION_LEN;
@@ -312,7 +292,7 @@ parser_error_t getNextSpendDescription(parser_context_t *spend) {
     if (spend == NULL) {
         return parser_unexpected_error;
     }
-    CTX_CHECK_AND_ADVANCE(spend, EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN);
+    CTX_CHECK_AND_ADVANCE(spend, EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN);
     uint8_t auth_path_len = 0;
     CHECK_ERROR(readByte(spend, &auth_path_len))
     CTX_CHECK_AND_ADVANCE(spend, (auth_path_len * (32 + 1)) + POSITION_LEN);
@@ -434,7 +414,7 @@ static parser_error_t readSaplingOutputDescriptionInfo(parser_context_t *ctx, ma
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, PAYMENT_ADDR_LEN))
 
         // read note
-        CHECK_ERROR(readBytes(ctx, &tmp.ptr, NOTE_LEN))
+        CHECK_ERROR(readBytes(ctx, &tmp.ptr, OUT_NOTE_LEN))
 
         // Parse memo
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, MEMO_LEN))

@@ -595,7 +595,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
     tx_vote_proposal_t *voteProposal = &ctx->tx_obj->voteProposal;
 
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (displayIdx >= 5 && !hasMemo) {
+    if (displayIdx >= 4 && !hasMemo) {
         displayIdx++;
     }
     switch (displayIdx) {
