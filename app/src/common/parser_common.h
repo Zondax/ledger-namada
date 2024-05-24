@@ -59,7 +59,8 @@ typedef enum {
     parser_invalid_number_of_spends,
     parser_invalid_number_of_outputs,
     parser_invalid_number_of_converts,
-    parser_invalid_spend_rk,
+    parser_invalid_rk,
+    parser_invalid_cv,
 } parser_error_t;
 
 typedef struct {

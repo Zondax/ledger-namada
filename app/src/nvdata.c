@@ -21,110 +21,84 @@
 #include "os.h"
 #include "view.h"
 
-transaction_info_t NV_CONST N_transaction_info_impl __attribute__((aligned(64)));
+transaction_info_t NV_CONST N_transaction_info_impl
+    __attribute__((aligned(64)));
 #define N_transactioninfo                                                      \
   (*(NV_VOLATILE transaction_info_t *)PIC(&N_transaction_info_impl))
 
-zxerr_t transaction_add_sizes(uint8_t n_spends, uint8_t n_outputs,
-                                 uint8_t n_converts) {
-    MEMCPY_NV((void *)&N_transactioninfo.n_spends, &n_spends, sizeof(uint8_t));
-    MEMCPY_NV((void *)&N_transactioninfo.n_outputs, &n_outputs, sizeof(uint8_t));
-    MEMCPY_NV((void *)&N_transactioninfo.n_converts, &n_converts, sizeof(uint8_t));
-    return zxerr_ok;
-}
+transaction_header_t transaction_header;
 
-zxerr_t transaction_append_spend_rcv(uint8_t i, uint8_t *rcv) {
-    if (i >= N_transactioninfo.n_spends) {
-        return zxerr_out_of_bounds;
+zxerr_t transaction_add(masp_type_e type) {
+    switch(type) {
+        case spend:
+        transaction_header.spendlist_len++;
+            break;
+        case output:
+        transaction_header.outputlist_len++;
+            break;
+        case convert:
+        transaction_header.convertlist_len++;
+            break;
+        default:
+            return zxerr_unknown;
     }
-
-    MEMCPY_NV((void *)&N_transactioninfo.spends[i].rcv, rcv, 32);
     return zxerr_ok;
-}
-
-zxerr_t transaction_append_spend_alpha(uint8_t i, uint8_t *alpha) {
-    if (i >= N_transactioninfo.n_spends) {
-        return zxerr_out_of_bounds;
-    }
-
-    MEMCPY_NV((void *)&N_transactioninfo.spends[i].alpha, alpha, 32);
-    return zxerr_ok;
-}
-
-zxerr_t transaction_append_output_rcv(uint8_t i, uint8_t *rcv) {
-    if (i >= N_transactioninfo.n_outputs) {
-        return zxerr_out_of_bounds;
-    }
-
-    MEMCPY_NV((void *)&N_transactioninfo.outputs[i].rcv, rcv, 32);
-    return zxerr_ok;
-}
-
-zxerr_t transaction_append_output_rcm(uint8_t i, uint8_t *rcm) {
-    if (i >= N_transactioninfo.n_outputs) {
-        return zxerr_out_of_bounds;
-    }
-
-    MEMCPY_NV((void *)&N_transactioninfo.outputs[i].rcm, rcm, 32);
-    return zxerr_ok;
-
-}
-zxerr_t transaction_append_convert_rcv(uint8_t i, uint8_t *rcv) {
-    if (i >= N_transactioninfo.n_converts) {
-        return zxerr_out_of_bounds;
-    }
-
-    MEMCPY_NV((void *)&N_transactioninfo.converts[i].rcv, rcv, 32);
-    return zxerr_ok;
-}
-
-void transaction_reset() {
-  MEMZERO((void *)&N_transactioninfo, sizeof(transaction_info_t));
 }
 
 uint8_t transaction_get_n_spends() {
-    return N_transactioninfo.n_spends;
+    return transaction_header.spendlist_len;
 }
 
 uint8_t transaction_get_n_outputs() {
-    return N_transactioninfo.n_outputs;
+    return transaction_header.outputlist_len;
 }
 
 uint8_t transaction_get_n_converts() {
-    return N_transactioninfo.n_converts;
+    return transaction_header.convertlist_len;
 }
 
-uint8_t *transaction_get_spend_rcv(uint8_t i) {
-    if (i >= N_transactioninfo.n_spends) {
-        return NULL;
-    }
-    return (uint8_t*)&N_transactioninfo.spends[i].rcv;
+bool spend_signatures_more_extract() {
+  return transaction_header.spends_sign_index > 0;
 }
 
-uint8_t *transaction_get_spend_alpha(uint8_t i) {
-    if (i >= N_transactioninfo.n_spends) {
-        return NULL;
-    }
-    return (uint8_t*)&N_transactioninfo.spends[i].alpha;
+zxerr_t spend_signatures_append(uint8_t *signature) {
+  if (transaction_header.spends_sign_index >=
+      transaction_header.spendlist_len) {
+    return zxerr_unknown;
+  }
+
+  MEMCPY_NV((void *)&N_transactioninfo
+                .spend_signatures[transaction_header.spends_sign_index],
+            signature, SIGNATURE_SIZE);
+  transaction_header.spends_sign_index++;
+  return zxerr_ok;
 }
 
-uint8_t *transaction_get_output_rcv(uint8_t i) {
-    if (i >= N_transactioninfo.n_outputs) {
-        return NULL;
-    }
-    return (uint8_t*)&N_transactioninfo.outputs[i].rcv;
+zxerr_t get_next_spend_signature(uint8_t *result) {
+  const uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
+  if (index >= transaction_header.spendlist_len) {
+    return zxerr_unknown;
+  }
+  MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
+  transaction_header.spends_sign_index--;
+  if (!spend_signatures_more_extract()) {
+    transaction_reset();
+  }
+  return zxerr_ok;
 }
 
-uint8_t *transaction_get_output_rcm(uint8_t i) {
-    if (i >= N_transactioninfo.n_outputs) {
-        return NULL;
-    }
-    return (uint8_t*)&N_transactioninfo.outputs[i].rcm;
+void zeroize_signatures() {
+  uint8_t sig[SIGNATURE_SIZE] = {0};
+
+  transaction_header.spends_sign_index = 0;
+  for (int i = 0; i < SPEND_LIST_SIZE; i++) {
+    spend_signatures_append(sig);
+  }
+  transaction_header.spends_sign_index = 0;
 }
 
-uint8_t *transaction_get_convert_rcv(uint8_t i) {
-    if (i >= N_transactioninfo.n_converts) {
-        return NULL;
-    }
-    return (uint8_t*)&N_transactioninfo.converts[i].rcv;
+void transaction_reset() {
+    MEMZERO(&transaction_header, sizeof(transaction_header_t));
+    zeroize_signatures();
 }
+

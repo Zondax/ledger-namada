@@ -87,6 +87,10 @@ extern "C" {
 #define CTX_CHECK_AVAIL(CTX, SIZE) \
     if ( (CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->bufferLen) { return parser_unexpected_buffer_end; }
 
+#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
+    CTX_CHECK_AVAIL((CTX), (SIZE))   \
+    (CTX)->offset += (SIZE);
+
 bool isAllZeroes(const void *buf, size_t n);
 
 #define DISCRIMINANT_DATA 0x00
@@ -99,6 +103,7 @@ bool isAllZeroes(const void *buf, size_t n);
 
 parser_error_t readByte(parser_context_t *ctx, uint8_t *byte);
 parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t outputLen);
+parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t outputLen);
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);

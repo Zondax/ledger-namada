@@ -19,6 +19,8 @@
 #include "zxformat.h"
 #include "leb128.h"
 #include "zxmacros.h"
+#include "bech32_encoding.h"
+#include "parser_address.h"
 
 #include "keys_personalizations.h"
 #include "rslib.h"
@@ -32,6 +34,11 @@
 
 #define TESTNET_ADDRESS_T_HRP "testtnam"
 #define TESTNET_PUBKEY_T_HRP "testtpknam"
+
+#define MAINNET_EXT_FULL_VIEWING_KEY_HRP "zvknam"
+#define MAINNET_PAYMENT_ADDR_HRP "znam"
+#define TESTNET_EXT_FULL_VIEWING_KEY_HRP "testzvknam"
+#define TESTNET_PAYMENT_ADDR_HRP "testznam"
 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
     #include "cx.h"
@@ -134,6 +141,119 @@ zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t 
     *output = (uint8_t)addressLen;
     memcpy(output + 1, address, addressLen);
     return zxerr_ok;
+}
+
+parser_error_t crypto_encodeLargeBech32(const uint8_t *address, size_t addressLen, uint8_t *output, size_t outputLen, bool paymentAddr) {
+    if (output == NULL || address == NULL) {
+        return parser_unexpected_value;
+    }
+
+    char HRP[12] = MAINNET_PAYMENT_ADDR_HRP;
+    if (!paymentAddr) {
+        strcpy(HRP, MAINNET_EXT_FULL_VIEWING_KEY_HRP);
+    }
+
+#if defined(LEDGER_SPECIFIC)
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_PAYMENT_ADDR_HRP);
+        if (!paymentAddr) {
+            strcpy(HRP, TESTNET_EXT_FULL_VIEWING_KEY_HRP);
+        }
+    }
+#endif
+
+    if(bech32EncodeFromLargeBytes((char *)output, outputLen, HRP, (uint8_t*) address, addressLen, 1, BECH32_ENCODING_BECH32M) != zxerr_ok) {
+        return parser_unexpected_value;
+    };
+    return parser_ok;
+}
+
+parser_error_t crypto_encodeAltAddress(const AddressAlt *addr, char *address, uint16_t addressLen) {
+    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
+
+    switch (addr->tag) {
+        case 0:
+            tmpBuffer[0] = PREFIX_ESTABLISHED;
+            MEMCPY(tmpBuffer + 1, addr->Established.hash.ptr, 20);
+            break;
+        case 1:
+            tmpBuffer[0] = PREFIX_IMPLICIT;
+            MEMCPY(tmpBuffer + 1, addr->Implicit.pubKeyHash.ptr, 20);
+            break;
+        case 2:
+            switch (addr->Internal.tag) {
+            case 0:
+              tmpBuffer[0] = PREFIX_POS;
+              break;
+            case 1:
+              tmpBuffer[0] = PREFIX_SLASH_POOL;
+              break;
+            case 2:
+              tmpBuffer[0] = PREFIX_PARAMETERS;
+              break;
+            case 3:
+              tmpBuffer[0] = PREFIX_IBC;
+              break;
+            case 4:
+              tmpBuffer[0] = PREFIX_IBC_TOKEN;
+              MEMCPY(tmpBuffer + 1, addr->Internal.IbcToken.ibcTokenHash.ptr, 20);
+              break;
+            case 5:
+              tmpBuffer[0] = PREFIX_GOVERNANCE;
+              break;
+            case 6:
+              tmpBuffer[0] = PREFIX_ETH_BRIDGE;
+              break;
+            case 7:
+              tmpBuffer[0] = PREFIX_BRIDGE_POOL;
+              break;
+            case 8:
+              tmpBuffer[0] = PREFIX_ERC20;
+              MEMCPY(tmpBuffer + 1, addr->Internal.Erc20.erc20Addr.ptr, 20);
+              break;
+            case 9:
+              tmpBuffer[0] = PREFIX_NUT;
+              MEMCPY(tmpBuffer + 1, addr->Internal.Nut.ethAddr.ptr, 20);
+              break;
+            case 10:
+              tmpBuffer[0] = PREFIX_MULTITOKEN;
+              break;
+            case 11:
+              tmpBuffer[0] = PREFIX_PGF;
+              break;
+            case 12:
+              tmpBuffer[0] = PREFIX_MASP;
+              break;
+            case 13:
+              tmpBuffer[0] = PREFIX_TMP_STORAGE;
+              break;
+            }
+            break;
+
+        default:
+            return parser_value_out_of_range;
+    }
+
+    char HRP[12] = MAINNET_ADDRESS_T_HRP;
+    // Check HRP for mainnet/testnet
+#if defined(LEDGER_SPECIFIC)
+    if (hdPath[1] == HDPATH_1_TESTNET) {
+        strcpy(HRP, TESTNET_ADDRESS_T_HRP);
+    }
+#endif
+
+    const zxerr_t err = bech32EncodeFromBytes(address,
+                                addressLen,
+                                HRP,
+                                (uint8_t*) tmpBuffer,
+                                ADDRESS_LEN_BYTES,
+                                1,
+                                BECH32_ENCODING_BECH32M);
+
+    if (err != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+    return parser_ok;
 }
 
 zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, uint16_t outputLen) {
@@ -346,6 +466,9 @@ parser_error_t computeIVK(const ak_t ak, const nk_t nk, ivk_t ivk) {
 }
 
 parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[KEY_LENGTH]) {
+    if(seed == NULL || master_sk == NULL) {
+        return parser_unexpected_error;
+    }
 #if defined(LEDGER_SPECIFIC)
     cx_blake2b_t ctx = {0};
     ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SAPLING_MASTER_PERSONALIZATION,

@@ -308,50 +308,58 @@ parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len) {
     return parser_ok;
 }
 
-parser_error_t getOutputDescriptionLen(const uint8_t *spend, uint16_t *len) {
-    if (spend == NULL || len == NULL) {
+parser_error_t getNextSpendDescription(parser_context_t *spend) {
+    if (spend == NULL) {
         return parser_unexpected_error;
     }
-    uint8_t has_ovk = spend[0];
-    *len = (has_ovk ? 33 : 1) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN;
+    CTX_CHECK_AND_ADVANCE(spend, EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN);
+    uint8_t auth_path_len = 0;
+    CHECK_ERROR(readByte(spend, &auth_path_len))
+    CTX_CHECK_AND_ADVANCE(spend, (auth_path_len * (32 + 1)) + POSITION_LEN);
 
     return parser_ok;
 }
 
+parser_error_t getNextOutputDescription(parser_context_t *output) {
+    if (output == NULL) {
+        return parser_unexpected_error;
+    }
+    uint8_t has_ovk = 0;
+    CHECK_ERROR(readByte(output, &has_ovk));
+    CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN);
+    return parser_ok;
+}
 
-parser_error_t getConvertLen(const uint8_t *convert, uint64_t *len) {
-    if (convert == NULL || len == NULL) {
+parser_error_t getNextConvertDescription(parser_context_t *convert) {
+    if (convert == NULL) {
         return parser_unexpected_error;
     }
     uint64_t allowed_size = 0;
-    uint8_t offset = 0;
-    uint8_t tag = convert[offset];
-    offset++;
+    uint16_t tmp16 = 0;
+    uint32_t tmp32 = 0;
+
+    uint8_t tag = 0;
+    CHECK_ERROR(readByte(convert, &tag));
 
     switch(tag) {
     case 253:
-        MEMCPY(&allowed_size, convert + offset, sizeof(uint16_t));
-        offset += 2; 
+        CHECK_ERROR(readUint16(convert, &tmp16));
+        allowed_size = (uint64_t)tmp16;
         break;
     case 254:
-        MEMCPY(&allowed_size, convert + offset, sizeof(uint32_t));
-        offset += 4; 
+        CHECK_ERROR(readUint32(convert, &tmp32));
+        allowed_size = (uint64_t)tmp32;
         break;
     case 255:
-        MEMCPY(&allowed_size, convert + offset, sizeof(uint64_t));
-        offset += 8; 
+        CHECK_ERROR(readUint64(convert, &allowed_size));
         break;
     default:
         allowed_size = (uint64_t)tag;
     }
-
-    offset += allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t);
-
-    uint64_t merkel_size = (uint64_t)convert[offset];
-    offset++;
-    offset += merkel_size * (32 + 1) + sizeof(uint64_t);
-
-    *len = offset;
+    CTX_CHECK_AND_ADVANCE(convert, allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t));
+    uint8_t merkel_size = 0;
+    CHECK_ERROR(readByte(convert, &merkel_size));
+    CTX_CHECK_AND_ADVANCE(convert, merkel_size * (32 + 1) + sizeof(uint64_t));
     return parser_ok;
 }
 

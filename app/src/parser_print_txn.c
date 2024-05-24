@@ -23,6 +23,7 @@
 #include "bech32.h"
 #include "parser_address.h"
 #include "bech32_encoding.h"
+#include "crypto_helper.h"
 
 #include "txn_delegation.h"
 
@@ -308,14 +309,7 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
             if (ctx->tx_obj->transfer.source_address.tag != 2) {
                 CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
             } else {
-                const char *hrp = "zvknam";
-                bech32EncodeFromLargeBytes(tmp_buf,
-                            sizeof(tmp_buf),
-                            hrp,
-                            (uint8_t*) spend.ptr,
-                            EXTENDED_FVK_LEN,
-                            1,
-                            BECH32_ENCODING_BECH32M);
+                CHECK_ERROR(crypto_encodeLargeBech32(spend.ptr, EXTENDED_FVK_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 0));
                 pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             }
 
@@ -348,14 +342,7 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
             if(ctx->tx_obj->transfer.target_address.tag != 2) {
                 CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             } else {
-                const char *hrp = "znam";
-                bech32EncodeFromLargeBytes(tmp_buf,
-                            sizeof(tmp_buf),
-                            hrp,
-                            (uint8_t*) out.ptr,
-                            PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + 1,
-                            1,
-                            BECH32_ENCODING_BECH32M);
+                CHECK_ERROR(crypto_encodeLargeBech32(out.ptr, PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + 1, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
                 pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             }
             break;

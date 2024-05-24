@@ -76,6 +76,16 @@ parser_error_t readBytes(parser_context_t *ctx, const uint8_t **output, uint16_t
     return parser_ok;
 }
 
+parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t outputLen) {
+    if (ctx->offset + outputLen > ctx->bufferLen) {
+        return parser_unexpected_buffer_end;
+    }
+
+    MEMCPY(output, (ctx->buffer + ctx->offset), outputLen);
+    ctx->offset += outputLen;
+    return parser_ok;
+}
+
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size) {
     uint8_t consumed = 0;
     uint64_t tmpSize = 0;

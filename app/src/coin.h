@@ -95,9 +95,18 @@ typedef enum {
     InvalidKey,
 } key_kind_e;
 
+typedef enum {
+    spend = 0,
+    output,
+    convert
+} masp_type_e;
+
 #define INS_GET_KEYS                    0x03
-#define INS_INIT_MASP_TX                0x04
-#define INS_SIGN_MASP                   0x05
+#define INS_GET_SPEND_RAND              0x04
+#define INS_GET_OUTPUT_RAND             0x05
+#define INS_GET_CONVERT_RAND            0x06
+#define INS_SIGN_MASP                   0x07
+#define INS_EXTRACT_SPEND_SIGN          0x08
 
 #define APDU_CODE_CHECK_SIGN_TR_FAIL 0x6999
 #ifdef __cplusplus

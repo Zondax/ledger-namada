@@ -57,7 +57,7 @@ parser_error_t readToken(const AddressAlt *token, const char **symbol) {
 
     // Convert token to address
     char address[53] = {0};
-    CHECK_ERROR(encodeAddress(token, address, sizeof(address)))
+    CHECK_ERROR(crypto_encodeAltAddress(token, address, sizeof(address)))
 
     *symbol = NULL;
 

@@ -43,7 +43,6 @@ extern "C" {
 #define PREFIX_INTERNAL 2
 
 parser_error_t readAddressAlt(parser_context_t *ctx, AddressAlt *obj);
-parser_error_t encodeAddress(const AddressAlt *addr, char *address, uint16_t addressLen);
 #ifdef __cplusplus
 }
 #endif

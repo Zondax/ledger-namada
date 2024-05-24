@@ -25,6 +25,7 @@
 #include "bech32.h"
 #include "bignum.h"
 #include "parser_address.h"
+#include "crypto_helper.h"
 
 #define PREFIX "yay with councils:\n"
 #define PREFIX_COUNCIL "Council: "
@@ -86,7 +87,7 @@ parser_error_t printAddressAlt(const AddressAlt *addr,
                              uint8_t pageIdx, uint8_t *pageCount) {
 
     char address[110] = {0};
-    CHECK_ERROR(encodeAddress(addr, address, sizeof(address)))
+    CHECK_ERROR(crypto_encodeAltAddress(addr, address, sizeof(address)))
     pageString(outVal, outValLen, (const char*) address, pageIdx, pageCount);
 
     return parser_ok;

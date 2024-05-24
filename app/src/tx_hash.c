@@ -58,7 +58,7 @@ zxerr_t tx_hash_transparent_inputs(const parser_tx_t *txObj, uint8_t *output) {
 
     const uint8_t *vin = txObj->transaction.sections.maspTx.data.transparent_bundle.vin.ptr;
 
-    for(uint64_t i = 0; i < txObj->transaction.sections.maspTx.data.transparent_bundle.n_vin; i++, vin += VOUT_LEN){
+    for(uint64_t i = 0; i < txObj->transaction.sections.maspTx.data.transparent_bundle.n_vin; i++, vin += VIN_LEN){
         CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, vin, ASSET_ID_LEN, NULL, 0));
         CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, vin + VIN_VALUE_OFFSET, sizeof(uint64_t), NULL, 0));
         CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, vin + VIN_ADDR_OFFSET, IMPLICIT_ADDR_LEN, NULL, 0));

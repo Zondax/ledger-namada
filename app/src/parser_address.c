@@ -15,7 +15,6 @@
 ********************************************************************************/
 #include "parser_address.h"
 #include "parser_impl_common.h"
-#include "bech32.h"
 
 parser_error_t readAddressEstablished(parser_context_t *ctx, EstablishedAddress *obj) {
     obj->hash.len = 20;
@@ -87,88 +86,6 @@ parser_error_t readAddressAlt(parser_context_t *ctx, AddressAlt *obj) {
     case 2:
     CHECK_ERROR(readAddressInternal(ctx, &obj->Internal))
     break;
-    }
-    return parser_ok;
-}
-
-parser_error_t encodeAddress(const AddressAlt *addr, char *address, uint16_t addressLen) {
-    uint8_t tmpBuffer[ADDRESS_LEN_BYTES] = {0};
-
-    switch (addr->tag) {
-        case 0:
-            tmpBuffer[0] = PREFIX_ESTABLISHED;
-            MEMCPY(tmpBuffer + 1, addr->Established.hash.ptr, 20);
-            break;
-        case 1:
-            tmpBuffer[0] = PREFIX_IMPLICIT;
-            MEMCPY(tmpBuffer + 1, addr->Implicit.pubKeyHash.ptr, 20);
-            break;
-        case 2:
-            switch (addr->Internal.tag) {
-            case 0:
-              tmpBuffer[0] = PREFIX_POS;
-              break;
-            case 1:
-              tmpBuffer[0] = PREFIX_SLASH_POOL;
-              break;
-            case 2:
-              tmpBuffer[0] = PREFIX_PARAMETERS;
-              break;
-            case 3:
-              tmpBuffer[0] = PREFIX_IBC;
-              break;
-            case 4:
-              tmpBuffer[0] = PREFIX_IBC_TOKEN;
-              MEMCPY(tmpBuffer + 1, addr->Internal.IbcToken.ibcTokenHash.ptr, 20);
-              break;
-            case 5:
-              tmpBuffer[0] = PREFIX_GOVERNANCE;
-              break;
-            case 6:
-              tmpBuffer[0] = PREFIX_ETH_BRIDGE;
-              break;
-            case 7:
-              tmpBuffer[0] = PREFIX_BRIDGE_POOL;
-              break;
-            case 8:
-              tmpBuffer[0] = PREFIX_ERC20;
-              MEMCPY(tmpBuffer + 1, addr->Internal.Erc20.erc20Addr.ptr, 20);
-              break;
-            case 9:
-              tmpBuffer[0] = PREFIX_NUT;
-              MEMCPY(tmpBuffer + 1, addr->Internal.Nut.ethAddr.ptr, 20);
-              break;
-            case 10:
-              tmpBuffer[0] = PREFIX_MULTITOKEN;
-              break;
-            case 11:
-              tmpBuffer[0] = PREFIX_PGF;
-              break;
-            case 12:
-              tmpBuffer[0] = PREFIX_MASP;
-              break;
-            case 13:
-              tmpBuffer[0] = PREFIX_TMP_STORAGE;
-              break;
-            }
-            break;
-
-        default:
-            return parser_value_out_of_range;
-    }
-
-    // Check HRP for mainnet/testnet
-    const char *hrp = "tnam";
-    const zxerr_t err = bech32EncodeFromBytes(address,
-                                addressLen,
-                                hrp,
-                                (uint8_t*) tmpBuffer,
-                                ADDRESS_LEN_BYTES,
-                                1,
-                                BECH32_ENCODING_BECH32M);
-
-    if (err != zxerr_ok) {
-        return parser_unexpected_error;
     }
     return parser_ok;
 }
