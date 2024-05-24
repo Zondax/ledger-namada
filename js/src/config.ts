@@ -20,8 +20,11 @@ export const INS = {
   SIGN: 0x02,
 
   GET_KEYS: 0x03,
-  GET_RANDOMNESS: 0x04,
-  SIGN_MASP: 0x05,
+  GET_SPEND_RAND: 0x04,
+  GET_OUTPUT_RAND: 0x05,
+  GET_CONVERT_RAND: 0x06,
+  SIGN_MASP: 0x07,
+  EXTRACT_SPEND_SIGN: 0x08,
 }
 export const SALT_LEN = 8
 export const HASH_LEN = 32

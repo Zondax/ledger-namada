@@ -101,21 +101,28 @@ export interface ResponseSign extends ResponseBase {
   signature?: Signature
 }
 
-export interface SpendSign {
+export interface ResponseSpendSign extends ResponseBase {
   rbar: Buffer
   sbar: Buffer
 }
 
 export interface ResponseSignMasp extends ResponseBase {
-  signatures: Buffer
+  hash: Buffer
 }
 
-export interface ResponseGetRandomness extends ResponseBase {
-  spend_randomness: Buffer
-  output_randomness: Buffer
-  convert_randomness: Buffer
+export interface ResponseGetSpendRandomness extends ResponseBase {
+  rcv: Buffer
+  alpha: Buffer
 }
 
+export interface ResponseGetOutputRandomness extends ResponseBase {
+  rcv: Buffer
+  rcm: Buffer
+}
+
+export interface ResponseGetConvertRandomness extends ResponseBase {
+  rcv: Buffer
+}
 export enum NamadaKeys {
     PublicAddress = 0x00,
     ViewKey = 0x01,

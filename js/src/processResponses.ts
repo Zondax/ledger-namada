@@ -16,7 +16,7 @@
 
 import { errorCodeToString } from './common'
 import { KEY_LENGTH, PK_LEN_PLUS_TAG, RANDOMNESS_LENGTH, SALT_LEN, SIG_LEN_PLUS_TAG } from './config'
-import { ISignature, KeyResponse, NamadaKeys, ResponseGetRandomness, ResponseSignMasp } from './types'
+import { ISignature, KeyResponse, NamadaKeys, ResponseGetConvertRandomness, ResponseGetOutputRandomness, ResponseGetSpendRandomness, ResponseSignMasp, ResponseSpendSign } from './types'
 
 export function getSignatureResponse(response: Buffer): ISignature {
   // App sign response: [ rawPubkey(33) | raw_salt(8) | raw_signature(65) | wrapper_salt(8) | wrapper_signature(65) |
@@ -106,17 +106,17 @@ export function processGetKeysResponse(response: Buffer, keyType: NamadaKeys): K
       const viewKey = Buffer.from(response.subarray(0, 2 * KEY_LENGTH))
       response = response.subarray(2 * KEY_LENGTH)
 
-      const ivk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      const ovk = Buffer.from(response.subarray(0, KEY_LENGTH))
       response = response.subarray(KEY_LENGTH)
 
-      const ovk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      const ivk = Buffer.from(response.subarray(0, KEY_LENGTH))
       response = response.subarray(KEY_LENGTH)
 
       requestedKey = {
         ...requestedKey,
         viewKey,
-        ivk,
         ovk,
+        ivk,
       }
       break
     }
@@ -140,55 +140,69 @@ export function processGetKeysResponse(response: Buffer, keyType: NamadaKeys): K
   return requestedKey
 }
 
-export function processRandomnessResponse(
+export function processSpendRandomnessResponse(
   response: Buffer,
-  spend_len: number,
-  output_len: number,
-  convert_len: number,
-): ResponseGetRandomness {
+): ResponseGetSpendRandomness {
   const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-  let spend_randomness = Buffer.alloc(0)
-  let output_randomness = Buffer.alloc(0)
-  let convert_randomness = Buffer.alloc(0)
-
-  let offset = 0
-
-  // Handle the randomness for spend_len
-  if (spend_len > 0) {
-    spend_randomness = response.subarray(offset, offset + (2 * spend_len * RANDOMNESS_LENGTH))
-    offset += 2 * spend_len * RANDOMNESS_LENGTH
-  }
-
-  // Handle the randomness for output_len
-  if (output_len > 0) {
-    output_randomness = response.subarray(offset, offset + (2 * output_len * RANDOMNESS_LENGTH))
-    offset += 2 * output_len * RANDOMNESS_LENGTH
-  }
-
-  // Handle the randomness for convert_len
-  if (convert_len > 0) {
-    convert_randomness = response.subarray(offset, offset + (convert_len * RANDOMNESS_LENGTH))
-  }
 
   return {
-    spend_randomness,
-    output_randomness,
-    convert_randomness,
+    rcv: Buffer.from(response.subarray(0, RANDOMNESS_LENGTH)),
+    alpha: Buffer.from(response.subarray(RANDOMNESS_LENGTH, 2 * RANDOMNESS_LENGTH)),
+    returnCode,
+    errorMessage: errorCodeToString(returnCode),
+  }
+}
+
+export function processOutputRandomnessResponse(
+  response: Buffer,
+): ResponseGetOutputRandomness {
+  const errorCodeData = response.subarray(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+
+  return {
+    rcv: Buffer.from(response.subarray(0, RANDOMNESS_LENGTH)),
+    rcm: Buffer.from(response.subarray(RANDOMNESS_LENGTH, 2 * RANDOMNESS_LENGTH)),
+    returnCode,
+    errorMessage: errorCodeToString(returnCode),
+  }
+}
+
+export function processConvertRandomnessResponse(
+  response: Buffer,
+): ResponseGetConvertRandomness {
+  const errorCodeData = response.subarray(-2)
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+
+  return {
+    rcv: Buffer.from(response.subarray(0, RANDOMNESS_LENGTH)),
     returnCode,
     errorMessage: errorCodeToString(returnCode),
   }
 }
 
 export function processMaspSign(
-  signatures: Buffer,
+  response: Buffer,
 ): ResponseSignMasp {
-  const errorCodeData = signatures.subarray(-2)
+  const errorCodeData = response.subarray(-2)
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
- 
+  let hash = Buffer.from(response.subarray(0, 32))
+  
   return {
-    signatures,
+    hash,
     returnCode,
     errorMessage: errorCodeToString(returnCode),
   }
+}
+
+export function processSpendSignResponse(response: Buffer): ResponseSpendSign {
+  const errorCodeData = response.slice(-2);
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+  return {
+    rbar: Buffer.from(response.subarray(0, 32)),
+    sbar: Buffer.from(response.subarray(32, 64)),
+    returnCode,
+    errorMessage: errorCodeToString(returnCode),
+  };
 }
