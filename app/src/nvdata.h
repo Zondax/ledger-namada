@@ -63,7 +63,7 @@ typedef struct {
 zxerr_t spend_append_rand_item(uint8_t *rcv, uint8_t *alpha);
 spend_item_t *spendlist_retrieve_rand_item(uint8_t i);
 zxerr_t output_append_rand_item(uint8_t *rcv, uint8_t *rcm);
-output_item_t *outputlist_retrieve_rand_item(uint8_t i);
+output_item_t *outputlist_retrieve_rand_item(uint64_t i);
 zxerr_t convert_append_rand_item(uint8_t *rcv);
 convert_item_t *convertlist_retrieve_rand_item(uint8_t i);
 

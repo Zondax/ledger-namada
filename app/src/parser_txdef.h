@@ -181,13 +181,6 @@ typedef struct {
     bytes_t spends_indices;
     bytes_t converts_indices;
     bytes_t outputs_indices;
-
-    uint32_t n_spend_rcvs;
-    uint32_t n_convert_rcvs;
-    uint32_t n_output_rcvs;
-    bytes_t spend_rcvs;
-    bytes_t convert_rcvs;
-    bytes_t output_rcvs;
 } masp_sapling_metadata_t;
 
 typedef struct{

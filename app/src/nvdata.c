@@ -76,7 +76,7 @@ zxerr_t output_append_rand_item(uint8_t *rcv, uint8_t *rcm) {
   return zxerr_ok;
 }
 
-output_item_t *outputlist_retrieve_rand_item(uint8_t i) {
+output_item_t *outputlist_retrieve_rand_item(uint64_t i) {
   if (transaction_header.outputlist_len <= i) {
     return NULL;
   } else {
