@@ -37,5 +37,11 @@ endif
 
 test_all:
 	make zemu_install
-	make clean && make
+
+	make clean
+	make
+	COIN=addr make zemu_test
+
+	make clean
+	APP_TESTING=1 make
 	make zemu_test

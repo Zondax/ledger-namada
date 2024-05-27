@@ -15,7 +15,8 @@
   ],
   "scripts": {
     "clean": "ts-node tests/pullImageKillOld.ts",
-    "test": "yarn clean && jest --maxConcurrency 3"
+    "test": "yarn clean &&  jest tests/masp.test.ts &&  jest tests/standard.test.ts &&  jest tests/transactions.test.ts",
+    "testaddr" : "yarn clean && jest tests/masp_address.test.ts"
   },
   "dependencies": {
     "@zondax/ledger-namada": "../js",
