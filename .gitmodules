@@ -7,12 +7,12 @@
 [submodule "deps/nanosplus-secure-sdk"]
 	path = deps/nanosplus-secure-sdk
 	url = https://github.com/LedgerHQ/ledger-secure-sdk
-[submodule "deps/nanos-secure-sdk"]
-	path = deps/nanos-secure-sdk
-	url = https://github.com/LedgerHQ/nanos-secure-sdk
 [submodule "deps/ledger-secure-sdk"]
 	path = deps/ledger-secure-sdk
 	url = https://github.com/LedgerHQ/ledger-secure-sdk
 [submodule "deps/blake2"]
 	path = deps/blake2
 	url = https://github.com/Zondax/BLAKE2.git
+[submodule "deps/nanos-secure-sdk"]
+	path = deps/nanos-secure-sdk
+	url = https://github.com/LedgerHQ/ledger-secure-sdk
