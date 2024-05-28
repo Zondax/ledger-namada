@@ -43,6 +43,7 @@
 #endif
 #include "blake2.h"
 
+#define DISCRIMINANT_HEADER 0x06
 #define SIGN_PREFIX_SIZE 11u
 #define SIGN_PREHASH_SIZE (SIGN_PREFIX_SIZE + CX_SHA256_SIZE)
 
@@ -184,7 +185,7 @@ static zxerr_t crypto_hashFeeHeader(const header_t *header, uint8_t *output, uin
     }
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    const uint8_t discriminant = 0x07;
+    const uint8_t discriminant = DISCRIMINANT_HEADER;
     CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
     CHECK_CX_OK(cx_sha256_update(&sha256, header->extBytes.ptr, header->extBytes.len));
     CHECK_CX_OK(cx_sha256_final(&sha256, output));
@@ -198,7 +199,7 @@ static zxerr_t crypto_hashRawHeader(const header_t *header, uint8_t *output, uin
     }
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
-    const uint8_t discriminant = 0x07;
+    const uint8_t discriminant = DISCRIMINANT_HEADER;
     CHECK_CX_OK(cx_sha256_update(&sha256, &discriminant, sizeof(discriminant)));
     CHECK_CX_OK(cx_sha256_update(&sha256, header->bytes.ptr, header->bytes.len));
     const uint8_t header_discriminant = 0x00;
@@ -701,16 +702,15 @@ zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, keys_t *keys) {
     signature_hash(txObj, sign_hash);
 
     uint8_t signature[2 * HASH_LEN] = {0};
-    uint8_t alpha[KEY_LENGTH] = {0};
     const uint8_t *spend = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.ptr;
     uint16_t spendLen = 0;
 
     for (uint64_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
         // Get spend description and alpha
         spend += spendLen;
-        MEMCPY(alpha, spend + ALPHA_OFFSET, KEY_LENGTH);
+        spend_item_t *item = spendlist_retrieve_rand_item(i);
 
-        CHECK_ZXERR(sign_sapling_spend(keys, alpha, sign_hash, signature));
+        CHECK_ZXERR(sign_sapling_spend(keys, item->alpha, sign_hash, signature));
 
         // Save signature in flash
         CHECK_ZXERR(spend_signatures_append(signature));
@@ -743,72 +743,75 @@ parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_contex
     }
 
     for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
-
-        //check rk
-        uint8_t alpha[KEY_LENGTH] = {0};
-        CHECK_ERROR(readBytesSize(builder_spends_ctx, alpha, KEY_LENGTH));
-
-        uint8_t rk[KEY_LENGTH] = {0};
-        CHECK_ERROR(computeRk(keys, alpha, rk));
-
-        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, CV_LEN + NULLIFIER_LEN + RK_LEN);
-        if (MEMCMP(rk, tx_spends_ctx->buffer + tx_spends_ctx->offset, RK_LEN) != 0) {
-            return parser_invalid_rk;
-        }
+        CHECK_ERROR(getNextSpendDescription(builder_spends_ctx, i));
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * i);
+        spend_item_t *item = spendlist_retrieve_rand_item(i);
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
         uint8_t identifier[IDENTIFIER_LEN] = {0};
         uint64_t value = 0;
-        uint8_t *rcv = (uint8_t*)txObj->transaction.sections.maspBuilder.metadata.spend_rcvs.ptr + (i * KEY_LENGTH);
-        
         CTX_CHECK_AND_ADVANCE(builder_spends_ctx, EXTENDED_FVK_LEN + DIVERSIFIER_LEN)
         CHECK_ERROR(readBytesSize(builder_spends_ctx, identifier, IDENTIFIER_LEN));
-
-        CTX_CHECK_AND_ADVANCE(builder_spends_ctx, IDENTIFIER_LEN);
         CHECK_ERROR(readUint64(builder_spends_ctx, &value));
 
-        CHECK_ERROR(computeValueCommitment(value, rcv, identifier, cv));
+        CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
         if(MEMCMP(cv, tx_spends_ctx->buffer + tx_spends_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
         }
 
-        CHECK_ERROR(getNextSpendDescription(builder_spends_ctx));
-        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN);
+        //check rk
+        uint8_t rk[KEY_LENGTH] = {0};
+        CHECK_ERROR(computeRk(keys, item->alpha, rk));
+
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, CV_LEN + NULLIFIER_LEN);
+#ifndef APP_TESTING
+        if (MEMCMP(rk, tx_spends_ctx->buffer + tx_spends_ctx->offset, RK_LEN) != 0) {
+            return parser_invalid_rk;
+        }
+#endif
+
+        builder_spends_ctx->offset = 0;
+        tx_spends_ctx->offset = 0;
     }
     return parser_ok;
 }
 
-parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_outputs_ctx, parser_context_t *tx_outputs_ctx) {
+parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_outputs_ctx, parser_context_t *tx_outputs_ctx, parser_context_t *indices_ctx) {
     if (txObj == NULL) {
         return parser_unexpected_error;
     }
-    if(txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
+
+    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs != txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
         return parser_invalid_number_of_outputs;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; i++) {
-        //check cv (computation validaded in cpp_tests
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
+        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
+
+        uint64_t indice = 0;
+        CHECK_ERROR(readUint64(indices_ctx, &indice));
+
+        CTX_CHECK_AND_ADVANCE(tx_outputs_ctx, SHIELDED_OUTPUTS_LEN * indice);
+        output_item_t *item = outputlist_retrieve_rand_item(indice);
+
+        //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
         uint8_t identifier[IDENTIFIER_LEN] = {0};
         uint64_t value = 0;
-        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.output_rcvs.ptr + (i * KEY_LENGTH);
-
         uint8_t has_ovk = 0;
         CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
-        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 33 : 1) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
+        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
         CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
-
-        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, IDENTIFIER_LEN);
         CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
-        CHECK_ERROR(computeValueCommitment( value, rcv, identifier, cv));
 
+        CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
         if(MEMCMP(cv, tx_outputs_ctx->buffer + tx_outputs_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
         }
 
-        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx));
-        CTX_CHECK_AND_ADVANCE(tx_outputs_ctx, SHIELDED_OUTPUTS_LEN);
+        builder_outputs_ctx->offset = 0;
+        tx_outputs_ctx->offset = 0;
     }
     return parser_ok;
 }
@@ -822,25 +825,26 @@ parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder
     }
 
     for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
+        CHECK_ERROR(getNextConvertDescription(builder_converts_ctx, i));
+        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN * i);
+
+        convert_item_t *item = convertlist_retrieve_rand_item(i);
         //check cv (computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
         uint8_t identifier[IDENTIFIER_LEN] = {0};
         uint64_t value = 0;
-        uint8_t *rcv = (uint8_t *)txObj->transaction.sections.maspBuilder.metadata.convert_rcvs.ptr + (i * KEY_LENGTH);
 
         CTX_CHECK_AND_ADVANCE(builder_converts_ctx, TAG_LEN);
         CHECK_ERROR(readBytesSize(builder_converts_ctx, identifier, IDENTIFIER_LEN));
-
         CTX_CHECK_AND_ADVANCE(builder_converts_ctx, ASSET_ID_LEN + INT_128_LEN + sizeof(uint64_t));
         CHECK_ERROR(readUint64(builder_converts_ctx, &value));
-        CHECK_ERROR(computeValueCommitment(value, rcv, identifier, cv));
 
+        CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
         if(MEMCMP(cv, tx_converts_ctx->buffer + tx_converts_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
         }
-    
-        CHECK_ERROR(getNextConvertDescription(builder_converts_ctx));
-        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN);
+
+        builder_converts_ctx->offset = 0;
     }
     return parser_ok;
 }
@@ -850,7 +854,6 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
         return zxerr_unknown;
     }
 
-#if !defined(LEDGER_SPECIFIC)
     // For now verify cv and rk https://github.com/anoma/masp/blob/main/masp_proofs/src/sapling/prover.rs#L278    
     // Check Spends
     parser_context_t builder_spends_ctx =  {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spends.ptr,
@@ -872,7 +875,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                      .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.len,
                                      .offset = 0, 
                                      .tx_obj = NULL};
-    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx));
+    parser_context_t indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.ptr,
+                                .bufferLen = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.len,
+                                .offset = 0, 
+                                .tx_obj = NULL};
+    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx, &indices_ctx));
 
     // Check converts
     parser_context_t builder_converts_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.ptr,
@@ -884,7 +891,6 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                         .offset = 0, 
                                         .tx_obj = NULL};
     CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx));
-#endif
     return zxerr_ok;
 }
 
@@ -945,30 +951,67 @@ zxerr_t crypto_computeRandomness(masp_type_e type, uint8_t *out, uint16_t outLen
     MEMZERO(out, outLen);
     uint8_t tmp_rnd[RANDOM_LEN] = {0};
 
-    transaction_add(type);
+#ifdef APP_TESTING
+    uint8_t out_tmp_rnd2[RANDOM_LEN] = {0x57, 0x04, 0x17, 0x50, 0x42, 0xb2, 0x4c, 0x3d, 0x51, 
+                                       0xe8, 0x0e, 0xeb, 0x4c, 0xfb, 0xff, 0xe2, 0xfc, 0x05,
+                                       0x61, 0x91, 0x61, 0x2b, 0x50, 0xca, 0xa9, 0x78, 0x24,
+                                       0xa2, 0x76, 0xd9, 0xe4, 0x0b};
+
+    uint8_t out_tmp_rnd[RANDOM_LEN] = {0x04, 0x56, 0xf7, 0x74, 0xac, 0x0f, 0x67, 0x12, 0x68,
+                                        0xf0, 0x3b, 0x82, 0xbf, 0x9a, 0x77, 0x4d, 0x39, 0x26,
+                                        0xb6, 0xc4, 0x43, 0x1e, 0x09, 0x9f, 0xf5, 0x5f, 0xee,
+                                        0x62, 0xa2, 0x9a, 0xf4, 0x09};
+
+
+    uint8_t spend_tmp_rnd[RANDOM_LEN] = {0x59, 0x63, 0x82, 0x91, 0xee, 0xab, 0xca, 0x62, 0x53,
+                                         0x50, 0xd7, 0xb9, 0x64, 0x1d, 0xf8, 0xf5, 0x7a, 0x81,
+                                         0x6e, 0xa9, 0xa5, 0x6c, 0xdb, 0x21, 0x7b, 0x6c, 0xc3,
+                                         0x32, 0xb0, 0x40, 0xf1, 0x0a};
+    
+    uint8_t spend_tmp_rnd2[RANDOM_LEN] = {0x0a, 0x10, 0xc1, 0xcd, 0xbd, 0x97, 0xb0, 0xbb, 0x38,
+                                          0xd3, 0x52, 0x58, 0x5a, 0xf1, 0x0d, 0x1f, 0xdf, 0xfa,
+                                          0xcf, 0xc3, 0x54, 0xb9, 0xd0, 0x29, 0x1c, 0x7c, 0x10,
+                                          0xaa, 0x4d, 0x23, 0x93, 0x03};
+#else 
+    uint8_t tmp_rnd2[RANDOM_LEN] = {0};
+#endif
 
     switch(type){
         case spend:
-            for (uint8_t i = 0; i < 2; i++) {
-                CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
-                MEMCPY(out + (i * RANDOM_LEN), tmp_rnd, RANDOM_LEN);
-            }
+#ifdef APP_TESTING
+            MEMCPY(out, spend_tmp_rnd, RANDOM_LEN);
+            MEMCPY(out + RANDOM_LEN, spend_tmp_rnd2, RANDOM_LEN);
+            CHECK_ZXERR(spend_append_rand_item(spend_tmp_rnd, spend_tmp_rnd2));
+#else
+            CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
+            MEMCPY(out, tmp_rnd, RANDOM_LEN);
+            CHECK_ZXERR(random_fr(tmp_rnd2, RANDOM_LEN));
+            MEMCPY(out + RANDOM_LEN, tmp_rnd2, RANDOM_LEN);
+
+            CHECK_ZXERR(spend_append_rand_item(tmp_rnd, tmp_rnd2));
+#endif
             *replyLen = 2 * RANDOM_LEN;
             break;
         case output:
-            for (uint8_t i = 0; i < 2; i++) {
-                if (i % 2 == 0) {
-                    CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
-                } else {
-                    cx_rng(tmp_rnd, RANDOM_LEN);
-                }
-                MEMCPY(out + (i * RANDOM_LEN), tmp_rnd, RANDOM_LEN);
-            }
+#ifdef APP_TESTING
+            MEMCPY(out, out_tmp_rnd, RANDOM_LEN);
+            MEMCPY(out + RANDOM_LEN, out_tmp_rnd2, RANDOM_LEN);
+            CHECK_ZXERR(output_append_rand_item(out_tmp_rnd, out_tmp_rnd2));
+#else
+            CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
+            MEMCPY(out, tmp_rnd, RANDOM_LEN);
+            cx_rng(tmp_rnd2, RANDOM_LEN);
+            MEMCPY(out + RANDOM_LEN, tmp_rnd2, RANDOM_LEN);
+
+            CHECK_ZXERR(output_append_rand_item(tmp_rnd, tmp_rnd2));
+#endif
             *replyLen = 2 * RANDOM_LEN;
             break;
         case convert:
             CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
             MEMCPY(out, tmp_rnd, RANDOM_LEN);
+
+            CHECK_ZXERR(convert_append_rand_item(tmp_rnd));
             *replyLen = RANDOM_LEN;
             break;
         default:

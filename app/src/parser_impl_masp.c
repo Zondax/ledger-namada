@@ -154,23 +154,6 @@ static parser_error_t readSaplingMetadata(parser_context_t *ctx, masp_sapling_me
         CHECK_ERROR(readBytes(ctx, &metadata->outputs_indices.ptr, metadata->outputs_indices.len))
     }
 
-    CHECK_ERROR(readUint32(ctx, &metadata->n_spend_rcvs))
-    if (metadata->n_spend_rcvs != 0) {
-        metadata->spend_rcvs.len = metadata->n_spend_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->spend_rcvs.ptr, metadata->spend_rcvs.len))
-    }
-
-    CHECK_ERROR(readUint32(ctx, &metadata->n_convert_rcvs))
-    if (metadata->n_convert_rcvs != 0) {
-        metadata->convert_rcvs.len = metadata->n_convert_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->convert_rcvs.ptr, metadata->convert_rcvs.len))
-    }
-
-    CHECK_ERROR(readUint32(ctx, &metadata->n_output_rcvs))
-    if (metadata->n_output_rcvs != 0) {
-        metadata->output_rcvs.len = metadata->n_output_rcvs * HASH_LEN;
-        CHECK_ERROR(readBytes(ctx, &metadata->output_rcvs.ptr, metadata->output_rcvs.len))
-    }
     return parser_ok;
 }
 
@@ -281,9 +264,6 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
         //parse note
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, NOTE_LEN))
 
-        //parse alpha
-        CHECK_ERROR(readBytes(ctx, &tmp.ptr, ALPHA_LEN))
-
         // Parse Merkle path
         CHECK_ERROR(readByte(ctx, &tmp_8))
         tmp.len = tmp_8 * (32 + 1);
@@ -300,7 +280,7 @@ parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len) {
         return parser_unexpected_error;
     }
 
-    uint16_t offset = EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN;
+    uint16_t offset = EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN;
     spend += offset;
     uint8_t auth_path_len = *spend;
     *len = offset + 1 + (auth_path_len * (32 + 1)) + POSITION_LEN;
@@ -308,58 +288,67 @@ parser_error_t getSpendDescriptionLen(const uint8_t *spend, uint16_t *len) {
     return parser_ok;
 }
 
-parser_error_t getNextSpendDescription(parser_context_t *spend) {
+parser_error_t getNextSpendDescription(parser_context_t *spend, uint8_t index) {
     if (spend == NULL) {
         return parser_unexpected_error;
     }
-    CTX_CHECK_AND_ADVANCE(spend, EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN);
-    uint8_t auth_path_len = 0;
-    CHECK_ERROR(readByte(spend, &auth_path_len))
-    CTX_CHECK_AND_ADVANCE(spend, (auth_path_len * (32 + 1)) + POSITION_LEN);
+
+    for (int i = 0 ; i< index; i++) {
+        CTX_CHECK_AND_ADVANCE(spend, EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN);
+        uint8_t auth_path_len = 0;
+        CHECK_ERROR(readByte(spend, &auth_path_len))
+        CTX_CHECK_AND_ADVANCE(spend, (auth_path_len * (32 + 1)) + POSITION_LEN);
+    }
 
     return parser_ok;
 }
 
-parser_error_t getNextOutputDescription(parser_context_t *output) {
+parser_error_t getNextOutputDescription(parser_context_t *output, uint8_t index) {
     if (output == NULL) {
         return parser_unexpected_error;
     }
-    uint8_t has_ovk = 0;
-    CHECK_ERROR(readByte(output, &has_ovk));
-    CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN);
+
+    for (int i = 0; i < index; i++) {
+        uint8_t has_ovk = 0;
+        CHECK_ERROR(readByte(output, &has_ovk));
+        CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN);
+    }
     return parser_ok;
 }
 
-parser_error_t getNextConvertDescription(parser_context_t *convert) {
+parser_error_t getNextConvertDescription(parser_context_t *convert, uint8_t index) {
     if (convert == NULL) {
         return parser_unexpected_error;
     }
     uint64_t allowed_size = 0;
     uint16_t tmp16 = 0;
     uint32_t tmp32 = 0;
-
-    uint8_t tag = 0;
-    CHECK_ERROR(readByte(convert, &tag));
-
-    switch(tag) {
-    case 253:
-        CHECK_ERROR(readUint16(convert, &tmp16));
-        allowed_size = (uint64_t)tmp16;
-        break;
-    case 254:
-        CHECK_ERROR(readUint32(convert, &tmp32));
-        allowed_size = (uint64_t)tmp32;
-        break;
-    case 255:
-        CHECK_ERROR(readUint64(convert, &allowed_size));
-        break;
-    default:
-        allowed_size = (uint64_t)tag;
-    }
-    CTX_CHECK_AND_ADVANCE(convert, allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t));
     uint8_t merkel_size = 0;
-    CHECK_ERROR(readByte(convert, &merkel_size));
-    CTX_CHECK_AND_ADVANCE(convert, merkel_size * (32 + 1) + sizeof(uint64_t));
+    uint8_t tag = 0;
+    for (int i = 0; i < index; i++) {
+        CHECK_ERROR(readByte(convert, &tag));
+
+        switch(tag) {
+        case 253:
+            CHECK_ERROR(readUint16(convert, &tmp16));
+            allowed_size = (uint64_t)tmp16;
+            break;
+        case 254:
+            CHECK_ERROR(readUint32(convert, &tmp32));
+            allowed_size = (uint64_t)tmp32;
+            break;
+        case 255:
+            CHECK_ERROR(readUint64(convert, &allowed_size));
+            break;
+        default:
+            allowed_size = (uint64_t)tag;
+        }
+        CTX_CHECK_AND_ADVANCE(convert, allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t));
+
+        CHECK_ERROR(readByte(convert, &merkel_size));
+        CTX_CHECK_AND_ADVANCE(convert, merkel_size * (32 + 1) + sizeof(uint64_t));
+    }
+
     return parser_ok;
 }
 
@@ -410,12 +399,6 @@ static parser_error_t readSaplingOutputDescriptionInfo(parser_context_t *ctx, ma
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_outputs))
-#if defined(LEDGER_SPECIFIC)
-    uint32_t rnd_outputs = (uint32_t)transaction_get_n_outputs();
-    if (rnd_outputs != builder->n_outputs) {
-        return parser_invalid_number_of_outputs;
-    }
-#endif
 
     // Get start pointer and offset to later calculate the size of the outputs
     builder->outputs.ptr = ctx->buffer + ctx->offset;
@@ -434,7 +417,7 @@ static parser_error_t readSaplingOutputDescriptionInfo(parser_context_t *ctx, ma
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, PAYMENT_ADDR_LEN))
 
         // read note
-        CHECK_ERROR(readBytes(ctx, &tmp.ptr, NOTE_LEN))
+        CHECK_ERROR(readBytes(ctx, &tmp.ptr, OUT_NOTE_LEN))
 
         // Parse memo
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, MEMO_LEN))

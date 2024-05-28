@@ -48,7 +48,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case Transfer:
             if(ctx->tx_obj->transaction.isMasp) {
-                uint8_t items = 0;
+                uint8_t items = 1;
                 uint8_t source_is_masp = ctx->tx_obj->transfer.source_address.tag == 2 ? 1 : 0;
                 uint8_t target_is_masp = ctx->tx_obj->transfer.target_address.tag == 2 ? 1 : 0;
                 if (!source_is_masp) {
@@ -71,7 +71,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             } else {
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
-            if(!ctx->tx_obj->transfer.symbol) {
+            if(!ctx->tx_obj->transfer.symbol && !ctx->tx_obj->transaction.isMasp) {
                 (*numItems)++;
             }
             break;
@@ -93,8 +93,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
         }
         case VoteProposal: {
-            const uint32_t delegations = ctx->tx_obj->voteProposal.number_of_delegations;
-            *numItems = (uint8_t) ((app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS) + delegations);
+            *numItems = (uint8_t) (app_mode_expert() ? VOTE_PROPOSAL_EXPERT_PARAMS : VOTE_PROPOSAL_NORMAL_PARAMS);
             break;
         }
         case RevealPubkey:
@@ -197,7 +196,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
       (*numItems)++;
     }
 
-    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
+    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL && !ctx->tx_obj->transaction.isMasp) {
         (*numItems)++;
     }
 

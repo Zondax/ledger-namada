@@ -69,7 +69,7 @@ jobs:
         id: build
         shell: bash -l {0}
         run: |
-          make
+          PRODUCTION_BUILD=1 make
           echo "size=$(python3 deps/ledger-zxlib/scripts/getSize.py s)" >> $GITHUB_OUTPUT
 
   size_nano_s:
@@ -130,7 +130,7 @@ jobs:
       - name: Build NanoS
         shell: bash -l {0}
         run: |
-          make
+          PRODUCTION_BUILD=0 make
           mv ./app/pkg/installer_s.sh ./app/pkg/installer_nanos.sh
       - name: Set tag
         id: nanos
@@ -166,7 +166,7 @@ jobs:
       - name: Build NanoSP
         shell: bash -l {0}
         run: |
-          make
+          PRODUCTION_BUILD=0 make
           mv ./app/pkg/installer_s2.sh ./app/pkg/installer_nanos_plus.sh
       - name: Set tag
         id: nanosp

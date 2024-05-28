@@ -20,10 +20,35 @@
 #include "zxerror.h"
 #include "zxmacros.h"
 #include <stdbool.h>
+#include "parser_txdef.h"
 
 #define SPEND_LIST_SIZE 15
 #define SIGNATURE_SIZE 64
 
+typedef struct {
+  uint8_t rcv[RANDOM_LEN];
+  uint8_t alpha[RANDOM_LEN];
+} spend_item_t;
+
+typedef struct {
+  spend_item_t items[SPEND_LIST_SIZE];
+} spendlist_t;
+
+typedef struct {
+  uint8_t rcv[RANDOM_LEN];
+  uint8_t rcm[RANDOM_LEN];
+} output_item_t;
+
+typedef struct {
+  output_item_t items[SPEND_LIST_SIZE];
+} outputlist_t;
+typedef struct {
+  uint8_t rcv[RANDOM_LEN];
+} convert_item_t;
+
+typedef struct {
+  convert_item_t items[SPEND_LIST_SIZE];
+} convertlist_t;
 typedef struct {
   uint8_t spendlist_len;
   uint8_t outputlist_len;
@@ -35,7 +60,12 @@ typedef struct {
   uint8_t spend_signatures[SPEND_LIST_SIZE][64];
 } transaction_info_t;
 
-zxerr_t transaction_add(masp_type_e type);
+zxerr_t spend_append_rand_item(uint8_t *rcv, uint8_t *alpha);
+spend_item_t *spendlist_retrieve_rand_item(uint8_t i);
+zxerr_t output_append_rand_item(uint8_t *rcv, uint8_t *rcm);
+output_item_t *outputlist_retrieve_rand_item(uint64_t i);
+zxerr_t convert_append_rand_item(uint8_t *rcv);
+convert_item_t *convertlist_retrieve_rand_item(uint8_t i);
 
 void transaction_reset();
 uint8_t transaction_get_n_spends();

@@ -189,7 +189,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
 static parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
 
     for (uint32_t i = 0; i < index; i++) {
-        spend->ptr += EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN + ALPHA_LEN;
+        spend->ptr += EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN;
         uint8_t tmp_len = spend->ptr[0];
         spend->ptr++;
         spend->ptr += (tmp_len * (32 + 1)) + sizeof(uint64_t);
@@ -207,7 +207,7 @@ static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
         } else {
             out->ptr++;
         }
-        out->ptr += DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN;
+        out->ptr += DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN;
     }
 
     return parser_ok;
@@ -342,7 +342,7 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
             if(ctx->tx_obj->transfer.target_address.tag != 2) {
                 CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
             } else {
-                CHECK_ERROR(crypto_encodeLargeBech32(out.ptr, PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + 1, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
+                CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? 33 : 1), PAYMENT_ADDR_LEN + DIVERSIFIER_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
                 pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             }
             break;
@@ -594,21 +594,11 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                                              uint8_t pageIdx, uint8_t *pageCount) {
     tx_vote_proposal_t *voteProposal = &ctx->tx_obj->voteProposal;
 
-    const uint32_t delegations_num = voteProposal->number_of_delegations;
-    const uint8_t delegations_first_field_idx = 4;
-    uint8_t adjustedDisplayIdx = \
-        (displayIdx < delegations_first_field_idx) \
-            ? displayIdx
-            : ((displayIdx < delegations_first_field_idx + delegations_num) \
-                ? delegations_first_field_idx
-                : displayIdx - delegations_num + 1);
-    *pageCount = 1;
-
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (adjustedDisplayIdx >= 5 && !hasMemo) {
-        adjustedDisplayIdx++;
+    if (displayIdx >= 4 && !hasMemo) {
+        displayIdx++;
     }
-    switch (adjustedDisplayIdx) {
+    switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
             snprintf(outVal, outValLen, "Vote Proposal");
@@ -650,22 +640,6 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             CHECK_ERROR(printAddressAlt(&voteProposal->voter, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
-            if (voteProposal->number_of_delegations == 0) {
-                return parser_unexpected_value;
-            }
-            snprintf(outKey, outKeyLen, "Delegation");
-            if (displayIdx - adjustedDisplayIdx >= voteProposal->number_of_delegations) {
-                return parser_value_out_of_range;
-            }
-            parser_context_t tmpCtx = {.buffer = voteProposal->delegations.ptr, .bufferLen = voteProposal->delegations.len, .offset = 0};
-            AddressAlt tmpProposal;
-            for(uint32_t i = 0; i <= displayIdx - adjustedDisplayIdx; i++) {
-              CHECK_ERROR(readAddressAlt(&tmpCtx, &tmpProposal))
-            }
-
-            CHECK_ERROR(printAddressAlt(&tmpProposal, outVal, outValLen, pageIdx, pageCount))
-            break;
-        case 5:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -673,7 +647,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= (5 + voteProposal->number_of_delegations - (hasMemo ? 0 : 1));
+            displayIdx -= 5;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 

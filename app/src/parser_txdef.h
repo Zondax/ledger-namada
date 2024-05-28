@@ -44,6 +44,7 @@ extern "C" {
 #define EXTENDED_FVK_LEN 169
 // note asset type (32 bytes) + note value (8 bytes) + note g_d (32 bytes) + note pk_d (32 bytes) + note rseed (1 byte + 32 bytes)
 #define NOTE_LEN 137
+#define OUT_NOTE_LEN 32 + 8 + 32 + 32
 #define DIVERSIFIER_LEN 11
 #define ALPHA_LEN 32
 #define MEMO_LEN 512
@@ -180,13 +181,6 @@ typedef struct {
     bytes_t spends_indices;
     bytes_t converts_indices;
     bytes_t outputs_indices;
-
-    uint32_t n_spend_rcvs;
-    uint32_t n_convert_rcvs;
-    uint32_t n_output_rcvs;
-    bytes_t spend_rcvs;
-    bytes_t convert_rcvs;
-    bytes_t output_rcvs;
 } masp_sapling_metadata_t;
 
 typedef struct{
@@ -244,13 +238,13 @@ typedef struct {
     bytes_t bytes;
     fees_t fees;
     bytes_t pubkey;
-    uint64_t epoch;
     uint64_t gasLimit;
-    bytes_t unshieldSectionHash;
+    uint32_t batchLen;
     bytes_t dataHash;
     bytes_t codeHash;
     bytes_t memoHash;
     const section_t *memoSection;
+    uint8_t atomic;
 } header_t;
 typedef struct {
     uint32_t sectionLen;
