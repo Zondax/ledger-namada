@@ -132,19 +132,20 @@ where
             }
         }
 
-        let mut public_key = [0; ED25519_PUBKEY_LEN + 1];
-        public_key.copy_from_slice(&response_data[..ED25519_PUBKEY_LEN + 1]);
-
-        let mut address_bytes = [0; ADDRESS_LEN];
-        address_bytes.copy_from_slice(&response_data[ED25519_PUBKEY_LEN + 1..]);
+        let (raw_public_key, rest) = response_data.split_at(ED25519_PUBKEY_LEN + 1);
+        let (public_key_len, rest) = rest.split_first().expect("response too short");
+        let (_public_key, rest) = rest.split_at((*public_key_len).into());
+        let (address_len, rest) = rest.split_first().expect("response too short");
+        let (address_bytes, rest) = rest.split_at((*address_len).into());
+        if rest.len() > 0 { panic!("response too long"); }
 
         let address_str = str::from_utf8(&address_bytes)
             .map_err(|_| LedgerAppError::Utf8)?
             .to_owned();
 
         Ok(ResponseAddress {
-            public_key,
-            address_bytes,
+            public_key: raw_public_key.try_into().unwrap(),
+            address_bytes: address_bytes.try_into().unwrap(),
             address_str,
         })
     }
