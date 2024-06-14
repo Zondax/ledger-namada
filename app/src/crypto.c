@@ -632,15 +632,15 @@ static parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_
     uint8_t hash[BLAKE2B_OUTPUT_LEN] = {0};
 #if defined(LEDGER_SPECIFIC)
     cx_blake2b_t ctx = {0};
-    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SINGNING_REGJUBJUB,
-                                           sizeof(SINGNING_REGJUBJUB)));
+    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SIGNING_REDJUBJUB,
+                                           sizeof(SIGNING_REDJUBJUB)));
     ASSERT_CX_OK(cx_blake2b_update(&ctx, a, a_len));
     ASSERT_CX_OK(cx_blake2b_update(&ctx, b, b_len));
     cx_blake2b_final(&ctx, hash);
 #else
     blake2b_state state = {0};
-    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SINGNING_REGJUBJUB,
-                                      sizeof(SINGNING_REGJUBJUB));
+    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SIGNING_REDJUBJUB,
+                                      sizeof(SIGNING_REDJUBJUB));
     blake2b_update(&state, a, a_len);
     blake2b_update(&state, b, b_len);
     blake2b_final(&state, hash, BLAKE2B_OUTPUT_LEN);

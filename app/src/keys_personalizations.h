@@ -34,7 +34,7 @@ const char EXPANDED_SPEND_BLAKE2_KEY[16] = "MASP__ExpandSeed";
 const char CRH_IVK_PERSONALIZATION[8] = "MASP_ivk";
 const char KEY_DIVERSIFICATION_PERSONALIZATION[8] = "MASP__gd";
 const char GH_FIRST_BLOCK[64] = "096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
-const char SINGNING_REGJUBJUB[16] = "MASP__RedJubjubH";
+const char SIGNING_REDJUBJUB[16] = "MASP__RedJubjubH";
 const char VALUE_COMMITMENT_GENERATOR_PERSONALIZATION[8] = "MASP__v_";
 #ifdef __cplusplus
 }
