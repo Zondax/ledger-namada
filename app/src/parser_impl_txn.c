@@ -499,7 +499,7 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
     return parser_ok;
 }
 
-static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
+static parser_error_t readTransparentTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
@@ -521,12 +521,120 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
 
     // shielded hash, check if it is there
-    CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
-    if (v->transfer.has_shielded_hash){
-        v->transfer.shielded_hash.len = HASH_LEN;
-        // we are not displaying these bytes
-        ctx.offset += v->transfer.shielded_hash.len;
+    v->transfer.has_shielded_hash = 0;
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
     }
+
+    return parser_ok;
+}
+
+static parser_error_t readShieldingTransferTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Source
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.source_address))
+    // Target
+    v->transfer.target_address.tag = 2; // Internal address
+    v->transfer.target_address.Internal.tag = 12; // MASP
+
+    // Token
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.token))
+    // Get symbol from token
+    CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
+
+    // Amount
+    v->transfer.amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
+
+    // Amount denomination
+    CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
+
+    // shielded hash, check if it is there
+    v->transfer.has_shielded_hash = 1;
+    v->transfer.shielded_hash.len = HASH_LEN;
+    // we are not displaying these bytes
+    ctx.offset += v->transfer.shielded_hash.len;
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+
+    return parser_ok;
+}
+
+// A zero amount to be used as a sentinel value in shielded transfers
+const uint8_t zero_amount[32];
+// A hash to be used as a sentinel value in shielded transfers
+const uint8_t nam_hash[20] = { 0x4b, 0x88, 0xfb, 0x91, 0x3a, 0x7, 0x66, 0xe3, 0xa, 0x0, 0xb2, 0xfb, 0x8a, 0xa2, 0x94, 0x9a, 0x71, 0xe, 0x24, 0xe6 };
+
+static parser_error_t readShieldedTransferTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Source
+    v->transfer.source_address.tag = 2; // Internal address
+    v->transfer.source_address.Internal.tag = 12; // MASP
+    // Target
+    v->transfer.target_address.tag = 2; // Internal address
+    v->transfer.target_address.Internal.tag = 12; // MASP
+
+    // Token
+    v->transfer.token.tag = 0;
+    v->transfer.token.Established.hash.len = 20;
+    v->transfer.token.Established.hash.ptr = nam_hash;
+    // Get symbol from token
+    v->transfer.symbol = "NAM";
+
+    // Amount
+    v->transfer.amount.len = 32;
+    v->transfer.amount.ptr = zero_amount;
+
+    // Amount denomination
+    v->transfer.amount_denom = 6;
+
+    // shielded hash, check if it is there
+    v->transfer.has_shielded_hash = 1;
+    v->transfer.shielded_hash.len = HASH_LEN;
+    // we are not displaying these bytes
+    ctx.offset += v->transfer.shielded_hash.len;
+
+    if (ctx.offset != ctx.bufferLen) {
+        return parser_unexpected_characters;
+    }
+
+    return parser_ok;
+}
+
+static parser_error_t readUnshieldingTransferTxn(const bytes_t *data, parser_tx_t *v) {
+    // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
+    parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+
+    // Source
+    v->transfer.source_address.tag = 2; // Internal address
+    v->transfer.source_address.Internal.tag = 12; // MASP
+    // Target
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.target_address))
+
+    // Token
+    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.token))
+    // Get symbol from token
+    CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
+
+    // Amount
+    v->transfer.amount.len = 32;
+    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
+
+    // Amount denomination
+    CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
+
+    // shielded hash, check if it is there
+    v->transfer.has_shielded_hash = 1;
+    v->transfer.shielded_hash.len = HASH_LEN;
+    // we are not displaying these bytes
+    ctx.offset += v->transfer.shielded_hash.len;
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
@@ -1239,8 +1347,17 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
             break;
         case Custom:
             break;
-        case Transfer:
-            CHECK_ERROR(readTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
+        case TransparentTransfer:
+            CHECK_ERROR(readTransparentTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ShieldingTransfer:
+            CHECK_ERROR(readShieldingTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case ShieldedTransfer:
+            CHECK_ERROR(readShieldedTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
+            break;
+        case UnshieldingTransfer:
+            CHECK_ERROR(readUnshieldingTransferTxn(&txObj->transaction.sections.data.bytes, txObj))
             break;
         case InitAccount:
             CHECK_ERROR(readInitAccountTxn(&txObj->transaction.sections.data.bytes,txObj->transaction.sections.extraData,txObj->transaction.sections.extraDataLen,txObj))
