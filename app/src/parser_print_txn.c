@@ -124,6 +124,7 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
 }
 
 static parser_error_t printTransferTxn( const parser_context_t *ctx,
+                                        const transaction_type_e type,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -140,7 +141,15 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
-            snprintf(outVal, outValLen, "Transfer");
+            if (type == TransparentTransfer) {
+              snprintf(outVal, outValLen, "Transparent Transfer");
+            } else if (type == ShieldingTransfer) {
+              snprintf(outVal, outValLen, "Shielding Transfer");
+            } else if (type == ShieldedTransfer) {
+              snprintf(outVal, outValLen, "Shielded Transfer");
+            } else if (type == UnshieldingTransfer) {
+              snprintf(outVal, outValLen, "Unshielding Transfer");
+            }
             if (app_mode_expert()) {
                 CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
@@ -217,6 +226,7 @@ uint16_t spend_index = 0;
 uint16_t out_index = 0;
 
 static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
+                                        const transaction_type_e type,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -298,7 +308,15 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Type");
-            snprintf(outVal, outValLen, "Transfer");
+            if (type == TransparentTransfer) {
+              snprintf(outVal, outValLen, "Transparent Transfer");
+            } else if (type == ShieldingTransfer) {
+              snprintf(outVal, outValLen, "Shielding Transfer");
+            } else if (type == ShieldedTransfer) {
+              snprintf(outVal, outValLen, "Shielded Transfer");
+            } else if (type == UnshieldingTransfer) {
+              snprintf(outVal, outValLen, "Unshielding Transfer");
+            }
             if (app_mode_expert()) {
                 CHECK_ERROR(printCodeHash(&ctx->tx_obj->transaction.sections.code, outKey, outKeyLen,
                                           outVal, outValLen, pageIdx, pageCount))
@@ -1464,11 +1482,11 @@ parser_error_t printTxnFields(const parser_context_t *ctx,
         case Custom:
             return printCustomTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-        case Transfer:
+        case TransparentTransfer: case ShieldingTransfer: case ShieldedTransfer: case UnshieldingTransfer:
             if(ctx->tx_obj->transaction.isMasp) {
-                return printMaspTransferTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+                return printMaspTransferTxn(ctx, ctx->tx_obj->typeTx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
             }
-            return printTransferTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            return printTransferTxn(ctx, ctx->tx_obj->typeTx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
         case InitAccount:
              return printInitAccountTxn(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);

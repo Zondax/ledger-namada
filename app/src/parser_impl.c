@@ -46,7 +46,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             *numItems = (app_mode_expert() ? CUSTOM_EXPERT_PARAMS : CUSTOM_NORMAL_PARAMS);
             break;
 
-        case Transfer:
+    case TransparentTransfer: case ShieldingTransfer: case ShieldedTransfer: case UnshieldingTransfer:
             if(ctx->tx_obj->transaction.isMasp) {
                 uint8_t items = 1;
                 uint8_t source_is_masp = ctx->tx_obj->transfer.source_address.tag == 2 ? 1 : 0;

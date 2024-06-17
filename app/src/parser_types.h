@@ -32,7 +32,10 @@ extern "C" {
 typedef enum {
     Bond = 0,
     Unbond,
-    Transfer,
+    TransparentTransfer,
+    ShieldingTransfer,
+    UnshieldingTransfer,
+    ShieldedTransfer,
     InitAccount,
     InitProposal,
     VoteProposal,
