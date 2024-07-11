@@ -326,15 +326,6 @@ typedef struct {
     bytes_t targets;
     uint32_t no_symbol_sources;
     uint32_t no_symbol_targets;
-    AddressAlt source_address;
-    AddressAlt target_address;
-    // Transferred token address
-    AddressAlt token;
-    uint8_t has_sub_prefix;
-    bytes_t sub_prefix;
-    bytes_t amount;
-    uint8_t amount_denom;
-    const char* symbol;
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;

@@ -523,8 +523,13 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
 
     v->transfer.sources.ptr = ctx.buffer + ctx.offset;
     for (uint32_t i = 0; i < v->transfer.sources_len; i++) {
-        CHECK_ERROR(readTransferSourceTarget(&ctx, &v->transfer.source_address, &v->transfer.token, &v->transfer.amount, &v->transfer.amount_denom, &v->transfer.symbol))
-        v->transfer.no_symbol_sources += (v->transfer.symbol == NULL);
+        AddressAlt owner;
+        AddressAlt token;
+        bytes_t amount;
+        uint8_t amount_denom;
+        const char* symbol;
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+        v->transfer.no_symbol_sources += (symbol == NULL);
     }
     v->transfer.sources.len = ctx.buffer + ctx.offset - v->transfer.sources.ptr;
 
@@ -533,8 +538,13 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
 
     v->transfer.targets.ptr = ctx.buffer + ctx.offset;
     for (uint32_t i = 0; i < v->transfer.targets_len; i++) {
-        CHECK_ERROR(readTransferSourceTarget(&ctx, &v->transfer.target_address, &v->transfer.token, &v->transfer.amount, &v->transfer.amount_denom, &v->transfer.symbol))
-        v->transfer.no_symbol_targets += (v->transfer.symbol == NULL);
+        AddressAlt owner;
+        AddressAlt token;
+        bytes_t amount;
+        uint8_t amount_denom;
+        const char* symbol;
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+        v->transfer.no_symbol_targets += (symbol == NULL);
     }
     v->transfer.targets.len = ctx.buffer + ctx.offset - v->transfer.targets.ptr;
 
