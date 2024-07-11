@@ -320,6 +320,12 @@ typedef struct {
 } tx_update_vp_t;
 
 typedef struct {
+    uint32_t sources_len;
+    bytes_t sources;
+    uint32_t targets_len;
+    bytes_t targets;
+    uint32_t no_symbol_sources;
+    uint32_t no_symbol_targets;
     AddressAlt source_address;
     AddressAlt target_address;
     // Transferred token address

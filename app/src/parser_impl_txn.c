@@ -499,26 +499,44 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
     return parser_ok;
 }
 
+parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner, AddressAlt *token, bytes_t *amount, uint8_t *amount_denom, const char** symbol) {
+    // Source
+    CHECK_ERROR(readAddressAlt(ctx, owner))
+    // Token
+    CHECK_ERROR(readAddressAlt(ctx, token))
+    // Get symbol from token
+    CHECK_ERROR(readToken(token, symbol))
+    // Amount
+    amount->len = 32;
+    CHECK_ERROR(readBytes(ctx, &amount->ptr, amount->len))
+    // Amount denomination
+    CHECK_ERROR(readByte(ctx, amount_denom))
+    return parser_ok;
+}
+
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    
+    // Number of sources
+    CHECK_ERROR(readUint32(&ctx, &v->transfer.sources_len))
 
-    // Source
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.source_address))
-    // Target
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.target_address))
+    v->transfer.sources.ptr = ctx.buffer + ctx.offset;
+    for (uint32_t i = 0; i < v->transfer.sources_len; i++) {
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &v->transfer.source_address, &v->transfer.token, &v->transfer.amount, &v->transfer.amount_denom, &v->transfer.symbol))
+        v->transfer.no_symbol_sources += (v->transfer.symbol == NULL);
+    }
+    v->transfer.sources.len = ctx.buffer + ctx.offset - v->transfer.sources.ptr;
 
-    // Token
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.token))
-    // Get symbol from token
-    CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
+    // Number of targets
+    CHECK_ERROR(readUint32(&ctx, &v->transfer.targets_len))
 
-    // Amount
-    v->transfer.amount.len = 32;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
-
-    // Amount denomination
-    CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
+    v->transfer.targets.ptr = ctx.buffer + ctx.offset;
+    for (uint32_t i = 0; i < v->transfer.targets_len; i++) {
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &v->transfer.target_address, &v->transfer.token, &v->transfer.amount, &v->transfer.amount_denom, &v->transfer.symbol))
+        v->transfer.no_symbol_targets += (v->transfer.symbol == NULL);
+    }
+    v->transfer.targets.len = ctx.buffer + ctx.offset - v->transfer.targets.ptr;
 
     // shielded hash, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))

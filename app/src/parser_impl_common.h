@@ -45,8 +45,8 @@ extern "C" {
 #define REVEAL_PUBKEY_NORMAL_PARAMS  2
 #define REVEAL_PUBKEY_EXPERT_PARAMS  6
 
-#define TRANSFER_NORMAL_PARAMS  4
-#define TRANSFER_EXPERT_PARAMS  8
+#define TRANSFER_NORMAL_PARAMS  1
+#define TRANSFER_EXPERT_PARAMS  5
 
 #define UPDATE_VP_NORMAL_PARAMS  2
 #define UPDATE_VP_EXPERT_PARAMS  6
@@ -120,6 +120,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
 
 parser_error_t readPGFPaymentAction(parser_context_t *ctx, pgf_payment_action_t *paymentAction);
+  parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner, AddressAlt *token, bytes_t *amount, uint8_t *amount_denom, const char** symbol);
 
 #ifdef __cplusplus
 }

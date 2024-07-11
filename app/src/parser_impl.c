@@ -71,8 +71,8 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             } else {
             *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
-            if(!ctx->tx_obj->transfer.symbol && !ctx->tx_obj->transaction.isMasp) {
-                (*numItems)++;
+            if(!ctx->tx_obj->transaction.isMasp) {
+                (*numItems) += ctx->tx_obj->transfer.sources_len*2 + ctx->tx_obj->transfer.targets_len*2 + ctx->tx_obj->transfer.no_symbol_sources + ctx->tx_obj->transfer.no_symbol_targets;
             }
             break;
 

@@ -128,13 +128,48 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
-
-    if(displayIdx >= 4 && ctx->tx_obj->transfer.symbol) {
-        displayIdx++;
-    }
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (displayIdx >= 5 && !hasMemo) {
-        displayIdx++;
+    const uint8_t typeStart = 0;
+    const uint8_t sourcesStart = 1;
+    const uint8_t targetsStart = sourcesStart + 2*ctx->tx_obj->transfer.sources_len + ctx->tx_obj->transfer.no_symbol_sources;
+    const uint8_t memoStart = targetsStart + 2*ctx->tx_obj->transfer.targets_len + ctx->tx_obj->transfer.no_symbol_targets;
+    const uint8_t expertStart = memoStart + (ctx->tx_obj->transaction.header.memoSection != NULL);
+    AddressAlt source_address;
+    AddressAlt target_address;
+    AddressAlt token;
+    bytes_t amount;
+    uint8_t amount_denom;
+    const char* symbol = NULL;
+    
+    if(typeStart <= displayIdx && displayIdx < sourcesStart) {
+      displayIdx = 0;
+    } else if(sourcesStart <= displayIdx && displayIdx < targetsStart) {
+      displayIdx -= sourcesStart;
+      parser_context_t sources_ctx = {.buffer = ctx->tx_obj->transfer.sources.ptr, .bufferLen = ctx->tx_obj->transfer.sources.len, .offset = 0, .tx_obj = NULL};
+      for (uint32_t i = 0; i < ctx->tx_obj->transfer.sources_len; i++) {
+        CHECK_ERROR(readTransferSourceTarget(&sources_ctx, &source_address, &token, &amount, &amount_denom, &symbol))
+        if(displayIdx >= 2 + (symbol == NULL)) {
+          displayIdx -= 2 + (symbol == NULL);
+        } else {
+          displayIdx += 1;
+          break;
+        }
+      }
+    } else if(targetsStart <= displayIdx && displayIdx < memoStart) {
+      displayIdx -= targetsStart;
+      parser_context_t targets_ctx = {.buffer = ctx->tx_obj->transfer.targets.ptr, .bufferLen = ctx->tx_obj->transfer.targets.len, .offset = 0, .tx_obj = NULL};
+      for (uint32_t i = 0; i < ctx->tx_obj->transfer.targets_len; i++) {
+        CHECK_ERROR(readTransferSourceTarget(&targets_ctx, &target_address, &token, &amount, &amount_denom, &symbol))
+        if(displayIdx >= 2 + (symbol == NULL)) {
+          displayIdx -= 2 + (symbol == NULL);
+        } else {
+          displayIdx += 4;
+          break;
+        }
+      }
+    } else if(memoStart <= displayIdx && displayIdx < expertStart) {
+      displayIdx = 7;
+    } else if(expertStart <= displayIdx) {
+      displayIdx = 8 + (displayIdx - expertStart);
     }
 
     switch (displayIdx) {
@@ -148,30 +183,43 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 1:
             snprintf(outKey, outKeyLen, "Sender");
-            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.source_address, outVal, outValLen, pageIdx, pageCount))
+            CHECK_ERROR(printAddressAlt(&source_address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 2:
-            snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.target_address, outVal, outValLen, pageIdx, pageCount))
-            break;
-        case 3:
-            if(ctx->tx_obj->transfer.symbol != NULL) {
-                snprintf(outKey, outKeyLen, "Amount");
-                CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, false, ctx->tx_obj->transfer.amount_denom,
-                                    ctx->tx_obj->transfer.symbol,
+            if(symbol != NULL) {
+                snprintf(outKey, outKeyLen, "Sending Amount");
+                CHECK_ERROR(printAmount(&amount, false, amount_denom, symbol,
                                     outVal, outValLen, pageIdx, pageCount))
             } else {
-                snprintf(outKey, outKeyLen, "Token");
-                CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transfer.token, outVal, outValLen, pageIdx, pageCount))
+                snprintf(outKey, outKeyLen, "Sending Token");
+                CHECK_ERROR(printAddressAlt(&token, outVal, outValLen, pageIdx, pageCount))
             }
             break;
-        case 4:
-            snprintf(outKey, outKeyLen, "Amount");
-            CHECK_ERROR(printAmount(&ctx->tx_obj->transfer.amount, false, ctx->tx_obj->transfer.amount_denom,
-                                    "",
+        case 3:
+            snprintf(outKey, outKeyLen, "Sending Amount");
+            CHECK_ERROR(printAmount(&amount, false, amount_denom, "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
+        case 4:
+            snprintf(outKey, outKeyLen, "Destination");
+            CHECK_ERROR(printAddressAlt(&target_address, outVal, outValLen, pageIdx, pageCount))
+            break;
         case 5:
+            if(symbol != NULL) {
+                snprintf(outKey, outKeyLen, "Receiving Amount");
+                CHECK_ERROR(printAmount(&amount, false, amount_denom, symbol,
+                                    outVal, outValLen, pageIdx, pageCount))
+            } else {
+                snprintf(outKey, outKeyLen, "Receiving Token");
+                CHECK_ERROR(printAddressAlt(&token, outVal, outValLen, pageIdx, pageCount))
+            }
+            break;
+        case 6:
+            snprintf(outKey, outKeyLen, "Receiving Amount");
+            CHECK_ERROR(printAmount(&amount, false, amount_denom, "",
+                                    outVal, outValLen, pageIdx, pageCount))
+            break;
+        case 7:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -179,7 +227,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             if (!app_mode_expert()) {
                return parser_display_idx_out_of_range;
             }
-            displayIdx -= 6;
+            displayIdx -= 8;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
     }
 
