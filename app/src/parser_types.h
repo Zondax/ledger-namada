@@ -321,8 +321,10 @@ typedef struct {
 
 typedef struct {
     uint32_t sources_len;
+    uint32_t non_masp_sources_len;
     bytes_t sources;
     uint32_t targets_len;
+    uint32_t non_masp_targets_len;
     bytes_t targets;
     uint32_t no_symbol_sources;
     uint32_t no_symbol_targets;

@@ -514,6 +514,11 @@ parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner
     return parser_ok;
 }
 
+// Check if the given address is the MASP internal address
+bool isMaspInternalAddress(const AddressAlt *addr) {
+    return addr->tag == 2 && addr->Internal.tag == 12;
+}
+
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
@@ -529,7 +534,8 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
         uint8_t amount_denom;
         const char* symbol;
         CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
-        v->transfer.no_symbol_sources += (symbol == NULL);
+        v->transfer.non_masp_sources_len += !isMaspInternalAddress(&owner);
+        v->transfer.no_symbol_sources += (symbol == NULL) && !isMaspInternalAddress(&owner);
     }
     v->transfer.sources.len = ctx.buffer + ctx.offset - v->transfer.sources.ptr;
 
@@ -544,7 +550,8 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
         uint8_t amount_denom;
         const char* symbol;
         CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
-        v->transfer.no_symbol_targets += (symbol == NULL);
+        v->transfer.non_masp_targets_len += !isMaspInternalAddress(&owner);
+        v->transfer.no_symbol_targets += (symbol == NULL) && !isMaspInternalAddress(&owner);
     }
     v->transfer.targets.len = ctx.buffer + ctx.offset - v->transfer.targets.ptr;
 

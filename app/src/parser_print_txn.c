@@ -130,8 +130,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         uint8_t pageIdx, uint8_t *pageCount) {
     const uint8_t typeStart = 0;
     const uint8_t sourcesStart = 1;
-    const uint8_t targetsStart = sourcesStart + 2*ctx->tx_obj->transfer.sources_len + ctx->tx_obj->transfer.no_symbol_sources;
-    const uint8_t memoStart = targetsStart + 2*ctx->tx_obj->transfer.targets_len + ctx->tx_obj->transfer.no_symbol_targets;
+    const uint8_t targetsStart = sourcesStart + 2*ctx->tx_obj->transfer.non_masp_sources_len + ctx->tx_obj->transfer.no_symbol_sources;
+    const uint8_t memoStart = targetsStart + 2*ctx->tx_obj->transfer.non_masp_targets_len + ctx->tx_obj->transfer.no_symbol_targets;
     const uint8_t expertStart = memoStart + (ctx->tx_obj->transaction.header.memoSection != NULL);
     AddressAlt source_address;
     AddressAlt target_address;
@@ -147,7 +147,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
       parser_context_t sources_ctx = {.buffer = ctx->tx_obj->transfer.sources.ptr, .bufferLen = ctx->tx_obj->transfer.sources.len, .offset = 0, .tx_obj = NULL};
       for (uint32_t i = 0; i < ctx->tx_obj->transfer.sources_len; i++) {
         CHECK_ERROR(readTransferSourceTarget(&sources_ctx, &source_address, &token, &amount, &amount_denom, &symbol))
-        if(displayIdx >= 2 + (symbol == NULL)) {
+        if(isMaspInternalAddress(&source_address)) {
+        } else if(displayIdx >= 2 + (symbol == NULL)) {
           displayIdx -= 2 + (symbol == NULL);
         } else {
           displayIdx += 1;
@@ -159,7 +160,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
       parser_context_t targets_ctx = {.buffer = ctx->tx_obj->transfer.targets.ptr, .bufferLen = ctx->tx_obj->transfer.targets.len, .offset = 0, .tx_obj = NULL};
       for (uint32_t i = 0; i < ctx->tx_obj->transfer.targets_len; i++) {
         CHECK_ERROR(readTransferSourceTarget(&targets_ctx, &target_address, &token, &amount, &amount_denom, &symbol))
-        if(displayIdx >= 2 + (symbol == NULL)) {
+        if(isMaspInternalAddress(&target_address)) {
+        } else if(displayIdx >= 2 + (symbol == NULL)) {
           displayIdx -= 2 + (symbol == NULL);
         } else {
           displayIdx += 4;
@@ -281,9 +283,9 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
     
     const uint8_t typeStart = 0;
     const uint8_t sourcesStart = 1;
-    const uint8_t spendsStart = sourcesStart + 2*ctx->tx_obj->transfer.sources_len + ctx->tx_obj->transfer.no_symbol_sources;
+    const uint8_t spendsStart = sourcesStart + 2*ctx->tx_obj->transfer.non_masp_sources_len + ctx->tx_obj->transfer.no_symbol_sources;
     const uint8_t targetsStart = spendsStart + 3*n_spends;
-    const uint8_t outputsStart = targetsStart + 2*ctx->tx_obj->transfer.targets_len + ctx->tx_obj->transfer.no_symbol_targets;
+    const uint8_t outputsStart = targetsStart + 2*ctx->tx_obj->transfer.non_masp_targets_len + ctx->tx_obj->transfer.no_symbol_targets;
     const uint8_t memoStart = outputsStart + 3*n_outs;
     const uint8_t expertStart = memoStart + (ctx->tx_obj->transaction.header.memoSection != NULL);
     AddressAlt source_address;
@@ -300,7 +302,8 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
       parser_context_t sources_ctx = {.buffer = ctx->tx_obj->transfer.sources.ptr, .bufferLen = ctx->tx_obj->transfer.sources.len, .offset = 0, .tx_obj = NULL};
       for (uint32_t i = 0; i < ctx->tx_obj->transfer.sources_len; i++) {
         CHECK_ERROR(readTransferSourceTarget(&sources_ctx, &source_address, &token, &namount, &amount_denom, &symbol))
-        if(displayIdx >= 2 + (symbol == NULL)) {
+        if(isMaspInternalAddress(&source_address)) {
+        } else if(displayIdx >= 2 + (symbol == NULL)) {
           displayIdx -= 2 + (symbol == NULL);
         } else {
           displayIdx += 1;
@@ -317,7 +320,8 @@ static parser_error_t printMaspTransferTxn( const parser_context_t *ctx,
       parser_context_t targets_ctx = {.buffer = ctx->tx_obj->transfer.targets.ptr, .bufferLen = ctx->tx_obj->transfer.targets.len, .offset = 0, .tx_obj = NULL};
       for (uint32_t i = 0; i < ctx->tx_obj->transfer.targets_len; i++) {
         CHECK_ERROR(readTransferSourceTarget(&targets_ctx, &target_address, &token, &namount, &amount_denom, &symbol))
-        if(displayIdx >= 2 + (symbol == NULL)) {
+        if(isMaspInternalAddress(&target_address)) {
+        } else if(displayIdx >= 2 + (symbol == NULL)) {
           displayIdx -= 2 + (symbol == NULL);
         } else {
           displayIdx += 4;

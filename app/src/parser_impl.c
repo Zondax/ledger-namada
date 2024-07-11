@@ -56,7 +56,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             } else {
                 *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
-            (*numItems) += ctx->tx_obj->transfer.sources_len*2 + ctx->tx_obj->transfer.targets_len*2 + ctx->tx_obj->transfer.no_symbol_sources + ctx->tx_obj->transfer.no_symbol_targets;
+            (*numItems) += ctx->tx_obj->transfer.non_masp_sources_len*2 + ctx->tx_obj->transfer.non_masp_targets_len*2 + ctx->tx_obj->transfer.no_symbol_sources + ctx->tx_obj->transfer.no_symbol_targets;
             break;
 
         case InitAccount: {
