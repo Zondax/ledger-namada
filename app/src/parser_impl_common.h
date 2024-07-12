@@ -122,6 +122,7 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj);
 parser_error_t readPGFPaymentAction(parser_context_t *ctx, pgf_payment_action_t *paymentAction);
 parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner, AddressAlt *token, bytes_t *amount, uint8_t *amount_denom, const char** symbol);
 bool isMaspInternalAddress(const AddressAlt *addr);
+parser_error_t readAssetData(parser_context_t *ctx, masp_asset_data_t *asset);
 
 #ifdef __cplusplus
 }

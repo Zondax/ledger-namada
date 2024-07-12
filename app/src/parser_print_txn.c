@@ -150,6 +150,20 @@ static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
     return parser_ok;
 }
 
+static parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, const uint8_t *stoken, masp_asset_data_t *asset_data, uint32_t *index) {
+    parser_context_t asset_data_ctx = {.buffer = maspBuilder->asset_data.ptr, .bufferLen = maspBuilder->asset_data.len, .offset = 0, .tx_obj = NULL};
+    for (*index = 0; *index < maspBuilder->n_asset_type; (*index)++) {
+        CHECK_ERROR(readAssetData(&asset_data_ctx, asset_data))
+        uint8_t identifier[32];
+        uint8_t nonce;
+        CHECK_ERROR(derive_asset_type(asset_data, identifier, &nonce))
+        if(MEMCMP(identifier, stoken, ASSET_ID_LEN) == 0) {
+            return parser_ok;
+        }
+    }
+    return parser_ok;
+}
+
 static parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
@@ -227,6 +241,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     uint8_t tmp_amount[32] = {0};
     bytes_t amount_bytes = {tmp_amount, 32};
     const uint8_t *amount = {0};
+    uint32_t asset_idx;
+    masp_asset_data_t asset_data;
 
     switch (displayIdx) {
         case 0:
@@ -281,20 +297,32 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
 
             break;
-        case 8:
+        case 8: {
             snprintf(outKey, outKeyLen, "Sending Token");
             const uint8_t *stoken = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN;
-            array_to_hexstr(tmp_buf, sizeof(tmp_buf), stoken, ASSET_ID_LEN);
-            pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, stoken, &asset_data, &asset_idx))
+            if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                CHECK_ERROR(printAddressAlt(&asset_data.token, outVal, outValLen, pageIdx, pageCount))
+            } else {
+                array_to_hexstr(tmp_buf, sizeof(tmp_buf), stoken, ASSET_ID_LEN);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
             break;
-        case 9:
+        } case 9: {
             snprintf(outKey, outKeyLen, "Sending Amount");
+            const uint8_t *stoken = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN;
             amount = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
-            // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
-            MEMCPY(tmp_amount + (ctx->tx_obj->transaction.sections.maspBuilder.asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
-            printAmount(&amount_bytes, false, ctx->tx_obj->transaction.sections.maspBuilder.asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, stoken, &asset_data, &asset_idx))
+              if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
+                MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            } else {
+                MEMCPY(tmp_amount, amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, 0, "", outVal, outValLen, pageIdx, pageCount);
+            }
             break;
-        case 10:
+        } case 10:
             snprintf(outKey, outKeyLen, "Destination");
             CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? 33 : 1), PAYMENT_ADDR_LEN + DIVERSIFIER_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
             pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
@@ -302,16 +330,28 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
         case 11:
             snprintf(outKey, outKeyLen, "Receiving Token");
             const uint8_t *rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
-            array_to_hexstr(tmp_buf, sizeof(tmp_buf), rtoken, ASSET_ID_LEN);
-            pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
+            if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                CHECK_ERROR(printAddressAlt(&asset_data.token, outVal, outValLen, pageIdx, pageCount))
+            } else {
+                array_to_hexstr(tmp_buf, sizeof(tmp_buf), rtoken, ASSET_ID_LEN);
+                pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
+            }
             break;
-        case 12:
+        case 12: {
             snprintf(outKey, outKeyLen, "Receiving Amount");
+            const uint8_t *rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
             amount = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
-            MEMCPY(tmp_amount + (ctx->tx_obj->transaction.sections.maspBuilder.asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
-            printAmount(&amount_bytes, false, ctx->tx_obj->transaction.sections.maspBuilder.asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
+            if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, asset_data.denom, "", outVal, outValLen, pageIdx, pageCount);
+            } else {
+                MEMCPY(tmp_amount, amount, sizeof(uint64_t));
+                printAmount(&amount_bytes, false, 0, "", outVal, outValLen, pageIdx, pageCount);
+            }
             break;
-        case 13:
+        } case 13:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
