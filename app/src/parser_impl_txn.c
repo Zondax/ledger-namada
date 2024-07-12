@@ -781,22 +781,9 @@ __Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *time
 static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    // Read tag
-    CHECK_ERROR(checkTag(&ctx, 0x0A))
-    // Skip URL: /ibc.applications.transfer.v1.MsgTransfer
+    uint32_t tmpValue;
     uint16_t tmpFieldLen = 0;
-    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
-    bytes_t tmpUrl = {.ptr = NULL, .len = (uint16_t)tmpFieldLen};
-    CHECK_ERROR(readBytes(&ctx, &tmpUrl.ptr, tmpUrl.len))
-
-    // Check value field (expect vector and check size)
-    CHECK_ERROR(checkTag(&ctx, 0x12))
-    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
-
-    if (tmpFieldLen != ctx.bufferLen - ctx.offset) {
-        return parser_unexpected_buffer_end;
-    }
-
+    CHECK_ERROR(readUint32(&ctx, &tmpValue));
     // Read port id
     CHECK_ERROR(checkTag(&ctx, 0x0A))
     CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.port_id.len))
@@ -859,6 +846,7 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         v->ibc.revision_height = tmp;
         ctx.offset += consumed;
     }
+    
     // Read timeout timestamp
     CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
 
@@ -868,6 +856,10 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         CHECK_ERROR(readFieldSizeU16(&ctx, &tmpBytes.len))
         CHECK_ERROR(readBytes(&ctx, &tmpBytes.ptr, tmpBytes.len))
     }
+
+    // Read byte indicating presence of Transfer
+    uint8_t has_transfer;
+    CHECK_ERROR(readByte(&ctx, &has_transfer))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;
