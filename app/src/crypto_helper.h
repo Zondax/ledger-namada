@@ -68,6 +68,7 @@ parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *ide
 parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk);
 parser_error_t crypto_encodeLargeBech32( const uint8_t *address, size_t addressLen, uint8_t *output, size_t outputLen, bool paymentAddr);
 parser_error_t crypto_encodeAltAddress(const AddressAlt *addr, char *address, uint16_t addressLen);
+parser_error_t derive_asset_type(const masp_asset_data_t *asset_data, uint8_t *identifier, uint8_t *nonce);
 #ifdef __cplusplus
 }
 #endif

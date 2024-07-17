@@ -499,26 +499,61 @@ static parser_error_t readUpdateVPTxn(const bytes_t *data, const section_t *extr
     return parser_ok;
 }
 
+parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner, AddressAlt *token, bytes_t *amount, uint8_t *amount_denom, const char** symbol) {
+    // Source
+    CHECK_ERROR(readAddressAlt(ctx, owner))
+    // Token
+    CHECK_ERROR(readAddressAlt(ctx, token))
+    // Get symbol from token
+    CHECK_ERROR(readToken(token, symbol))
+    // Amount
+    amount->len = 32;
+    CHECK_ERROR(readBytes(ctx, &amount->ptr, amount->len))
+    // Amount denomination
+    CHECK_ERROR(readByte(ctx, amount_denom))
+    return parser_ok;
+}
+
+// Check if the given address is the MASP internal address
+bool isMaspInternalAddress(const AddressAlt *addr) {
+    return addr->tag == 2 && addr->Internal.tag == 12;
+}
+
 static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     // https://github.com/anoma/namada/blob/8f960d138d3f02380d129dffbd35a810393e5b13/core/src/types/token.rs#L467-L482
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
+    
+    // Number of sources
+    CHECK_ERROR(readUint32(&ctx, &v->transfer.sources_len))
 
-    // Source
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.source_address))
-    // Target
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.target_address))
+    v->transfer.sources.ptr = ctx.buffer + ctx.offset;
+    for (uint32_t i = 0; i < v->transfer.sources_len; i++) {
+        AddressAlt owner;
+        AddressAlt token;
+        bytes_t amount;
+        uint8_t amount_denom;
+        const char* symbol;
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+        v->transfer.non_masp_sources_len += !isMaspInternalAddress(&owner);
+        v->transfer.no_symbol_sources += (symbol == NULL) && !isMaspInternalAddress(&owner);
+    }
+    v->transfer.sources.len = ctx.buffer + ctx.offset - v->transfer.sources.ptr;
 
-    // Token
-    CHECK_ERROR(readAddressAlt(&ctx, &v->transfer.token))
-    // Get symbol from token
-    CHECK_ERROR(readToken(&v->transfer.token, &v->transfer.symbol))
+    // Number of targets
+    CHECK_ERROR(readUint32(&ctx, &v->transfer.targets_len))
 
-    // Amount
-    v->transfer.amount.len = 32;
-    CHECK_ERROR(readBytes(&ctx, &v->transfer.amount.ptr, v->transfer.amount.len))
-
-    // Amount denomination
-    CHECK_ERROR(readByte(&ctx, &v->transfer.amount_denom))
+    v->transfer.targets.ptr = ctx.buffer + ctx.offset;
+    for (uint32_t i = 0; i < v->transfer.targets_len; i++) {
+        AddressAlt owner;
+        AddressAlt token;
+        bytes_t amount;
+        uint8_t amount_denom;
+        const char* symbol;
+        CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+        v->transfer.non_masp_targets_len += !isMaspInternalAddress(&owner);
+        v->transfer.no_symbol_targets += (symbol == NULL) && !isMaspInternalAddress(&owner);
+    }
+    v->transfer.targets.len = ctx.buffer + ctx.offset - v->transfer.targets.ptr;
 
     // shielded hash, check if it is there
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
@@ -746,22 +781,9 @@ __Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *time
 static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    // Read tag
-    CHECK_ERROR(checkTag(&ctx, 0x0A))
-    // Skip URL: /ibc.applications.transfer.v1.MsgTransfer
+    uint32_t tmpValue;
     uint16_t tmpFieldLen = 0;
-    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
-    bytes_t tmpUrl = {.ptr = NULL, .len = (uint16_t)tmpFieldLen};
-    CHECK_ERROR(readBytes(&ctx, &tmpUrl.ptr, tmpUrl.len))
-
-    // Check value field (expect vector and check size)
-    CHECK_ERROR(checkTag(&ctx, 0x12))
-    CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
-
-    if (tmpFieldLen != ctx.bufferLen - ctx.offset) {
-        return parser_unexpected_buffer_end;
-    }
-
+    CHECK_ERROR(readUint32(&ctx, &tmpValue));
     // Read port id
     CHECK_ERROR(checkTag(&ctx, 0x0A))
     CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.port_id.len))
@@ -824,6 +846,7 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         v->ibc.revision_height = tmp;
         ctx.offset += consumed;
     }
+
     // Read timeout timestamp
     CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
 
@@ -833,6 +856,10 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         CHECK_ERROR(readFieldSizeU16(&ctx, &tmpBytes.len))
         CHECK_ERROR(readBytes(&ctx, &tmpBytes.ptr, tmpBytes.len))
     }
+
+    // Read byte indicating presence of Transfer
+    uint8_t has_transfer;
+    CHECK_ERROR(readByte(&ctx, &has_transfer))
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;

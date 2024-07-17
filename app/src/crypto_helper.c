@@ -502,6 +502,34 @@ bool check_diversifier(const uint8_t d[DIVERSIFIER_LENGTH]) {
     return is_valid_diversifier(hash);
 }
 
+// Derive the asset type corresponding to the given asset data
+parser_error_t derive_asset_type(const masp_asset_data_t *asset_data, uint8_t *identifier, uint8_t *nonce) {
+    if(asset_data == NULL) {
+        return parser_unexpected_error;
+    }
+
+    for(*nonce = 0; *nonce <= 255; (*nonce) ++) {
+        blake2s_state ai_state = {0};
+        blake2s_init_with_personalization(&ai_state, 32, (const uint8_t *)ASSET_IDENTIFIER_PERSONALIZATION, sizeof(ASSET_IDENTIFIER_PERSONALIZATION));
+        blake2s_update(&ai_state, (const uint8_t *)GH_FIRST_BLOCK, sizeof(GH_FIRST_BLOCK));
+        blake2s_update(&ai_state, asset_data->bytes.ptr, asset_data->bytes.len);
+        blake2s_update(&ai_state, nonce, sizeof(*nonce));
+        blake2s_final(&ai_state, identifier, ASSET_IDENTIFIER_LENGTH);
+
+        uint8_t hash[32] = {0};
+        blake2s_state vcg_state = {0};
+        blake2s_init_with_personalization(&vcg_state, 32, (const uint8_t *)VALUE_COMMITMENT_GENERATOR_PERSONALIZATION, sizeof(VALUE_COMMITMENT_GENERATOR_PERSONALIZATION));
+        blake2s_update(&vcg_state, identifier, KEY_LENGTH);
+        blake2s_final(&vcg_state, hash, KEY_LENGTH);
+
+        if(is_valid_diversifier(hash)) {
+          return parser_ok;
+        }
+    }
+
+    return parser_unexpected_error;
+}
+
 // Return list with 4 diversifiers, starting computing form start_index
 parser_error_t computeDiversifiersList(const uint8_t dk[KEY_LENGTH], uint8_t start_index[DIVERSIFIER_LENGTH], uint8_t diversifier_list[DIVERSIFIER_LIST_LENGTH]) {
     if(dk == NULL || start_index == NULL || diversifier_list == NULL) {

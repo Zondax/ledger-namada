@@ -113,12 +113,12 @@ typedef struct {
     bytes_t indexedSignatures;
 } signature_section_t;
 typedef struct {
-    uint8_t token_discriminant;
-    bytes_t token;
+    AddressAlt token;
     uint8_t denom;
     uint8_t position;
     uint8_t has_epoch;
     uint64_t epoch;
+    bytes_t bytes;
 } masp_asset_data_t;
 
 typedef struct {
@@ -218,7 +218,7 @@ typedef struct {
 typedef struct {
     bytes_t target_hash;
     uint32_t n_asset_type;
-    masp_asset_data_t asset_data;
+    bytes_t asset_data;
     masp_sapling_metadata_t metadata;
     masp_builder_t builder;
 } masp_builder_section_t;

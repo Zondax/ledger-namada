@@ -18,6 +18,8 @@
 #include "parser_impl_common.h"
 #include "parser_txdef.h"
 #include "nvdata.h"
+#include "crypto_helper.h"
+#include "parser_address.h"
 
 static parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
     uint8_t tag = 0;
@@ -187,33 +189,6 @@ static parser_error_t readInternalAddress(parser_context_t *ctx, bytes_t *token)
     return parser_ok;
 }
 
-static parser_error_t readAssetData(parser_context_t *ctx, masp_asset_data_t *asset) {
-    if (ctx == NULL || asset == NULL) {
-        return parser_unexpected_error;
-    }
-
-    CHECK_ERROR(readByte(ctx, &asset->token_discriminant))
-    switch(asset->token_discriminant) {
-    case 0:
-        asset->token.len = ESTABLISHED_ADDR_LEN;
-        CHECK_ERROR(readBytes(ctx, &asset->token.ptr, asset->token.len))
-        break;
-    case 1:
-        asset->token.len = IMPLICIT_ADDR_LEN;
-        CHECK_ERROR(readBytes(ctx, &asset->token.ptr, asset->token.len))
-        break;
-    case 2:
-        CHECK_ERROR(readInternalAddress(ctx, &asset->token))
-        break;
-    }
-    CHECK_ERROR(readByte(ctx, &asset->denom))
-    CHECK_ERROR(readByte(ctx, &asset->position))
-    CHECK_ERROR(readByte(ctx, &asset->has_epoch))
-    if (asset->has_epoch) {
-        CHECK_ERROR(readUint64(ctx, &asset->epoch))
-    }
-    return parser_ok;
-}
 static parser_error_t readTransparentBuilder(parser_context_t *ctx, masp_transparent_builder_t *builder) {
     if (ctx == NULL || builder == NULL) {
         return parser_unexpected_error;
@@ -529,12 +504,32 @@ parser_error_t readMaspBuilder(parser_context_t *ctx, masp_builder_section_t *ma
     CHECK_ERROR(readBytes(ctx, &maspBuilder->target_hash.ptr, maspBuilder->target_hash.len))
 
     CHECK_ERROR(readUint32(ctx, &maspBuilder->n_asset_type))
+    maspBuilder->asset_data.ptr = ctx->buffer + ctx->offset;
     for (uint32_t i = 0; i < maspBuilder->n_asset_type; i++) {
-        CHECK_ERROR(readAssetData(ctx, &maspBuilder->asset_data))
+        masp_asset_data_t asset_data;
+        CHECK_ERROR(readAssetData(ctx, &asset_data))
     }
+    maspBuilder->asset_data.len = ctx->buffer + ctx->offset - maspBuilder->asset_data.ptr;
 
     CHECK_ERROR(readSaplingMetadata(ctx, &maspBuilder->metadata))
     CHECK_ERROR(readBuilder(ctx, &maspBuilder->builder))
 
+    return parser_ok;
+}
+
+parser_error_t readAssetData(parser_context_t *ctx, masp_asset_data_t *asset) {
+    if (ctx == NULL || asset == NULL) {
+        return parser_unexpected_error;
+    }
+
+    asset->bytes.ptr = ctx->buffer + ctx->offset;
+    CHECK_ERROR(readAddressAlt(ctx, &asset->token))
+    CHECK_ERROR(readByte(ctx, &asset->denom))
+    CHECK_ERROR(readByte(ctx, &asset->position))
+    CHECK_ERROR(readByte(ctx, &asset->has_epoch))
+    if (asset->has_epoch) {
+        CHECK_ERROR(readUint64(ctx, &asset->epoch))
+    }
+    asset->bytes.len = ctx->buffer + ctx->offset - asset->bytes.ptr;
     return parser_ok;
 }
