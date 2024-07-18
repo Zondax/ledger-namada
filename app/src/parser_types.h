@@ -343,6 +343,7 @@ typedef struct {
     uint64_t revision_number;
     uint64_t revision_height;
     timestamp_t timeout_timestamp;
+    tx_transfer_t transfer;
 } tx_ibc_t;
 
 typedef struct {

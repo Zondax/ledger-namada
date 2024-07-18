@@ -784,6 +784,7 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     uint32_t tmpValue;
     uint16_t tmpFieldLen = 0;
     CHECK_ERROR(readUint32(&ctx, &tmpValue));
+
     // Read port id
     CHECK_ERROR(checkTag(&ctx, 0x0A))
     CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.port_id.len))
@@ -860,6 +861,48 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     // Read byte indicating presence of Transfer
     uint8_t has_transfer;
     CHECK_ERROR(readByte(&ctx, &has_transfer))
+
+    if(has_transfer) {
+        // Number of sources
+        CHECK_ERROR(readUint32(&ctx, &v->ibc.transfer.sources_len))
+
+        v->ibc.transfer.sources.ptr = ctx.buffer + ctx.offset;
+        for (uint32_t i = 0; i < v->ibc.transfer.sources_len; i++) {
+            AddressAlt owner;
+            AddressAlt token;
+            bytes_t amount;
+            uint8_t amount_denom;
+            const char* symbol;
+            CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+            v->ibc.transfer.non_masp_sources_len += !isMaspInternalAddress(&owner);
+            v->ibc.transfer.no_symbol_sources += (symbol == NULL) && !isMaspInternalAddress(&owner);
+        }
+        v->ibc.transfer.sources.len = ctx.buffer + ctx.offset - v->ibc.transfer.sources.ptr;
+
+        // Number of targets
+        CHECK_ERROR(readUint32(&ctx, &v->ibc.transfer.targets_len))
+
+        v->ibc.transfer.targets.ptr = ctx.buffer + ctx.offset;
+        for (uint32_t i = 0; i < v->ibc.transfer.targets_len; i++) {
+            AddressAlt owner;
+            AddressAlt token;
+            bytes_t amount;
+            uint8_t amount_denom;
+            const char* symbol;
+            CHECK_ERROR(readTransferSourceTarget(&ctx, &owner, &token, &amount, &amount_denom, &symbol))
+            v->ibc.transfer.non_masp_targets_len += !isMaspInternalAddress(&owner);
+            v->ibc.transfer.no_symbol_targets += (symbol == NULL) && !isMaspInternalAddress(&owner);
+        }
+        v->ibc.transfer.targets.len = ctx.buffer + ctx.offset - v->ibc.transfer.targets.ptr;
+
+        // shielded hash, check if it is there
+        CHECK_ERROR(readByte(&ctx, &v->ibc.transfer.has_shielded_hash))
+        if (v->ibc.transfer.has_shielded_hash){
+            v->ibc.transfer.shielded_hash.len = HASH_LEN;
+            // we are not displaying these bytes
+            ctx.offset += v->ibc.transfer.shielded_hash.len;
+        }
+    }
 
     if (ctx.offset != ctx.bufferLen) {
         return parser_unexpected_characters;

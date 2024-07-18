@@ -159,36 +159,6 @@ static parser_error_t readSaplingMetadata(parser_context_t *ctx, masp_sapling_me
     return parser_ok;
 }
 
-static parser_error_t readInternalAddress(parser_context_t *ctx, bytes_t *token) {
-    if (ctx == NULL || token == NULL) {
-        return parser_unexpected_error;
-    }
-
-    uint8_t tag = 0;
-    CHECK_ERROR(readByte(ctx, &tag))
-    switch(tag) {
-    case 0: // Internal Addr Pos
-    case 1: // Internal Addr PosSlashPool
-    case 2: // Internal Addr Parameters
-    case 3: // Internal Addr Ibc
-    case 5: // Internal Addr Governance
-    case 6: // Internal Addr EthBridge
-    case 7: // Internal Addr EthBridgePool
-    case 10: // Internal Addr Multitoken
-    case 11: // Internal Addr Pgf
-    case 12: // Internal Addr Masp
-        return parser_ok;
-        break;
-    case 4: // Internal Addr IbcToken
-    case 8: // Internal Addr Erc20
-    case 9: // Internal Addr Nut
-        token->len = ESTABLISHED_ADDR_LEN;
-        CHECK_ERROR(readBytes(ctx, &token->ptr, token->len))
-        break;
-    }
-    return parser_ok;
-}
-
 static parser_error_t readTransparentBuilder(parser_context_t *ctx, masp_transparent_builder_t *builder) {
     if (ctx == NULL || builder == NULL) {
         return parser_unexpected_error;
