@@ -762,11 +762,11 @@ static parser_error_t readBridgePoolTransfer(const bytes_t *data, tx_bridge_pool
     return parser_ok;
 }
 
-__Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *timestamp) {
+__Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *timestamp, uint8_t expected_tag) {
     uint8_t consumed = 0;
     uint64_t tmp = 0;
 
-    CHECK_ERROR(checkTag(ctx, 0x38))
+    CHECK_ERROR(checkTag(ctx, expected_tag))
     const uint64_t timestampSize = ctx->bufferLen - ctx->offset;
     decodeLEB128(ctx->buffer + ctx->offset, timestampSize, &consumed, &tmp);
     ctx->offset += consumed;
@@ -778,9 +778,57 @@ __Z_INLINE parser_error_t readTimestamp(parser_context_t *ctx, timestamp_t *time
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t readSenderAndReceiver(parser_context_t *ctx, parser_tx_t *v, uint8_t sender_expected_tag, uint8_t reveiver_expected_tag ) {
+    // Read sender
+    CTX_CHECK_AVAIL(ctx, 1);
+    if (*(ctx->buffer + ctx->offset) == sender_expected_tag) {
+        CHECK_ERROR(checkTag(ctx, sender_expected_tag))
+        CHECK_ERROR(readFieldSizeU16(ctx, &v->ibc.sender_address.len))
+        CHECK_ERROR(readBytes(ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+    }
+
+    // Read receiver
+    CTX_CHECK_AVAIL(ctx, 1);
+    if (*(ctx->buffer + ctx->offset) == reveiver_expected_tag) {
+        CHECK_ERROR(checkTag(ctx, reveiver_expected_tag))
+        CHECK_ERROR(readFieldSizeU16(ctx, &v->ibc.receiver.len))
+        CHECK_ERROR(readBytes(ctx, &v->ibc.receiver.ptr, v->ibc.receiver.len))
+    }
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t readTimeouts(parser_context_t *ctx, parser_tx_t *v, uint8_t height_expected_tag, uint8_t timestamp_expected_tag ) {
+    // Read timeout height
+    CHECK_ERROR(checkTag(ctx, height_expected_tag))
+    CHECK_ERROR(readByte(ctx, &v->ibc.timeout_height_type))
+
+    if (v->ibc.timeout_height_type > 0) {
+        uint8_t consumed = 0;
+        uint64_t tmp = 0;
+
+        // Read 0x08
+        CHECK_ERROR(checkTag(ctx, 0x08))
+        const uint64_t remainingBytes = ctx->bufferLen - ctx->offset;
+        decodeLEB128(ctx->buffer + ctx->offset, remainingBytes, &consumed, &tmp);
+        v->ibc.revision_number = tmp;
+        ctx->offset += consumed;
+
+        CHECK_ERROR(checkTag(ctx, 0x10))
+        const uint64_t remainingBytes2 = ctx->bufferLen - ctx->offset;
+        decodeLEB128(ctx->buffer + ctx->offset, remainingBytes2, &consumed, &tmp);
+        v->ibc.revision_height = tmp;
+        ctx->offset += consumed;
+    }
+
+    // Read timeout timestamp
+    CHECK_ERROR(readTimestamp(ctx, &v->ibc.timeout_timestamp, timestamp_expected_tag))
+    return parser_ok;
+}
+
 static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
+    v->ibc.is_ibc = 1;
     uint32_t tmpValue;
     uint16_t tmpFieldLen = 0;
     CHECK_ERROR(readUint32(&ctx, &tmpValue));
@@ -796,73 +844,61 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readBytes(&ctx, &v->ibc.channel_id.ptr, v->ibc.channel_id.len))
 
     ////// Packed data
-    // Read token address
     CHECK_ERROR(checkTag(&ctx, 0x1A))
     CHECK_ERROR(readFieldSizeU16(&ctx, &tmpFieldLen))
 
-    CHECK_ERROR(checkTag(&ctx, 0x0A))
-    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_address.len))
-    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_address.ptr, v->ibc.token_address.len))
+    uint8_t tag = 0;
+    CHECK_ERROR(readByte(&ctx, &tag))
 
-    // Read token amount
-    CHECK_ERROR(checkTag(&ctx, 0x12))
-    CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_amount.len))
-    CHECK_ERROR(readBytes(&ctx, &v->ibc.token_amount.ptr, v->ibc.token_amount.len))
+    if (tag == 0x0A) { // Transfer
+        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_address.len))
+        CHECK_ERROR(readBytes(&ctx, &v->ibc.token_address.ptr, v->ibc.token_address.len))
 
-    // Read sender
-    CTX_CHECK_AVAIL(&ctx, 1);
-    if (*(ctx.buffer + ctx.offset) == 0x22) {
-        CHECK_ERROR(checkTag(&ctx, 0x22))
-        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.sender_address.len))
-        CHECK_ERROR(readBytes(&ctx, &v->ibc.sender_address.ptr, v->ibc.sender_address.len))
+        // Read token amount
+        CHECK_ERROR(checkTag(&ctx, 0x12))
+        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.token_amount.len))
+        CHECK_ERROR(readBytes(&ctx, &v->ibc.token_amount.ptr, v->ibc.token_amount.len))
+
+        CHECK_ERROR(readSenderAndReceiver(&ctx, v, 0x22, 0x2A))
+        CHECK_ERROR(readTimeouts(&ctx, v, 0x32, 0x38))
+
+    } else { // NFT Transfer
+        v->ibc.is_nft = 1;
+
+        // Read ClassId
+        ctx.offset--;
+        v->ibc.class_id.len = tmpFieldLen;
+        CHECK_ERROR(readBytes(&ctx, &v->ibc.class_id.ptr, v->ibc.class_id.len))
+
+        // Read TokenIDs
+        uint16_t tmp_len = 0;
+        v->ibc.token_id.ptr = ctx.buffer + ctx.offset;
+        while (*(ctx.buffer + ctx.offset) == 0x22) {
+            ctx.offset++;
+            CHECK_ERROR(readFieldSizeU16(&ctx, &tmp_len))
+            CTX_CHECK_AND_ADVANCE(&ctx, tmp_len);
+            v->ibc.n_token_id++;
+        }
+
+        v->ibc.token_id.len = ctx.buffer + ctx.offset - v->ibc.token_id.ptr;
+
+        CHECK_ERROR(readSenderAndReceiver(&ctx, v, 0x2a, 0x32))
+        CHECK_ERROR(readTimeouts(&ctx, v, 0x3a, 0x40))
     }
 
-    // Read receiver
-    CTX_CHECK_AVAIL(&ctx, 1);
-    if (*(ctx.buffer + ctx.offset) == 0x2A) {
-        CHECK_ERROR(checkTag(&ctx, 0x2A))
-        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.receiver.len))
-        CHECK_ERROR(readBytes(&ctx, &v->ibc.receiver.ptr, v->ibc.receiver.len))
-    }
-    ////////////////
+    // Read memo if present
+    uint8_t tmp_byte = 0;
+    uint8_t has_transfer = 0;
+    CHECK_ERROR(readByte(&ctx, &tmp_byte))
+    if (tmp_byte == 0x42 || tmp_byte == 0x4a) {
+        CHECK_ERROR(readFieldSizeU16(&ctx, &v->ibc.memo.len))
+        CHECK_ERROR(readBytes(&ctx, &v->ibc.memo.ptr, v->ibc.memo.len))
 
-    // Read timeout height
-    CHECK_ERROR(checkTag(&ctx, 0x32))
-    CHECK_ERROR(readByte(&ctx, &v->ibc.timeout_height_type))
-
-    if (v->ibc.timeout_height_type > 0) {
-        uint8_t consumed = 0;
-        uint64_t tmp = 0;
-
-        // Read 0x08
-        CHECK_ERROR(checkTag(&ctx, 0x08))
-        const uint64_t remainingBytes = ctx.bufferLen - ctx.offset;
-        decodeLEB128(ctx.buffer + ctx.offset, remainingBytes, &consumed, &tmp);
-        v->ibc.revision_number = tmp;
-        ctx.offset += consumed;
-
-        CHECK_ERROR(checkTag(&ctx, 0x10))
-        const uint64_t remainingBytes2 = ctx.bufferLen - ctx.offset;
-        decodeLEB128(ctx.buffer + ctx.offset, remainingBytes2, &consumed, &tmp);
-        v->ibc.revision_height = tmp;
-        ctx.offset += consumed;
+        // Read byte indicating presence of Transfer
+        CHECK_ERROR(readByte(&ctx, &has_transfer))
     }
 
-    // Read timeout timestamp
-    CHECK_ERROR(readTimestamp(&ctx, &v->ibc.timeout_timestamp))
-
-    if (ctx.offset < ctx.bufferLen) {
-        CHECK_ERROR(checkTag(&ctx, 0x42))
-        bytes_t  tmpBytes = {0};
-        CHECK_ERROR(readFieldSizeU16(&ctx, &tmpBytes.len))
-        CHECK_ERROR(readBytes(&ctx, &tmpBytes.ptr, tmpBytes.len))
-    }
-
-    // Read byte indicating presence of Transfer
-    uint8_t has_transfer;
-    CHECK_ERROR(readByte(&ctx, &has_transfer))
-
-    if(has_transfer) {
+    if(has_transfer || tmp_byte == 1) {
         // Number of sources
         CHECK_ERROR(readUint32(&ctx, &v->ibc.transfer.sources_len))
 

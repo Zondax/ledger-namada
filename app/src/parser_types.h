@@ -343,7 +343,13 @@ typedef struct {
     uint64_t revision_number;
     uint64_t revision_height;
     timestamp_t timeout_timestamp;
+    bytes_t memo;
     tx_transfer_t transfer;
+    bytes_t class_id;
+    bytes_t token_id;
+    uint16_t n_token_id;
+    uint8_t is_nft;
+    uint8_t is_ibc;
 } tx_ibc_t;
 
 typedef struct {
