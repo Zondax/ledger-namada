@@ -55,6 +55,8 @@ zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t 
 zxerr_t crypto_hashCodeSection(const section_t *section, uint8_t *output, uint32_t outputLen);
 zxerr_t crypto_hashExtraDataSection(const section_t *section, uint8_t *output, uint32_t outputLen);
 
+zxerr_t ensureBip32();
+zxerr_t ensureZip32();
 
 // MASP SECTION
 parser_error_t convertKey(const uint8_t spendingKey[KEY_LENGTH], const uint8_t modifier, uint8_t outputKey[KEY_LENGTH], bool reduceWideByte);

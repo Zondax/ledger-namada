@@ -52,9 +52,40 @@
 #include "blake2.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
+uint8_t hdPathLen;
 
 uint8_t bech32_hrp_len;
 char bech32_hrp[MAX_BECH32_HRP_LEN + 1];
+
+// Ensure that we are working on a BIP 32 path
+zxerr_t ensureBip32() {
+    const bool default_mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
+                         hdPath[1] == HDPATH_1_DEFAULT;
+
+    const bool default_testnet = hdPath[0] == HDPATH_0_DEFAULT &&
+                         hdPath[1] == HDPATH_1_TESTNET;
+
+    if (!default_mainnet && !default_testnet) {
+        return zxerr_unknown;
+    } else {
+        return zxerr_ok;
+    }
+}
+
+// Ensure that we are working on a ZIP 32 path
+zxerr_t ensureZip32() {
+    const bool identity_mainnet = hdPath[0] == HDPATH_0_IDENTITY &&
+                         hdPath[1] == HDPATH_1_DEFAULT;
+
+    const bool identity_testnet = hdPath[0] == HDPATH_0_IDENTITY &&
+                         hdPath[1] == HDPATH_1_TESTNET;
+
+    if (!identity_mainnet && !identity_testnet) {
+        return zxerr_unknown;
+    } else {
+        return zxerr_ok;
+    }
+}
 
 static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_t *pubkey){
     if (publicKeyHash == NULL || pubkey == NULL) {
@@ -91,6 +122,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
 }
 
 zxerr_t crypto_encodeRawPubkey(const uint8_t* rawPubkey, uint16_t rawPubkeyLen, uint8_t *output, uint16_t outputLen) {
+    CHECK_ZXERR(ensureBip32());
     if (rawPubkey == NULL || rawPubkeyLen != PK_LEN_25519_PLUS_TAG || output == NULL) {
         return zxerr_encoding_failed;
     }
@@ -116,6 +148,7 @@ zxerr_t crypto_encodeRawPubkey(const uint8_t* rawPubkey, uint16_t rawPubkeyLen, 
 }
 
 zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t *output, uint16_t outputLen) {
+    CHECK_ZXERR(ensureBip32());
     if (output == NULL || pubkey == NULL || pubkeyLen != PK_LEN_25519) {
         return zxerr_encoding_failed;
     }

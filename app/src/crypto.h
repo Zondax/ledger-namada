@@ -27,6 +27,7 @@ extern "C" {
 #include "parser_txdef.h"
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
+extern uint8_t hdPathLen;
 
 zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen);
 zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen);

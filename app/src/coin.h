@@ -22,7 +22,9 @@ extern "C" {
 #define CLA                             0x57
 
 #define HDPATH_LEN_DEFAULT   5
+#define IDENTITY_DER_PATH_LEN 3
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
+#define HDPATH_0_IDENTITY    (0x80000000u | 0x20u)   //32
 
 #define HDPATH_1_DEFAULT     (0x80000000u | 0x36d)  //877
 #define HDPATH_1_TESTNET     (0x80000000u | 0x01)  //1

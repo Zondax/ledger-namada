@@ -58,6 +58,7 @@
   } while (0)
 
 static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyLen) {
+    CHECK_ZXERR(ensureBip32());
     if (pubKey == NULL || pubKeyLen < PK_LEN_25519) {
         return zxerr_invalid_crypto_settings;
     }
@@ -70,7 +71,7 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
     CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
-                                                     HDPATH_LEN_DEFAULT,
+                                                     hdPathLen,
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
@@ -99,6 +100,7 @@ catch_cx_error:
 }
 
 static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const uint8_t *message, uint16_t messageLen) {
+    CHECK_ZXERR(ensureBip32());
     if (output == NULL || message == NULL || outputLen < ED25519_SIGNATURE_SIZE || messageLen == 0) {
         return zxerr_unknown;
     }
@@ -111,7 +113,7 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
     CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
-                                                     HDPATH_LEN_DEFAULT,
+                                                     hdPathLen,
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
@@ -501,6 +503,7 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
 
 // MASP
 static zxerr_t computeKeys(keys_t * saplingKeys) {
+    CHECK_ZXERR(ensureZip32());
     if (saplingKeys == NULL) {
         return zxerr_no_data;
     }
@@ -574,7 +577,7 @@ zxerr_t crypto_computeSaplingSeed(uint8_t spendingKey[static KEY_LENGTH]) {
     CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
-                                                     HDPATH_LEN_DEFAULT,
+                                                     hdPathLen,
                                                      privateKeyData,
                                                      NULL, NULL, 0));
     memcpy(spendingKey, privateKeyData, KEY_LENGTH);

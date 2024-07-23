@@ -51,7 +51,7 @@ zxerr_t getItemPublicAddress(int8_t displayIdx, char *outKey, uint16_t outKeyLen
         case 1: {
             snprintf(outKey, outKeyLen, "HD Path");
             char buffer[200] = {0};
-            bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
+            bip32_to_str(buffer, sizeof(buffer), hdPath, hdPathLen);
             pageString(outVal, outValLen, buffer, pageIdx, pageCount);
             break;
         }
@@ -90,7 +90,7 @@ zxerr_t getItemProofGenerationKey(int8_t displayIdx, char *outKey, uint16_t outK
         case 2: {
             snprintf(outKey, outKeyLen, "HD Path");
             char buffer[200] = {0};
-            bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
+            bip32_to_str(buffer, sizeof(buffer), hdPath, hdPathLen);
             pageString(outVal, outValLen, buffer, pageIdx, pageCount);
             break;
         }
@@ -139,7 +139,7 @@ zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char
         case 4: {
             snprintf(outKey, outKeyLen, "HD Path");
             char buffer[200] = {0};
-            bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
+            bip32_to_str(buffer, sizeof(buffer), hdPath, hdPathLen);
             pageString(outVal, outValLen, buffer, pageIdx, pageCount);
             break;
         }
