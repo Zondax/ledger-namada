@@ -40,7 +40,7 @@
 #define TESTNET_EXT_FULL_VIEWING_KEY_HRP "testzvknam"
 #define TESTNET_PAYMENT_ADDR_HRP "testznam"
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     #include "cx.h"
     #include "cx_sha256.h"
     #include "cx_blake2b.h"
@@ -67,7 +67,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
 
     // Step 2. Hash the serialized public key with sha256.
     uint8_t pkh[CX_SHA256_SIZE] = {0};
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_hash_sha256((const uint8_t*) borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -263,7 +263,7 @@ zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, 
 
     MEMZERO(output, outputLen);
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_hash_sha256(input, inputLen, output, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -280,7 +280,7 @@ zxerr_t crypto_computeCodeHash(section_t *extraData) {
     }
 
     if (extraData->commitmentDiscriminant) {
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
         cx_sha256_t sha256 = {0};
         cx_sha256_init(&sha256);
         CHECK_CX_OK(cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len));
@@ -301,7 +301,7 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
     }
 
     const uint32_t extraDataTagLen = extraData->tag.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &extraData->discriminant, 1));
@@ -334,7 +334,7 @@ zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t 
     }
 
     const uint32_t dataBytesLen = data->bytes.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &data->discriminant, 1));
@@ -361,7 +361,7 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
     }
 
     const uint32_t codeTagLen = code->tag.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &code->discriminant, 1));
