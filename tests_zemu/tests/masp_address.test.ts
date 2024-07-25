@@ -14,16 +14,17 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind  } from '@zondax/zemu'
+import Zemu, { ButtonKind, isTouchDevice  } from '@zondax/zemu'
 import { NamadaApp, NamadaKeys, ResponseAddress, ResponseProofGenKey, ResponseViewKey } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions, expectedKeys } from './common'
 
 const sha256 = require('js-sha256')
 
 jest.setTimeout(120000)
+const MASP_MODELS = models.filter(m => m.name !== 'nanos')
 
 describe('Address', function () {
-  test.concurrent.each(models.slice(1))('can start and stop container', async function (m) {
+  test.concurrent.each(MASP_MODELS)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -32,7 +33,7 @@ describe('Address', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('get shielded address', async function (m) {
+  test.concurrent.each(MASP_MODELS)('get shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -52,11 +53,11 @@ describe('Address', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('show address', async function (m) {
+  test.concurrent.each(MASP_MODELS)('show address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({...defaultOptions, model: m.name,
-                       approveKeyword: m.name === 'stax' ? 'Path' : '',
+                       approveKeyword: isTouchDevice(m.name) ? 'Path' : '',
                        approveAction: ButtonKind.ApproveTapButton,})
       const app = new NamadaApp(sim.getTransport())
 
@@ -76,11 +77,11 @@ describe('Address', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('show address - reject', async function (m) {
+  test.concurrent.each(MASP_MODELS)('show address - reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({...defaultOptions, model: m.name,
-                       rejectKeyword: m.name === 'stax' ? 'QR' : ''})
+                       rejectKeyword: isTouchDevice(m.name) ? 'QR' : ''})
       const app = new NamadaApp(sim.getTransport())
 
       const respRequest = app.retrieveKeys(hdpath, NamadaKeys.PublicAddress, true)
@@ -98,7 +99,7 @@ describe('Address', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('show view key', async function (m) {
+  test.concurrent.each(MASP_MODELS)('show view key', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -123,7 +124,7 @@ describe('Address', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('get proof generation key', async function (m) {
+  test.concurrent.each(MASP_MODELS)('get proof generation key', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })

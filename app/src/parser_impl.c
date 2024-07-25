@@ -49,31 +49,14 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case Transfer:
             if(ctx->tx_obj->transaction.isMasp) {
                 uint8_t items = 1;
-                uint8_t source_is_masp = ctx->tx_obj->transfer.source_address.tag == 2 ? 1 : 0;
-                uint8_t target_is_masp = ctx->tx_obj->transfer.target_address.tag == 2 ? 1 : 0;
-                if (!source_is_masp) {
-                    items += 3; // print  only sender from transfer source
-                    if(target_is_masp) {
-                        items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
-                    } else {
-                        items += 3; // print  only receiver from transfer target
-                    }
-                } else {
-                    items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
-                    if(!target_is_masp) {
-                        items += 3; // print  only receiver from transfer target
-                    } else {
-                        items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
-                    }
-                }
+                items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
+                items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
 
                 *numItems = (app_mode_expert() ? items + 5 : items);
             } else {
-            *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
+                *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
-            if(!ctx->tx_obj->transfer.symbol && !ctx->tx_obj->transaction.isMasp) {
-                (*numItems)++;
-            }
+            (*numItems) += ctx->tx_obj->transfer.non_masp_sources_len*2 + ctx->tx_obj->transfer.non_masp_targets_len*2 + ctx->tx_obj->transfer.no_symbol_sources + ctx->tx_obj->transfer.no_symbol_targets;
             break;
 
         case InitAccount: {
@@ -136,7 +119,15 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
 
         case IBC:
-            *numItems = (app_mode_expert() ? IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);
+            *numItems = (app_mode_expert() ?  IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);
+            if(ctx->tx_obj->transaction.isMasp) {
+                *numItems += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
+                *numItems += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
+            }
+            *numItems += ctx->tx_obj->ibc.transfer.non_masp_sources_len*2 + ctx->tx_obj->ibc.transfer.non_masp_targets_len*2 + ctx->tx_obj->ibc.transfer.no_symbol_sources + ctx->tx_obj->ibc.transfer.no_symbol_targets;
+            if(ctx->tx_obj->ibc.is_nft) {
+                *numItems += (ctx->tx_obj->ibc.n_token_id - (ctx->tx_obj->ibc.memo.len == 0 ? 1 : 0));
+            }
             break;
 
         case Redelegate:
@@ -162,6 +153,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case ChangeValidatorMetadata: {
             *numItems = app_mode_expert() ? CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS : CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS;
 
+            if (ctx->tx_obj->metadataChange.name.ptr != NULL) {
+                (*numItems)++;
+            }
             if (ctx->tx_obj->metadataChange.email.ptr != NULL) {
                 (*numItems)++;
             }
@@ -196,7 +190,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
       (*numItems)++;
     }
 
-    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL && !ctx->tx_obj->transaction.isMasp) {
+    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL && !ctx->tx_obj->transaction.isMasp && !ctx->tx_obj->ibc.is_ibc) {
         (*numItems)++;
     }
 

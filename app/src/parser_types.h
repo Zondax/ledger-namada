@@ -320,15 +320,14 @@ typedef struct {
 } tx_update_vp_t;
 
 typedef struct {
-    AddressAlt source_address;
-    AddressAlt target_address;
-    // Transferred token address
-    AddressAlt token;
-    uint8_t has_sub_prefix;
-    bytes_t sub_prefix;
-    bytes_t amount;
-    uint8_t amount_denom;
-    const char* symbol;
+    uint32_t sources_len;
+    uint32_t non_masp_sources_len;
+    bytes_t sources;
+    uint32_t targets_len;
+    uint32_t non_masp_targets_len;
+    bytes_t targets;
+    uint32_t no_symbol_sources;
+    uint32_t no_symbol_targets;
     uint8_t has_shielded_hash;
     bytes_t shielded_hash;
 } tx_transfer_t;
@@ -344,6 +343,13 @@ typedef struct {
     uint64_t revision_number;
     uint64_t revision_height;
     timestamp_t timeout_timestamp;
+    bytes_t memo;
+    tx_transfer_t transfer;
+    bytes_t class_id;
+    bytes_t token_id;
+    uint16_t n_token_id;
+    uint8_t is_nft;
+    uint8_t is_ibc;
 } tx_ibc_t;
 
 typedef struct {

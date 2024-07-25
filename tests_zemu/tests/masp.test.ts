@@ -21,9 +21,11 @@ const sha256 = require('js-sha256')
 
 jest.setTimeout(120000)
 
+const MASP_MODELS = models.filter(m => m.name !== 'nanos')
+
 describe('Masp', function () {
 
-  test.concurrent.each(models.slice(1))('Get randomness', async function (m) {
+  test.concurrent.each(MASP_MODELS)('Get randomness', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -53,7 +55,7 @@ describe('Masp', function () {
     }
   })
 
-  test.concurrent.each(models.slice(1))('Sign MASP', async function (m) {
+  test.concurrent.each(MASP_MODELS)('Sign MASP', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -79,11 +81,6 @@ describe('Masp', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign_masp`)
 
       const resp: ResponseSignMasp = await respRequest as ResponseSignMasp;
-      console.log(resp)
-      let hash = sha256.create()
-      hash.update(msg)
-      let h = hash.digest('hex')
-      expect(resp.hash.toString).toEqual(Buffer.from(h, 'hex').toString)
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
 

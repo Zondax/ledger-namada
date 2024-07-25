@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind, zondaxMainmenuNavigation } from '@zondax/zemu'
+import Zemu, { ButtonKind, zondaxMainmenuNavigation, isTouchDevice } from '@zondax/zemu'
 import { NamadaApp } from '@zondax/ledger-namada'
 import { models, hdpath, defaultOptions } from './common'
 
@@ -95,7 +95,7 @@ describe('Standard', function () {
       await sim.start({
         ...defaultOptions,
         model: m.name,
-        approveKeyword: m.name === 'stax' ? 'Pubkey' : '',
+        approveKeyword: isTouchDevice(m.name) ? 'Pubkey' : '',
         approveAction: ButtonKind.ApproveTapButton,
       })
       const app = new NamadaApp(sim.getTransport())
@@ -128,7 +128,7 @@ describe('Standard', function () {
       await sim.start({
         ...defaultOptions,
         model: m.name,
-        rejectKeyword: m.name === 'stax' ? 'QR' : '',
+        rejectKeyword: isTouchDevice(m.name) ? 'QR' : '',
       })
       const app = new NamadaApp(sim.getTransport())
 

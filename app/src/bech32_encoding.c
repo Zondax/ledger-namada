@@ -16,7 +16,7 @@
 #include "bech32_encoding.h"
 #include <zxmacros.h>
 
-#define MAX_SIZE 200
+#define MAX_SIZE 280
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
     uint8_t b = pre >> 25u;
@@ -107,14 +107,13 @@ zxerr_t bech32EncodeFromLargeBytes(char *out,
         return zxerr_out_of_bounds;
     }
 
-    size_t hrplen = strlen(hrp);
     // We set a lower bound to ensure this is safe
-    if (out_len < hrplen + (in_len * 2) + 7) {
+    if (out_len < MAX_SIZE) {
         return zxerr_buffer_too_small;
     }
 
     // Overestimate required size *2==(8/4) instead of *(8/5)
-    uint8_t tmp_data[MAX_SIZE * 2];
+    uint8_t tmp_data[280];
     size_t tmp_size = 0;
     MEMZERO(tmp_data, sizeof(tmp_data));
 

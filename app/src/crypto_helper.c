@@ -40,7 +40,7 @@
 #define TESTNET_EXT_FULL_VIEWING_KEY_HRP "testzvknam"
 #define TESTNET_PAYMENT_ADDR_HRP "testznam"
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     #include "cx.h"
     #include "cx_sha256.h"
     #include "cx_blake2b.h"
@@ -67,7 +67,7 @@ static zxerr_t crypto_publicKeyHash_ed25519(uint8_t *publicKeyHash, const uint8_
 
     // Step 2. Hash the serialized public key with sha256.
     uint8_t pkh[CX_SHA256_SIZE] = {0};
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_hash_sha256((const uint8_t*) borshEncodedPubKey, PK_LEN_25519 + 1, pkh, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -263,7 +263,7 @@ zxerr_t crypto_sha256(const uint8_t *input, uint16_t inputLen, uint8_t *output, 
 
     MEMZERO(output, outputLen);
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_hash_sha256(input, inputLen, output, CX_SHA256_SIZE);
 #else
     picohash_ctx_t ctx;
@@ -280,7 +280,7 @@ zxerr_t crypto_computeCodeHash(section_t *extraData) {
     }
 
     if (extraData->commitmentDiscriminant) {
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
         cx_sha256_t sha256 = {0};
         cx_sha256_init(&sha256);
         CHECK_CX_OK(cx_sha256_update(&sha256, extraData->bytes.ptr, extraData->bytes.len));
@@ -301,7 +301,7 @@ zxerr_t crypto_hashExtraDataSection(const section_t *extraData, uint8_t *output,
     }
 
     const uint32_t extraDataTagLen = extraData->tag.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &extraData->discriminant, 1));
@@ -334,7 +334,7 @@ zxerr_t crypto_hashDataSection(const section_t *data, uint8_t *output, uint32_t 
     }
 
     const uint32_t dataBytesLen = data->bytes.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &data->discriminant, 1));
@@ -361,7 +361,7 @@ zxerr_t crypto_hashCodeSection(const section_t *code, uint8_t *output, uint32_t 
     }
 
     const uint32_t codeTagLen = code->tag.len;
-#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX) || defined(TARGET_FLEX)
     cx_sha256_t sha256 = {0};
     cx_sha256_init(&sha256);
     CHECK_CX_OK(cx_sha256_update(&sha256, &code->discriminant, 1));
@@ -500,6 +500,34 @@ bool check_diversifier(const uint8_t d[DIVERSIFIER_LENGTH]) {
     blake2s_final(&state, hash, KEY_LENGTH);
 
     return is_valid_diversifier(hash);
+}
+
+// Derive the asset type corresponding to the given asset data
+parser_error_t derive_asset_type(const masp_asset_data_t *asset_data, uint8_t *identifier, uint8_t *nonce) {
+    if(asset_data == NULL || nonce == NULL) {
+        return parser_unexpected_error;
+    }
+
+    for(*nonce = 0; *nonce <= 255; (*nonce) ++) {
+        blake2s_state ai_state = {0};
+        blake2s_init_with_personalization(&ai_state, 32, (const uint8_t *)ASSET_IDENTIFIER_PERSONALIZATION, sizeof(ASSET_IDENTIFIER_PERSONALIZATION));
+        blake2s_update(&ai_state, (const uint8_t *)GH_FIRST_BLOCK, sizeof(GH_FIRST_BLOCK));
+        blake2s_update(&ai_state, asset_data->bytes.ptr, asset_data->bytes.len);
+        blake2s_update(&ai_state, nonce, sizeof(*nonce));
+        blake2s_final(&ai_state, identifier, ASSET_IDENTIFIER_LENGTH);
+
+        uint8_t hash[32] = {0};
+        blake2s_state vcg_state = {0};
+        blake2s_init_with_personalization(&vcg_state, 32, (const uint8_t *)VALUE_COMMITMENT_GENERATOR_PERSONALIZATION, sizeof(VALUE_COMMITMENT_GENERATOR_PERSONALIZATION));
+        blake2s_update(&vcg_state, identifier, KEY_LENGTH);
+        blake2s_final(&vcg_state, hash, KEY_LENGTH);
+
+        if(is_valid_diversifier(hash)) {
+          return parser_ok;
+        }
+    }
+
+    return parser_unexpected_error;
 }
 
 // Return list with 4 diversifiers, starting computing form start_index
