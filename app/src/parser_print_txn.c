@@ -1278,27 +1278,30 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
 
     const tx_metadata_change_t *metadataChange = &ctx->tx_obj->metadataChange;
 
-    if(displayIdx >= 2 && metadataChange->email.ptr == NULL) {
+    if(displayIdx >= 2 && metadataChange->name.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 3 && metadataChange->description.ptr == NULL) {
+    if(displayIdx >= 3 && metadataChange->email.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 4 && metadataChange->website.ptr == NULL) {
+    if(displayIdx >= 4 && metadataChange->description.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 5 && metadataChange->discord_handle.ptr == NULL) {
+    if(displayIdx >= 5 && metadataChange->website.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 6 && metadataChange->avatar.ptr == NULL) {
+    if(displayIdx >= 6 && metadataChange->discord_handle.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 7 && !metadataChange->has_commission_rate) {
+    if(displayIdx >= 7 && metadataChange->avatar.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 8 && !metadataChange->has_commission_rate) {
         displayIdx++;
     }
 
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (displayIdx >= 8 && !hasMemo) {
+    if (displayIdx >= 9 && !hasMemo) {
         displayIdx++;
     }
 
@@ -1317,36 +1320,41 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
             break;
         }
         case 2: {
+            snprintf(outKey, outKeyLen, "Name");
+            pageStringExt(outVal, outValLen, (const char*)metadataChange->name.ptr, metadataChange->name.len, pageIdx, pageCount);
+            break;
+        }
+        case 3: {
             snprintf(outKey, outKeyLen, "Email");
             pageStringExt(outVal, outValLen, (const char*)metadataChange->email.ptr, metadataChange->email.len, pageIdx, pageCount);
             break;
         }
-        case 3: {
+        case 4: {
             snprintf(outKey, outKeyLen, "Description");
             pageStringExt(outVal, outValLen, (const char*)metadataChange->description.ptr, metadataChange->description.len, pageIdx, pageCount);
             break;
         }
-        case 4: {
+        case 5: {
             snprintf(outKey, outKeyLen, "Website");
             pageStringExt(outVal, outValLen, (const char*)metadataChange->website.ptr, metadataChange->website.len, pageIdx, pageCount);
             break;
         }
-        case 5: {
+        case 6: {
             snprintf(outKey, outKeyLen, "Discord handle");
             pageStringExt(outVal, outValLen, (const char*)metadataChange->discord_handle.ptr, metadataChange->discord_handle.len, pageIdx, pageCount);
             break;
         }
-          case 6: {
+        case 7: {
             snprintf(outKey, outKeyLen, "Avatar");
             pageStringExt(outVal, outValLen, (const char*)metadataChange->avatar.ptr, metadataChange->avatar.len, pageIdx, pageCount);
             break;
         }
-        case 7: {
+        case 8: {
             snprintf(outKey, outKeyLen, "Commission rate");
             CHECK_ERROR(printAmount(&metadataChange->commission_rate, true, POS_DECIMAL_PRECISION, "", outVal, outValLen, pageIdx, pageCount))
             break;
         }
-        case 8:
+        case 9:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -1354,7 +1362,7 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 9;
+            displayIdx -= 10;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }

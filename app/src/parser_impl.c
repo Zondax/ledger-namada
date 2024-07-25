@@ -162,6 +162,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case ChangeValidatorMetadata: {
             *numItems = app_mode_expert() ? CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS : CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS;
 
+            if (ctx->tx_obj->metadataChange.name.ptr != NULL) {
+                (*numItems)++;
+            }
             if (ctx->tx_obj->metadataChange.email.ptr != NULL) {
                 (*numItems)++;
             }
