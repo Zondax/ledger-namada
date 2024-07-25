@@ -75,6 +75,11 @@ ifndef ICONNAME
 $(error ICONNAME is not set)
 endif
 
+# Compile MASP mode for all devices excetpt Nano S, 
+ifneq ($(TARGET_NAME),TARGET_NANOS)
+    DEFINES += COMPILE_MASP
+endif
+
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
 # Add SDK BLAKE2b
 DEFINES += HAVE_HASH HAVE_BLAKE2

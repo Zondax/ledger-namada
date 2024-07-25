@@ -123,6 +123,28 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     *flags |= IO_ASYNCH_REPLY;
 }
 
+// For wrapper transactions, address is derived from Ed25519 pubkey
+__Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    zemu_log("handleGetAddr\n");
+    extractHDPath(rx, OFFSET_DATA);
+    *tx = 0;
+    const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    zxerr_t zxerr = app_fill_address(key_ed25519);
+    if(zxerr != zxerr_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    if (requireConfirmation) {
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_cmd);
+        view_review_show(REVIEW_ADDRESS);
+        *flags |= IO_ASYNCH_REPLY;
+        return;
+    }
+    *tx = cmdResponseLen;
+    THROW(APDU_CODE_OK);
+}
+#if defined(COMPILE_MASP)
 __Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     ZEMU_LOGF(50, "handleSignMasp\n")
     if (!process_chunk(tx, rx)) {
@@ -144,28 +166,6 @@ __Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, 
     view_review_init(tx_getItem, tx_getNumItems, app_sign_masp);
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
-}
-
-// For wrapper transactions, address is derived from Ed25519 pubkey
-__Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("handleGetAddr\n");
-    extractHDPath(rx, OFFSET_DATA);
-    *tx = 0;
-    const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-
-    zxerr_t zxerr = app_fill_address(key_ed25519);
-    if(zxerr != zxerr_ok){
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-    if (requireConfirmation) {
-        view_review_init(addr_getItem, addr_getNumItems, app_reply_cmd);
-        view_review_show(REVIEW_ADDRESS);
-        *flags |= IO_ASYNCH_REPLY;
-        return;
-    }
-    *tx = cmdResponseLen;
-    THROW(APDU_CODE_OK);
 }
 
 __Z_INLINE void handleGetKeys(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
@@ -220,6 +220,8 @@ __Z_INLINE void handleExtractSpendSign(__Z_UNUSED volatile uint32_t *flags, vola
     *tx = cmdResponseLen;
     THROW(APDU_CODE_OK);
 }
+
+#endif
 
 __Z_INLINE void handle_getversion(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx)
 {
@@ -288,7 +290,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     handleSignTransaction(flags, tx, rx);
                     break;
                 }
-
+#if defined(COMPILE_MASP)
                 case INS_GET_KEYS: {
                     CHECK_PIN_VALIDATED()
                     handleGetKeys(flags, tx, rx);
@@ -324,6 +326,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     handleExtractSpendSign(flags, tx, rx);
                     break;
                 }
+#endif
 #if defined(APP_TESTING)
                 case INS_TEST: {
                     handleTest(flags, tx, rx);

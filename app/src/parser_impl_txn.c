@@ -1294,6 +1294,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 signature->idx = i+1;
                 break;
             }
+#if defined(COMPILE_MASP)
             case DISCRIMINANT_MASP_TX:
                 // Identify tx has masp tx
                 v->transaction.isMasp = true;
@@ -1302,7 +1303,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
                 break;
-
+#endif
             default:
                 return parser_unexpected_field;
         }

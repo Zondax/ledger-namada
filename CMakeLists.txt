@@ -233,6 +233,7 @@ target_link_libraries(unittests PRIVATE
         JsonCpp::JsonCpp)
 
 add_compile_definitions(TESTVECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/")
+add_compile_definitions(COMPILE_MASP=1)
 add_test(NAME unittests COMMAND unittests)
 set_tests_properties(unittests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
