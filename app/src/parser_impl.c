@@ -119,6 +119,12 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             if(ctx->tx_obj->becomeValidator.website.ptr) {
                 (*numItems)++;
             }
+            if(ctx->tx_obj->becomeValidator.avatar.ptr) {
+                (*numItems)++;
+            }
+            if(ctx->tx_obj->becomeValidator.name.ptr) {
+                (*numItems)++;
+            }
             break;
         }
         case UpdateVP: {

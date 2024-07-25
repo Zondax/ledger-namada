@@ -913,18 +913,24 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
-    if(displayIdx >= 9 && ctx->tx_obj->becomeValidator.description.ptr == NULL) {
+    if(displayIdx >= 9 && ctx->tx_obj->becomeValidator.name.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 10 && ctx->tx_obj->becomeValidator.website.ptr == NULL) {
+    if(displayIdx >= 10 && ctx->tx_obj->becomeValidator.description.ptr == NULL) {
         displayIdx++;
     }
-    if(displayIdx >= 11 && ctx->tx_obj->becomeValidator.discord_handle.ptr == NULL) {
+    if(displayIdx >= 11 && ctx->tx_obj->becomeValidator.website.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 12 && ctx->tx_obj->becomeValidator.discord_handle.ptr == NULL) {
+        displayIdx++;
+    }
+    if(displayIdx >= 13 && ctx->tx_obj->becomeValidator.avatar.ptr == NULL) {
         displayIdx++;
     }
 
     const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
-    if (displayIdx >= 12 && !hasMemo) {
+    if (displayIdx >= 14 && !hasMemo) {
         displayIdx++;
     }
 
@@ -985,25 +991,37 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             break;
         }
         case 9: {
+            snprintf(outKey, outKeyLen, "Name");
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.name.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.name.ptr, ctx->tx_obj->becomeValidator.name.len, pageIdx, pageCount);
+            }
+            break;
+        }
+        case 10: {
             snprintf(outKey, outKeyLen, "Description");
-            // snprintf(outVal, outValLen, "(none)");
             snprintf(outVal, outValLen, "");
             if (ctx->tx_obj->becomeValidator.description.len > 0) {
                 pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.description.ptr, ctx->tx_obj->becomeValidator.description.len, pageIdx, pageCount);
             }
             break;
         }
-        case 10: {
+        case 11: {
             snprintf(outKey, outKeyLen, "Website");
             pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
             break;
         }
-        case 11: {
+        case 12: {
             snprintf(outKey, outKeyLen, "Discord handle");
             pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
             break;
         }
-        case 12:
+        case 13: {
+            snprintf(outKey, outKeyLen, "Avatar");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.avatar.ptr, ctx->tx_obj->becomeValidator.avatar.len, pageIdx, pageCount);
+            break;
+        }
+        case 14:
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
 
@@ -1011,7 +1029,7 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
             if (!app_mode_expert()) {
                 return parser_display_idx_out_of_range;
             }
-            displayIdx -= 13;
+            displayIdx -= 15;
             return printExpert(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
     }
