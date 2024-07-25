@@ -504,7 +504,7 @@ bool check_diversifier(const uint8_t d[DIVERSIFIER_LENGTH]) {
 
 // Derive the asset type corresponding to the given asset data
 parser_error_t derive_asset_type(const masp_asset_data_t *asset_data, uint8_t *identifier, uint8_t *nonce) {
-    if(asset_data == NULL) {
+    if(asset_data == NULL || nonce == NULL) {
         return parser_unexpected_error;
     }
 
