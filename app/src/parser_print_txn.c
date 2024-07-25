@@ -190,7 +190,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     AddressAlt target_address;
     AddressAlt token;
     bytes_t namount;
-    uint8_t amount_denom;
+    uint8_t amount_denom = 0;
     const char* symbol = NULL;
 
     if (typeStart <= displayIdx && displayIdx < sourcesStart) {
@@ -240,7 +240,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
         displayIdx = 14 + (displayIdx - expertStart);
     }
 
-    char tmp_buf[500] = {0};
+    char tmp_buf[300] = {0};
     uint8_t tmp_amount[32] = {0};
     bytes_t amount_bytes = {tmp_amount, 32};
     const uint8_t *amount = {0};
@@ -1131,7 +1131,7 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
     AddressAlt target_address;
     AddressAlt token;
     bytes_t namount;
-    uint8_t amount_denom;
+    uint8_t amount_denom = 0;
     const char* symbol = NULL;
 
     const tx_ibc_t *ibc = &ctx->tx_obj->ibc;
@@ -1180,7 +1180,7 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
         displayIdx = 22 + (displayIdx - expertStart);
     }
 
-    char tmp_buf[500] = {0};
+    char tmp_buf[300] = {0};
     uint8_t tmp_amount[32] = {0};
     bytes_t amount_bytes = {tmp_amount, 32};
     const uint8_t *amount = {0};
@@ -1438,7 +1438,7 @@ static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
     AddressAlt target_address;
     AddressAlt token;
     bytes_t namount;
-    uint8_t amount_denom;
+    uint8_t amount_denom = 0;
     const char* symbol = NULL;
 
     const tx_ibc_t *ibc = &ctx->tx_obj->ibc;
@@ -1500,7 +1500,7 @@ static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
         displayIdx = 23 + (displayIdx - expertStart);
     }
 
-    char tmp_buf[500] = {0};
+    char tmp_buf[300] = {0};
     uint8_t tmp_amount[32] = {0};
     bytes_t amount_bytes = {tmp_amount, 32};
     const uint8_t *amount = {0};

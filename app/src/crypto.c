@@ -284,9 +284,11 @@ static zxerr_t crypto_addTxnHashes(const parser_tx_t *txObj, concatenated_hashes
             break;
 
         case UpdateVP:
-            MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->updateVp.vp_type_sechash.ptr, HASH_LEN);
-            hashes->indices.ptr[hashes->hashesLen] = txObj->updateVp.vp_type_secidx;
-            hashes->hashesLen++;
+           if (txObj->updateVp.has_vp_code) {
+                MEMCPY(hashes->hashes.ptr + hashes->hashesLen * HASH_LEN, txObj->updateVp.vp_type_sechash.ptr, HASH_LEN);
+                hashes->indices.ptr[hashes->hashesLen] = txObj->updateVp.vp_type_secidx;
+                hashes->hashesLen++;
+            }
             break;
 
         case InitProposal:
