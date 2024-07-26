@@ -349,7 +349,6 @@ typedef struct {
     bytes_t token_id;
     uint16_t n_token_id;
     uint8_t is_nft;
-    uint8_t is_ibc;
 } tx_ibc_t;
 
 typedef struct {

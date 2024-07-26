@@ -828,7 +828,6 @@ __Z_INLINE parser_error_t readTimeouts(parser_context_t *ctx, parser_tx_t *v, ui
 static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
     parser_context_t ctx = {.buffer = data->ptr, .bufferLen = data->len, .offset = 0, .tx_obj = NULL};
 
-    v->ibc.is_ibc = 1;
     uint32_t tmpValue;
     uint16_t tmpFieldLen = 0;
     CHECK_ERROR(readUint32(&ctx, &tmpValue));
