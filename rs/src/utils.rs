@@ -21,7 +21,9 @@ use std::error::Error;
 
 const HARDENED: u32 = 0x80000000;
 
-use crate::params::{ADDRESS_LEN, ED25519_PUBKEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG};
+use crate::params::{
+    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG,
+};
 use byteorder::{LittleEndian, WriteBytesExt};
 
 pub struct ResponseAddress {
@@ -39,6 +41,44 @@ pub struct ResponseSignature {
     pub wrapper_signature: [u8; SIG_LEN_PLUS_TAG],
     pub raw_indices: Vec<u8>,
     pub wrapper_indices: Vec<u8>,
+}
+
+pub struct ResponsePubAddress {
+    pub public_address: [u8; ED25519_PUBKEY_LEN],
+}
+
+pub struct ResponseViewKey {
+    pub view_key: [u8; 2 * KEY_LEN],
+    pub ivk: [u8; KEY_LEN],
+    pub ovk: [u8; KEY_LEN],
+}
+
+pub struct ResponseProofGenKey {
+    pub ak: [u8; KEY_LEN],
+    pub nsk: [u8; KEY_LEN],
+}
+
+pub struct ResponseGetSpendRandomness {
+    pub rcv: [u8; KEY_LEN],
+    pub alpha: [u8; KEY_LEN],
+}
+
+pub struct ResponseGetOutputRandomness {
+    pub rcv: [u8; KEY_LEN],
+    pub rcm: [u8; KEY_LEN],
+}
+
+pub struct ResponseGetConvertRandomness {
+    pub rcv: [u8; KEY_LEN],
+}
+
+pub struct ResponseSpendSignature {
+    pub rbar: [u8; KEY_LEN],
+    pub sbar: [u8; KEY_LEN],
+}
+
+pub struct ResponseMaspSign {
+    pub hash: [u8; KEY_LEN],
 }
 
 /// BIP44 Path

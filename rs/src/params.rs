@@ -17,9 +17,13 @@
 #![deny(unused_import_braces, unused_qualifications)]
 #![deny(missing_docs)]
 
+use crate::utils::{ResponseProofGenKey, ResponsePubAddress, ResponseViewKey};
+
 /// App identifier
 pub const CLA: u8 = 0x57;
 
+/// MASP keys len
+pub const KEY_LEN: usize = 32;
 /// Public Key Length
 pub const ED25519_PUBKEY_LEN: usize = 32;
 /// Public Key + Tag Length
@@ -41,7 +45,40 @@ pub enum InstructionCode {
     GetAddressAndPubkey = 1,
     /// Instruction to sign a transaction
     Sign = 2,
+    /// Instruction to retrieve MASP keys
+    GetKeys = 3,
+    /// Instruction to generate spend randomness values
+    GetSpendRandomness = 4,
+    /// Instruction to generate output randomness values
+    GetOutputRandomness = 5,
+    /// Instruction to generate spend convert values
+    GetConvertRandomness = 6,
+    /// Instruction to sign masp
+    SignMasp = 7,
+    /// Instruction to retrieve spend signatures
+    ExtractSpendSignature = 8,
 
     /// Instruction to retrieve a signed section
     GetSignature = 0x0a,
+}
+
+#[derive(Clone, Debug)]
+/// Masp keys return types
+pub enum NamadaKeys {
+    /// Public address key
+    PublicAddress = 0x00,
+    /// View key
+    ViewKey = 0x01,
+    /// Proof generation key
+    ProofGenerationKey = 0x02,
+}
+
+/// Types of Keys Response
+pub enum KeyResponse {
+    /// Address response
+    Address(ResponsePubAddress),
+    /// View key response
+    ViewKey(ResponseViewKey),
+    /// Proof generation key response
+    ProofGenKey(ResponseProofGenKey),
 }
