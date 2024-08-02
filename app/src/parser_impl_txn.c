@@ -559,8 +559,7 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
     if (v->transfer.has_shielded_hash){
         v->transfer.shielded_hash.len = HASH_LEN;
-        // we are not displaying these bytes
-        ctx.offset += v->transfer.shielded_hash.len;
+        CHECK_ERROR(readBytes(&ctx,  &v->transfer.shielded_hash.ptr, v->transfer.shielded_hash.len))
     }
 
     if (ctx.offset != ctx.bufferLen) {
@@ -935,8 +934,7 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         CHECK_ERROR(readByte(&ctx, &v->ibc.transfer.has_shielded_hash))
         if (v->ibc.transfer.has_shielded_hash){
             v->ibc.transfer.shielded_hash.len = HASH_LEN;
-            // we are not displaying these bytes
-            ctx.offset += v->ibc.transfer.shielded_hash.len;
+            CHECK_ERROR(readBytes(&ctx,  &v->transfer.shielded_hash.ptr, v->transfer.shielded_hash.len))
         }
     }
 
