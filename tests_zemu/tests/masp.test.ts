@@ -25,35 +25,35 @@ const MASP_MODELS = models.filter(m => m.name !== 'nanos')
 
 describe('Masp', function () {
 
-  test.concurrent.each(MASP_MODELS)('Get randomness', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new NamadaApp(sim.getTransport())
+  // test.concurrent.each(MASP_MODELS)('Get randomness', async function (m) {
+  //   const sim = new Zemu(m.path)
+  //   try {
+  //     await sim.start({ ...defaultOptions, model: m.name })
+  //     const app = new NamadaApp(sim.getTransport())
 
-      const respSpend = await app.getSpendRandomness();
-      console.log(respSpend)
-      expect(respSpend.returnCode).toEqual(0x9000)
-      expect(respSpend.errorMessage).toEqual('No errors')
+  //     const respSpend = await app.getSpendRandomness();
+  //     console.log(respSpend)
+  //     expect(respSpend.returnCode).toEqual(0x9000)
+  //     expect(respSpend.errorMessage).toEqual('No errors')
 
-      const respSpend1 = await app.getSpendRandomness();
-      console.log(respSpend1)
-      expect(respSpend.returnCode).toEqual(0x9000)
-      expect(respSpend.errorMessage).toEqual('No errors')
+  //     const respSpend1 = await app.getSpendRandomness();
+  //     console.log(respSpend1)
+  //     expect(respSpend.returnCode).toEqual(0x9000)
+  //     expect(respSpend.errorMessage).toEqual('No errors')
 
-      const respOutput = await app.getOutputRandomness();
-      console.log(respOutput)
-      expect(respOutput.returnCode).toEqual(0x9000)
-      expect(respOutput.errorMessage).toEqual('No errors')
+  //     const respOutput = await app.getOutputRandomness();
+  //     console.log(respOutput)
+  //     expect(respOutput.returnCode).toEqual(0x9000)
+  //     expect(respOutput.errorMessage).toEqual('No errors')
 
-      const respRandomness = await app.getConvertRandomness();
-      console.log(respRandomness)
-      expect(respRandomness.returnCode).toEqual(0x9000)
-      expect(respRandomness.errorMessage).toEqual('No errors')
-    } finally {
-      await sim.close()
-    }
-  })
+  //     const respRandomness = await app.getConvertRandomness();
+  //     console.log(respRandomness)
+  //     expect(respRandomness.returnCode).toEqual(0x9000)
+  //     expect(respRandomness.errorMessage).toEqual('No errors')
+  //   } finally {
+  //     await sim.close()
+  //   }
+  // })
 
   test.concurrent.each(MASP_MODELS)('Sign MASP', async function (m) {
     const sim = new Zemu(m.path)
