@@ -20,6 +20,13 @@
 #include "nvdata.h"
 #include "crypto_helper.h"
 #include "parser_address.h"
+#include "tx_hash.h"
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+    #include "cx.h"
+    #include "cx_sha256.h"
+    #include "cx_blake2b.h"
+#endif
 
 static parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
     uint8_t tag = 0;
@@ -456,6 +463,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     // Read sapling bundle
     CHECK_ERROR(readSaplingBundle(ctx, &maspTx->data.sapling_bundle))
 
+    //TODO VERIFYCATION HERE OF SHIELDED_HASH
     return parser_ok;
 }
 
@@ -483,6 +491,41 @@ parser_error_t readMaspBuilder(parser_context_t *ctx, masp_builder_section_t *ma
 
     CHECK_ERROR(readSaplingMetadata(ctx, &maspBuilder->metadata))
     CHECK_ERROR(readBuilder(ctx, &maspBuilder->builder))
+
+#if defined(LEDGER_SPECIFIC)
+    zemu_log_stack("COMPARING HASHES\n");
+    // Before starting the print stage verify the target_hashes and tx_id hashes
+    // Compute 0x04 || tx_id
+    uint8_t prefix_tx_id[HASH_LEN + 1]= {0};
+    prefix_tx_id[0] = 0x04;
+    tx_hash_txId(ctx->tx_obj, prefix_tx_id + 1);
+    // ZEMU_LOGF(50, "tx_id:")
+    // for (int i = 1; i < HASH_LEN+1; i++) {
+    //     ZEMU_LOGF(50,"%02x", prefix_tx_id[i]);
+    // }
+    //     ZEMU_LOGF(50, "\n");
+    //hash
+    uint8_t hash[HASH_LEN] = {0};
+    cx_hash_sha256(prefix_tx_id, HASH_LEN + 1, hash, HASH_LEN);
+
+    // Compare with MaspBuilder target_hash
+    // ZEMU_LOGF(50, "target_hash:")
+    // for (int i = 0; i < HASH_LEN; i++) {
+    //     ZEMU_LOGF(50,"%02x", maspBuilder->target_hash.ptr[i]);
+    // }
+    // ZEMU_LOGF(50, "\n");
+    if (memcmp(hash, maspBuilder->target_hash.ptr, HASH_LEN) != 0) {
+        zemu_log_stack("COMPARING maspBuilder\n");
+        return parser_invalid_target_hash;
+    }
+    // Compare with shielded_hash
+    if (memcmp(hash, ctx->tx_obj->transfer.shielded_hash.ptr, HASH_LEN) != 0) {
+        zemu_log_stack("COMPARING shielded_hash\n");
+        return parser_invalid_target_hash;
+    }
+    zemu_log_stack("out of COMPARING HASHES\n");
+
+#endif
 
     return parser_ok;
 }

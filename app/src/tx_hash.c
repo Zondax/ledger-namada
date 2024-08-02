@@ -273,3 +273,51 @@ zxerr_t tx_hash_transparent_data(const parser_tx_t *txObj, uint8_t *output) {
 
     return zxerr_ok;
 }
+
+#define BRANCH_ID_IDENTIFIER 0xE9FF75A6
+zxerr_t tx_hash_txId(const parser_tx_t *txObj, uint8_t *ouput) {
+    if (txObj == NULL || ouput == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t personal[16] = {0};
+    MEMCPY(personal, ZCASH_TX_PERSONALIZATION_PREFIX, 12);
+    personal[12]= 0xa6;
+    personal[13]= 0x75;
+    personal[14]= 0xff;
+    personal[15]= 0xe9;
+    ZEMU_LOGF(50, "personal:")
+    for (int i = 0; i < 16; i++) {
+        ZEMU_LOGF(50,"%02x", personal[i]);
+    }
+    ZEMU_LOGF(50, "\n");
+
+    cx_blake2b_t ctx_hash = {0};
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx_hash, 256, NULL, 0, personal, PERSONALIZATION_SIZE));
+
+    uint8_t header[32] = {0};
+    uint8_t transparent[32] = {0};
+    uint8_t sapling[32] = {0};
+
+    ZEMU_LOGF(50, "header:")
+    CHECK_ZXERR(tx_hash_header_data(txObj, header));
+    for (int i = 0; i < 16; i++) {
+        ZEMU_LOGF(50,"%02x", personal[i]);
+    }
+    ZEMU_LOGF(50, "\n");
+    CHECK_ZXERR(tx_hash_transparent_data(txObj, transparent));
+    CHECK_ZXERR(tx_hash_sapling_data(txObj, sapling));
+
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, 0, header, HASH_SIZE, NULL, 0));
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, 0, transparent, HASH_SIZE, NULL, 0));
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, CX_LAST, sapling, HASH_SIZE, ouput, HASH_SIZE));
+    
+    ZEMU_LOGF(50, "tx_id:")
+    for (int i = 0; i < 32; i++) {
+        ZEMU_LOGF(50,"%02x", ouput[i]);
+    }
+        ZEMU_LOGF(50, "\n");
+
+    return zxerr_ok;
+
+}
