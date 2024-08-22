@@ -27,6 +27,8 @@ parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
 
     CHECK_ERROR(validateTransactionParams(v))
 
+    CHECK_ERROR(verifyShieldedHash(ctx))
+
     if (ctx->offset != ctx->bufferLen) {
         return parser_unexpected_unparsed_bytes;
     }

@@ -45,3 +45,4 @@ zxerr_t tx_hash_sapling_converts(const parser_tx_t *txObj, uint8_t *output);
 zxerr_t tx_hash_sapling_outputs(const parser_tx_t *txObj, uint8_t *output);
 zxerr_t tx_hash_sapling_data(const parser_tx_t *txObj, uint8_t *output);
 zxerr_t tx_hash_transparent_data(const parser_tx_t *txObj, uint8_t *output);
+zxerr_t tx_hash_txId(const parser_tx_t *txObj, uint8_t *output);

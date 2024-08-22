@@ -19,6 +19,7 @@
 #include <zxformat.h>
 #include <zxmacros.h>
 #include "parser_txdef.h"
+#include "parser_impl_masp.h"
 
 // Hash MaspTx Header information
 zxerr_t tx_hash_header_data(const parser_tx_t *txObj, uint8_t *output) {
@@ -123,13 +124,20 @@ zxerr_t tx_hash_sapling_spends(const parser_tx_t *txObj, uint8_t *output) {
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&nc_ctx, 256, NULL, 0, (uint8_t*)ZCASH_SAPLING_SPENDS_NONCOMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
 
     const uint8_t *spend = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.ptr;
+    const uint64_t n_shielded_spends = txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends;
+    const bool has_spend_anchor = txObj->transaction.sections.maspBuilder.builder.sapling_builder.has_spend_anchor;
+    const uint8_t *spend_anchor_ptr = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spend_anchor.ptr;
 
-    for(uint64_t i = 0; i < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends; i++, spend += SHIELDED_SPENDS_LEN){
-        CHECK_CX_OK(cx_hash_no_throw(&nullifier_ctx.header, 0, spend + CV_LEN, NULLIFIER_LEN, NULL,0));
+    for (uint64_t i = 0; i < n_shielded_spends; i++, spend += SHIELDED_SPENDS_LEN) {
+        shielded_spends_t *shielded_spends = (shielded_spends_t *)spend;
 
-        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, spend, CV_LEN, NULL, 0));
-        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, txObj->transaction.sections.maspTx.data.sapling_bundle.anchor_shielded_spends.ptr, ANCHOR_LEN, NULL, 0));
-        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, spend + CV_LEN + NULLIFIER_LEN, RK_LEN, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&nullifier_ctx.header, 0, shielded_spends->nullifier, NULLIFIER_LEN, NULL, 0));
+
+        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, shielded_spends->cv, CV_LEN, NULL, 0));
+        if (has_spend_anchor) {
+            CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, spend_anchor_ptr, ANCHOR_LEN, NULL, 0));
+        }
+        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, shielded_spends->rk, RK_LEN, NULL, 0));
     }
 
     uint8_t nullifier_hash[HASH_SIZE] = {0};
@@ -200,20 +208,21 @@ zxerr_t tx_hash_sapling_outputs(const parser_tx_t *txObj, uint8_t *output) {
     cx_blake2b_t non_compact_ctx = {0};
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&non_compact_ctx, 256, NULL, 0, (uint8_t*)ZCASH_SAPLING_OUTPUTS_NONCOMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
 
-    const uint8_t *out = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.ptr;
+    const uint8_t *shielded_outputs_ptr = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.ptr;
+    const uint64_t n_shielded_outputs = txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs;
 
-    for (uint64_t i = 0; i < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs; i++, out += SHIELDED_OUTPUTS_LEN) {
-        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, out + CMU_OFFSET, CMU_LEN, NULL,0));
-        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, out + EPK_OFFSET, EPK_OFFSET, NULL,0));
-        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, out + ENC_CIPHER_OFFSET, COMPACT_NOTE_SIZE, NULL,0));
+    for (uint64_t i = 0; i < n_shielded_outputs; i++, shielded_outputs_ptr += SHIELDED_OUTPUTS_LEN) {
+        const shielded_outputs_t *shielded_output = (const shielded_outputs_t *)shielded_outputs_ptr;
 
-        CHECK_CX_OK(cx_hash_no_throw(&memo_ctx.header, 0,out + ENC_CIPHER_OFFSET + COMPACT_NOTE_SIZE, NOTE_PLAINTEXT_SIZE, NULL,0));
+        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, shielded_output->cmu, CMU_LEN, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, shielded_output->ephemeral_key, EPK_LEN, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&compact_ctx.header, 0, shielded_output->enc_ciphertext, COMPACT_NOTE_SIZE, NULL, 0));
 
-        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, out, CV_LEN, NULL,0));
-        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, out + ENC_CIPHER_OFFSET + COMPACT_NOTE_SIZE + NOTE_PLAINTEXT_SIZE ,
-                    ENC_CIPHER_LEN - (COMPACT_NOTE_SIZE + NOTE_PLAINTEXT_SIZE), NULL, 0));
-        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, out + OUT_CIPHER_OFFSET, OUT_CIPHER_LEN, NULL,0));
+        CHECK_CX_OK(cx_hash_no_throw(&memo_ctx.header, 0, shielded_output->enc_ciphertext + COMPACT_NOTE_SIZE, NOTE_PLAINTEXT_SIZE, NULL, 0));
 
+        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, shielded_output->cv, CV_LEN, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, shielded_output->enc_ciphertext + COMPACT_NOTE_SIZE + NOTE_PLAINTEXT_SIZE, ENC_CIPHER_LEN - COMPACT_NOTE_SIZE - NOTE_PLAINTEXT_SIZE, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&non_compact_ctx.header, 0, shielded_output->out_ciphertext, OUT_CIPHER_LEN, NULL, 0));
     }
 
     uint8_t compact_hash[HASH_SIZE] = {0};
@@ -237,19 +246,42 @@ zxerr_t tx_hash_sapling_data(const parser_tx_t *txObj, uint8_t *output) {
     }
 
     cx_blake2b_t ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t*)ZCASH_SAPLING_OUTPUTS_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
 
     uint8_t spends_hash[32] = {0};
     uint8_t converts_hash[32] = {0};
     uint8_t outputs_hash[32] = {0};
 
-    CHECK_ZXERR(tx_hash_transparent_inputs(txObj, spends_hash));
-    CHECK_ZXERR(tx_hash_transparent_outputs(txObj, converts_hash));
-    CHECK_ZXERR(tx_hash_transparent_outputs(txObj, outputs_hash));
+    if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs != 0) {
+        CHECK_ZXERR(tx_hash_sapling_spends(txObj, spends_hash));
 
-    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, spends_hash, HASH_SIZE, NULL, 0));
-    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, converts_hash, HASH_SIZE, NULL, 0));
-    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, outputs_hash, HASH_SIZE, output, HASH_SIZE));
+        // TODO: there is not an example to validate converts
+        CHECK_ZXERR(tx_hash_sapling_converts(txObj, converts_hash));
+
+        CHECK_ZXERR(tx_hash_sapling_outputs(txObj, outputs_hash));
+
+        CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, spends_hash, HASH_SIZE, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, converts_hash, HASH_SIZE, NULL, 0));
+        CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, outputs_hash, HASH_SIZE, NULL, 0));
+
+        if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_value_sum_asset_type == 0) {
+            uint8_t zero_byte = 0;
+            CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, &zero_byte, 1, NULL, 0));
+        } else {
+            // TODO: while debugging
+            // https://github.com/anoma/masp/blob/8d83b172698098fba393006016072bc201ed9ab7/masp_primitives/src/transaction/txid.rs#L234,
+            // there is a 0x01 byte at the beginning. Is this byte representing the n_value_sum_asset_type?
+            uint8_t asset_type = (uint8_t)txObj->transaction.sections.maspTx.data.sapling_bundle.n_value_sum_asset_type;
+            CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, &asset_type, 1, NULL, 0));
+
+            CHECK_CX_OK(cx_hash_no_throw(
+                &ctx.header, 0, txObj->transaction.sections.maspTx.data.sapling_bundle.value_sum_asset_type.ptr,
+                (ASSET_ID_LEN + INT_128_LEN) * txObj->transaction.sections.maspTx.data.sapling_bundle.n_value_sum_asset_type,
+                NULL, 0));
+        }
+    }
+
+    CHECK_CX_OK(cx_hash_final(&ctx.header, output));
 
     return zxerr_ok;
 }
@@ -260,16 +292,50 @@ zxerr_t tx_hash_transparent_data(const parser_tx_t *txObj, uint8_t *output) {
     }
 
     cx_blake2b_t ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t*)ZCASH_SAPLING_OUTPUTS_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)ZCASH_TRANSPARENT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
 
     uint8_t outputs_hash[32] = {0};
     uint8_t inputs_hash[32] = {0};
 
-    CHECK_ZXERR(tx_hash_transparent_inputs(txObj, inputs_hash));
-    CHECK_ZXERR(tx_hash_transparent_outputs(txObj, outputs_hash));
+    if (txObj->transaction.sections.maspTx.data.transparent_bundle.n_vin > 0 ||
+        txObj->transaction.sections.maspTx.data.transparent_bundle.n_vout > 0) {
+        CHECK_ZXERR(tx_hash_transparent_inputs(txObj, inputs_hash));
+        CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, inputs_hash, HASH_SIZE, NULL, 0));
 
-    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, inputs_hash, HASH_SIZE, NULL, 0));
-    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, outputs_hash, HASH_SIZE, output, HASH_SIZE));
+        CHECK_ZXERR(tx_hash_transparent_outputs(txObj, outputs_hash));
+        CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, outputs_hash, HASH_SIZE, NULL, 0));
+    }
+
+    CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, NULL, 0, output, HASH_SIZE));
+    return zxerr_ok;
+}
+
+zxerr_t tx_hash_txId(const parser_tx_t *txObj, uint8_t *output) {
+    if (txObj == NULL || output == NULL) {
+        return zxerr_no_data;
+    }
+
+    uint8_t personal[16] = {0};
+    MEMCPY(personal, ZCASH_TX_PERSONALIZATION_PREFIX, 12);
+    
+    // Use BRANCH_ID_IDENTIFIER to set the last 4 bytes
+    uint32_t branch_id = BRANCH_ID_IDENTIFIER;
+    memcpy(&personal[12], &branch_id, sizeof(branch_id));
+
+    cx_blake2b_t ctx_hash = {0};
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx_hash, 256, NULL, 0, personal, PERSONALIZATION_SIZE));
+
+    uint8_t header[32] = {0};
+    uint8_t transparent[32] = {0};
+    uint8_t sapling[32] = {0};
+
+    CHECK_ZXERR(tx_hash_header_data(txObj, header));
+    CHECK_ZXERR(tx_hash_transparent_data(txObj, transparent));
+    CHECK_ZXERR(tx_hash_sapling_data(txObj, sapling));
+
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, 0, header, HASH_SIZE, NULL, 0));
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, 0, transparent, HASH_SIZE, NULL, 0));
+    CHECK_CX_OK(cx_hash_no_throw(&ctx_hash.header, CX_LAST, sapling, HASH_SIZE, output, HASH_SIZE));
 
     return zxerr_ok;
 }
