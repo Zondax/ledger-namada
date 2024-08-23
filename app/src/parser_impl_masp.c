@@ -20,6 +20,13 @@
 #include "nvdata.h"
 #include "crypto_helper.h"
 #include "parser_address.h"
+#include "tx_hash.h"
+
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+    #include "cx.h"
+    #include "cx_sha256.h"
+    #include "cx_blake2b.h"
+#endif
 
 static parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
     uint8_t tag = 0;
@@ -105,8 +112,8 @@ static parser_error_t readSaplingBundle(parser_context_t *ctx, masp_sapling_bund
 
     // Read outputs proofs
     if (bundle->n_shielded_outputs != 0) {
-        bundle->zkproof_shielded_spends.len = ZKPROFF_LEN * bundle->n_shielded_outputs;
-        CHECK_ERROR(readBytes(ctx, &bundle->zkproof_shielded_spends.ptr, bundle->zkproof_shielded_spends.len))
+        bundle->zkproof_shielded_outputs.len = ZKPROFF_LEN * bundle->n_shielded_outputs;
+        CHECK_ERROR(readBytes(ctx, &bundle->zkproof_shielded_outputs.ptr, bundle->zkproof_shielded_outputs.len))
     }
 
     // Read authorization signature

@@ -61,6 +61,7 @@ typedef enum {
     parser_invalid_number_of_converts,
     parser_invalid_rk,
     parser_invalid_cv,
+    parser_invalid_target_hash,
 } parser_error_t;
 
 typedef struct {
