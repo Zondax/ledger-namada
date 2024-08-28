@@ -20,3 +20,4 @@
 #define CHECKSUM_SIZE           4
 #define VERSION_P2SH            0x1CBD
 #define VERSION_P2PKH           0x1CB8
+#define ED25519_SK_SIZE 64

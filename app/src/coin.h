@@ -33,6 +33,8 @@ extern "C" {
 #define HDPATH_3_DEFAULT     (0u)
 #define HDPATH_4_DEFAULT     (0u)
 
+#define MASK_HARDENED 0x80000000
+
 #define SECP256K1_PK_LEN            65u
 #define COMPRESSED_SECP256K1_PK_LEN 33u
 #define SECP256K1_SK_LEN            32u
@@ -74,6 +76,7 @@ extern "C" {
 /// For payment addresses on the Testnet, the Human-Readable Part is "patest"
 #define SAPLING_PAYMENT_ADDR_HRP "patest"
 
+#define HDPATH_LEN_BIP44              5
 #define COIN_AMOUNT_DECIMAL_PLACES 6
 #define COIN_TICKER "NAM "
 

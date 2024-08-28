@@ -36,6 +36,7 @@ typedef enum {
 #define EXTENDED_KEY_LENGTH 64
 #define DIVERSIFIER_LENGTH 11
 #define DIVERSIFIER_LIST_LENGTH 44
+#define ZIP32_SEED_SIZE 64
 typedef uint8_t spending_key_t[KEY_LENGTH];
 typedef uint8_t ask_t[KEY_LENGTH];
 typedef uint8_t nsk_t[KEY_LENGTH];
@@ -51,16 +52,13 @@ typedef uint8_t d_t[DIVERSIFIER_LENGTH];
 typedef uint8_t public_address_t[KEY_LENGTH];
 
 typedef struct {
-    spending_key_t spendingKey;
     ask_t ask;
     ak_t ak;
     nsk_t nsk;
     nk_t nk;
-    dk_t dk;
     ivk_t ivk;
     ovk_t ovk;
     d_t diversifier;
-    d_t diversifier_start_index;
     public_address_t address;
 } keys_t;
 

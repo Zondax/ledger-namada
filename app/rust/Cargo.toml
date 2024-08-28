@@ -11,9 +11,14 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [dependencies]
+ztruct = { path = "../ztruct", version = "*" }
 jubjub = { version = "0.10.0", default-features = false }
 aes = { version = "0.7", default-features = false }
 binary-ff1 = { version = "0.2", default-features = false }
+blake2s_simd = { version = "0.5", default-features = false }
+blake2b_simd = { version = "0.5", default-features = false }
+byteorder = { version = "1.5", default-features = false }
+log = "0.4"
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"

@@ -509,12 +509,8 @@ static zxerr_t computeKeys(keys_t * saplingKeys) {
     }
 
     // Compute ask, nsk, ovk
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_ASK, saplingKeys->ask, true));
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_NSK, saplingKeys->nsk, true));
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_OVK, saplingKeys->ovk, true));
-
-    // Compute diversifier key - dk
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_DK, saplingKeys->dk, true));
+    zip32_child_ask_nsk(hdPath[2], saplingKeys->ask, saplingKeys->nsk);
+    zip32_ovk(hdPath[2], saplingKeys->ovk);
 
     // Compute ak, nk, ivk
     CHECK_PARSER_OK(generate_key(saplingKeys->ask, SpendingKeyGenerator, saplingKeys->ak));
@@ -522,10 +518,10 @@ static zxerr_t computeKeys(keys_t * saplingKeys) {
     CHECK_PARSER_OK(computeIVK(saplingKeys->ak, saplingKeys->nk, saplingKeys->ivk));
 
     // Compute diversifier
-    CHECK_PARSER_OK(computeDiversifier(saplingKeys->dk, saplingKeys->diversifier_start_index, saplingKeys->diversifier));
+    diversifier_find_valid(hdPath[2], saplingKeys->diversifier);
 
     // Compute address
-    CHECK_PARSER_OK(computePkd(saplingKeys->ivk, saplingKeys->diversifier, saplingKeys->address));
+    get_pkd(hdPath[2], saplingKeys->diversifier, saplingKeys->address);
 
     return zxerr_ok;
 }
@@ -544,14 +540,13 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             break;
 
         case ViewKeys:
-            if (outputLen < 5 * KEY_LENGTH) {
+            if (outputLen < 4 * KEY_LENGTH) {
                 return zxerr_buffer_too_small;
             }
             memcpy(output, saplingKeys->ak, KEY_LENGTH);
             memcpy(output + KEY_LENGTH, saplingKeys->nk, KEY_LENGTH);
             memcpy(output + 2 * KEY_LENGTH, saplingKeys->ovk, KEY_LENGTH);
             memcpy(output + 3 * KEY_LENGTH, saplingKeys->ivk, KEY_LENGTH);
-            memcpy(output + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
             break;
 
         case ProofGenerationKey:
@@ -568,26 +563,29 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
     return zxerr_ok;
 }
 
-zxerr_t crypto_computeSaplingSeed(uint8_t spendingKey[static KEY_LENGTH]) {
-    if (spendingKey == NULL ) {
-        return zxerr_no_data;
-    }
+zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
+    zemu_log_stack("crypto_fillDeviceSeed");
+
+    // Generate randomness using a fixed path related to the device mnemonic
+    const uint32_t path[HDPATH_LEN_BIP44] = {
+        HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
+    };
+
+    MEMZERO(device_seed, ED25519_SK_SIZE);
+    uint8_t raw_privkey[64];  // Allocate 64 bytes to respect Syscall API but only 32 will be used
+
     zxerr_t error = zxerr_unknown;
-    uint8_t privateKeyData[2*KEY_LENGTH] = {0};
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
-                                                     CX_CURVE_Ed25519,
-                                                     hdPath,
-                                                     hdPathLen,
-                                                     privateKeyData,
-                                                     NULL, NULL, 0));
-    memcpy(spendingKey, privateKeyData, KEY_LENGTH);
+    io_seproxyhal_io_heartbeat();
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, path, HDPATH_LEN_BIP44, raw_privkey, NULL,
+                                                     NULL, 0));
+
+    io_seproxyhal_io_heartbeat();
     error = zxerr_ok;
+    MEMCPY(device_seed, raw_privkey, 32);
 
-catch_cx_error: 
-    MEMZERO(privateKeyData, sizeof(privateKeyData));
-
-    if(error != zxerr_ok) {
-        MEMZERO(spendingKey, KEY_LENGTH);
+catch_cx_error:
+    if (error != zxerr_ok) {
+        MEMZERO(raw_privkey, 64);
     }
 
     return error;
@@ -602,15 +600,6 @@ zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind
     MEMZERO(output, outputLen);
 
     keys_t saplingKeys = {0};
-    uint8_t sk[KEY_LENGTH] = {0};
-
-    // sk erased inside in case of error
-    CHECK_ZXERR(crypto_computeSaplingSeed(sk))
-
-    if (computeMasterFromSeed((const uint8_t*) sk, saplingKeys.spendingKey) != parser_ok) {
-        MEMZERO(sk, sizeof(sk));
-        return zxerr_unknown;
-    }
 
     error = computeKeys(&saplingKeys);
 
@@ -619,7 +608,6 @@ zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind
         error = copyKeys(&saplingKeys, requestedKey, output, outputLen);
     }
 
-    MEMZERO(sk, sizeof(sk));
     MEMZERO(&saplingKeys, sizeof(saplingKeys));
     return error;
 }
@@ -637,7 +625,7 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
             break;
 
         case ViewKeys:
-            *cmdResponseLen = 5 * KEY_LENGTH;
+            *cmdResponseLen = 4 * KEY_LENGTH;
             break;
 
         case ProofGenerationKey:
@@ -912,17 +900,10 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
     }
 
     // Get keys
-    uint8_t sapling_seed[KEY_LENGTH] = {0};
     keys_t keys = {0};
-    CHECK_ZXERR(crypto_computeSaplingSeed(sapling_seed));
-    if (computeMasterFromSeed(sapling_seed, keys.spendingKey)) {
-        MEMZERO(sapling_seed, sizeof(sapling_seed));
-        return zxerr_unknown;
-    }
 
     if (computeKeys(&keys) != zxerr_ok || crypto_check_masp(txObj, &keys) != zxerr_ok || 
         crypto_sign_spends_sapling(txObj, &keys) != zxerr_ok) {
-        MEMZERO(sapling_seed, sizeof(sapling_seed));
         MEMZERO(&keys, sizeof(keys));
         return zxerr_invalid_crypto_settings;
     }
@@ -930,7 +911,6 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
     //Hash buffer and retreive for verify purpose
     zxerr_t err = crypto_hash_messagebuffer(output, outputLen, tx_get_buffer(), tx_get_buffer_length());
 
-    MEMZERO(sapling_seed, sizeof(sapling_seed));
     MEMZERO(&keys, sizeof(keys));
     return err;
 }
