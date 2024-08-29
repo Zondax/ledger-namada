@@ -8,21 +8,24 @@ use log::debug;
 use crate::bolos::aes::AesBOLOS;
 use crate::bolos::blake2b;
 use crate::bolos::blake2b::{
-    blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
+    blake2b32_with_personalization, blake2b64_with_personalization, blake2b_expand_v4,
+    blake2b_expand_vec_two,
 };
 use crate::bolos::c_check_app_canary;
 use crate::constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE};
 use crate::cryptoops::bytes_to_extended;
 use crate::cryptoops::extended_to_bytes;
-use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
+use crate::personalization::{
+    ZIP32_SAPLING_FVFP_PERSONALIZATION, ZIP32_SAPLING_MASTER_PERSONALIZATION,
+};
 use crate::sapling::{
     sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_asknsk_to_ivk, sapling_nsk_to_nk,
 };
 use crate::types::{
     diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
-    DiversifierList4, DkBytes, FullViewingKey, IvkBytes, NskBytes, OvkBytes,
-    SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterKey, Zip32MasterSpendingKey,
-    Zip32Path, Zip32Seed,
+    DiversifierList4, DkBytes, FullViewingKey, FvkTagBytes, IvkBytes, NskBytes, OvkBytes,
+    SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterChainCode, Zip32MasterKey,
+    Zip32MasterSpendingKey, Zip32Path, Zip32Seed,
 };
 use crate::zip32_extern::diversifier_is_valid;
 use crate::{cryptoops, zip32};
@@ -318,10 +321,11 @@ fn zip32_sapling_derive_child(
 }
 
 #[inline(never)]
-pub fn zip32_sapling_derive(path: &Zip32Path) -> SaplingKeyBundle {
+pub fn zip32_sapling_derive(path: &Zip32Path) -> (SaplingKeyBundle, Zip32MasterChainCode, FvkTagBytes) {
     // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
     let mut ik = zip32_master_key_i();
 
+    let mut fvfp = [0u8; 4];
     let mut key_bundle_i = SaplingKeyBundle::new(
         zip32_sapling_ask_m(&ik.spending_key()),
         zip32_sapling_nsk_m(&ik.spending_key()),
@@ -330,11 +334,15 @@ pub fn zip32_sapling_derive(path: &Zip32Path) -> SaplingKeyBundle {
     );
 
     for path_i in path.iter().copied() {
+        fvfp.copy_from_slice(&blake2b32_with_personalization(
+            ZIP32_SAPLING_FVFP_PERSONALIZATION,
+            zip32_sapling_fvk(&key_bundle_i).to_bytes(),
+        )[0..4]);
         zip32_sapling_derive_child(&mut ik, path_i, &mut key_bundle_i);
         c_check_app_canary();
     }
 
-    key_bundle_i
+    (key_bundle_i, ik.chain_code(), fvfp)
 }
 
 #[inline(never)]
@@ -450,7 +458,7 @@ mod tests {
 
         with_device_seed_context(seed, || {
             let path = [];
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -508,7 +516,7 @@ mod tests {
         with_device_seed_context(seed, || {
             let path = [1];
 
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -568,7 +576,7 @@ mod tests {
         with_device_seed_context(seed, || {
             let path = [1 + ZIP32_HARDENED];
 
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -628,7 +636,7 @@ mod tests {
         with_device_seed_context(seed, || {
             let path = [1, 2 + ZIP32_HARDENED];
 
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -688,7 +696,7 @@ mod tests {
         with_device_seed_context(seed, || {
             let path = [1 + ZIP32_HARDENED, 2 + ZIP32_HARDENED];
 
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -745,7 +753,7 @@ mod tests {
 
         with_device_seed_context(seed, || {
             let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, 0x8000_0001];
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             assert_eq!(
@@ -787,7 +795,7 @@ mod tests {
 
         with_device_seed_context(seed, || {
             let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, 0x8000_1000];
-            let k = zip32_sapling_derive(&path);
+            let k = zip32_sapling_derive(&path).0;
             let fvk = zip32_sapling_fvk(&k);
 
             let ivk = sapling_aknk_to_ivk(&fvk.ak(), &fvk.nk());

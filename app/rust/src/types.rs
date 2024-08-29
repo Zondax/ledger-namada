@@ -32,6 +32,8 @@ pub type DkBytes = [u8; 32];
 
 pub type NfBytes = [u8; 32];
 
+pub type FvkTagBytes = [u8; 4];
+
 // This can be between 32 and 252 bytes
 // FIXME: move to 64 to align with ed25519 private key?
 pub type Zip32Seed = [u8; 32];

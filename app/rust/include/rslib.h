@@ -16,3 +16,6 @@ parser_error_t add_points(const uint8_t hash[32], const uint8_t value[32], const
 void zip32_ovk(uint32_t zip32_account, uint8_t *ovk);
 void zip32_child_ask_nsk(uint32_t account, uint8_t *ask, uint8_t *nsk);
 void diversifier_find_valid(uint32_t zip32_account, uint8_t *default_diversifier);
+void zip32_dk(uint32_t zip32_account, uint8_t *dk);
+void zip32_chain_code(uint32_t zip32_account, uint8_t *chain_code);
+void zip32_parent_fvk_tag(uint32_t zip32_account, uint8_t *fvk_tag);

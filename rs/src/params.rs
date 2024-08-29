@@ -24,6 +24,8 @@ pub const CLA: u8 = 0x57;
 
 /// MASP keys len
 pub const KEY_LEN: usize = 32;
+/// MASP tag length
+pub const TAG_LEN: usize = 4;
 /// Public Key Length
 pub const ED25519_PUBKEY_LEN: usize = 32;
 /// Public Key + Tag Length

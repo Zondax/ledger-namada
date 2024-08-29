@@ -32,6 +32,7 @@ typedef enum {
 
 #define RNG_LEN 80
 #define KEY_LENGTH 32
+#define TAG_LENGTH 4
 #define ASSET_IDENTIFIER_LENGTH 32
 #define EXTENDED_KEY_LENGTH 64
 #define DIVERSIFIER_LENGTH 11
@@ -45,9 +46,11 @@ typedef uint8_t ak_t[KEY_LENGTH];
 typedef uint8_t nk_t[KEY_LENGTH];
 
 typedef uint8_t dk_t[KEY_LENGTH];
+typedef uint8_t chain_code_t[KEY_LENGTH];
 typedef uint8_t ivk_t[KEY_LENGTH];
 typedef uint8_t ovk_t[KEY_LENGTH];
 typedef uint8_t d_t[DIVERSIFIER_LENGTH];
+typedef uint8_t fvk_tag_t[TAG_LENGTH];
 
 typedef uint8_t public_address_t[KEY_LENGTH];
 
@@ -59,6 +62,9 @@ typedef struct {
     ivk_t ivk;
     ovk_t ovk;
     d_t diversifier;
+    dk_t dk;
+    chain_code_t chain_code;
+    fvk_tag_t parent_fvk_tag;
     public_address_t address;
 } keys_t;
 

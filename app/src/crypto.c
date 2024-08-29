@@ -520,6 +520,15 @@ static zxerr_t computeKeys(keys_t * saplingKeys) {
     // Compute diversifier
     diversifier_find_valid(hdPath[2], saplingKeys->diversifier);
 
+    // Compute dk
+    zip32_dk(hdPath[2], saplingKeys->dk);
+
+    // Compute chain code
+    zip32_chain_code(hdPath[2], saplingKeys->chain_code);
+
+    // Compute parent full viewing key tag
+    zip32_parent_fvk_tag(hdPath[2], saplingKeys->parent_fvk_tag);
+
     // Compute address
     get_pkd(hdPath[2], saplingKeys->diversifier, saplingKeys->address);
 
@@ -540,13 +549,16 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             break;
 
         case ViewKeys:
-            if (outputLen < 4 * KEY_LENGTH) {
+            if (outputLen < 6 * KEY_LENGTH + TAG_LENGTH) {
                 return zxerr_buffer_too_small;
             }
             memcpy(output, saplingKeys->ak, KEY_LENGTH);
             memcpy(output + KEY_LENGTH, saplingKeys->nk, KEY_LENGTH);
             memcpy(output + 2 * KEY_LENGTH, saplingKeys->ovk, KEY_LENGTH);
             memcpy(output + 3 * KEY_LENGTH, saplingKeys->ivk, KEY_LENGTH);
+            memcpy(output + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
+            memcpy(output + 5 * KEY_LENGTH, saplingKeys->chain_code, KEY_LENGTH);
+            memcpy(output + 6 * KEY_LENGTH, saplingKeys->parent_fvk_tag, TAG_LENGTH);
             break;
 
         case ProofGenerationKey:
@@ -625,7 +637,7 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
             break;
 
         case ViewKeys:
-            *cmdResponseLen = 4 * KEY_LENGTH;
+            *cmdResponseLen = 6 * KEY_LENGTH + TAG_LENGTH;
             break;
 
         case ProofGenerationKey:

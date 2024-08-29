@@ -22,7 +22,7 @@ use std::error::Error;
 const HARDENED: u32 = 0x80000000;
 
 use crate::params::{
-    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG,
+    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG, TAG_LEN,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -52,6 +52,8 @@ pub struct ResponseViewKey {
     pub ivk: [u8; KEY_LEN],
     pub ovk: [u8; KEY_LEN],
     pub dk: [u8; KEY_LEN],
+    pub chain_code: [u8; KEY_LEN],
+    pub parent_fvk_tag: [u8; TAG_LEN],
 }
 
 pub struct ResponseProofGenKey {
