@@ -100,9 +100,6 @@ impl BIP44Path {
         }
 
         let path_array: Vec<&str> = self.path.split('/').collect();
-        if path_array.len() != 6 {
-            return Err("Invalid path. (e.g \"m/44'/134'/0/0/0\"".into());
-        }
 
         let mut serialized_path = Vec::new();
         // First byte is path size
