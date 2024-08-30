@@ -549,16 +549,17 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             break;
 
         case ViewKeys:
-            if (outputLen < 6 * KEY_LENGTH + TAG_LENGTH) {
+            if (outputLen < 5 * KEY_LENGTH + 2 * TAG_LENGTH + 1) {
                 return zxerr_buffer_too_small;
             }
-            memcpy(output, saplingKeys->ak, KEY_LENGTH);
-            memcpy(output + KEY_LENGTH, saplingKeys->nk, KEY_LENGTH);
-            memcpy(output + 2 * KEY_LENGTH, saplingKeys->ovk, KEY_LENGTH);
-            memcpy(output + 3 * KEY_LENGTH, saplingKeys->ivk, KEY_LENGTH);
-            memcpy(output + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
-            memcpy(output + 5 * KEY_LENGTH, saplingKeys->chain_code, KEY_LENGTH);
-            memcpy(output + 6 * KEY_LENGTH, saplingKeys->parent_fvk_tag, TAG_LENGTH);
+            memcpy(output, &hdPathLen, 1);
+            memcpy(output + 1, saplingKeys->parent_fvk_tag, TAG_LENGTH);
+            memcpy(output + 5, &hdPath[hdPathLen - 1], TAG_LENGTH);
+            memcpy(output + 9, saplingKeys->chain_code, KEY_LENGTH);
+            memcpy(output + 41, saplingKeys->ak, KEY_LENGTH);
+            memcpy(output + 73, saplingKeys->nk, KEY_LENGTH);
+            memcpy(output + 105, saplingKeys->ovk, KEY_LENGTH);
+            memcpy(output + 137, saplingKeys->dk, KEY_LENGTH);
             break;
 
         case ProofGenerationKey:
@@ -637,7 +638,7 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
             break;
 
         case ViewKeys:
-            *cmdResponseLen = 6 * KEY_LENGTH + TAG_LENGTH;
+            *cmdResponseLen = 5 * KEY_LENGTH + 2 * TAG_LENGTH + 1;
             break;
 
         case ProofGenerationKey:

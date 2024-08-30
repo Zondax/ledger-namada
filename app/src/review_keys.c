@@ -106,10 +106,18 @@ zxerr_t getNumItemsViewKey(uint8_t *num_items) {
     if (num_items == NULL) {
         return zxerr_no_data;
     }
-    // Display [viewKey | ivk | ovk | dk | HD path]
-    *num_items = 5;
+    // Display [xfvk | HD path]
+    *num_items = 2;
     return zxerr_ok;
 }
+
+#define CHECK_PARSER_OK(CALL)      \
+  do {                         \
+    cx_err_t __cx_err = CALL;  \
+    if (__cx_err != parser_ok) {   \
+      return zxerr_unknown;    \
+    }                          \
+  } while (0)
 
 zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen, uint8_t pageIdx,
                      uint8_t *pageCount) {
@@ -117,26 +125,13 @@ zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char
 
     switch (displayIdx) {
         case 0:
-            snprintf(outKey, outKeyLen, "ViewKey");
-            const char* viewKey = (const char*)G_io_apdu_buffer;
-            pageStringHex(outVal, outValLen, viewKey, 2 * KEY_LENGTH, pageIdx, pageCount);
+            snprintf(outKey, outKeyLen, "Ext Full View Key");
+            const uint8_t* xfvk = G_io_apdu_buffer;
+            char tmp_buf[300] = {0};
+            CHECK_PARSER_OK(crypto_encodeLargeBech32(xfvk, EXTENDED_FVK_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 0));
+            pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             break;
-        case 1:
-            snprintf(outKey, outKeyLen, "IVK");
-            const char* ivk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, ivk, KEY_LENGTH, pageIdx, pageCount);
-            break;
-        case 2:
-            snprintf(outKey, outKeyLen, "OVK");
-            const char* ovk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, ovk, KEY_LENGTH, pageIdx, pageCount);
-            break;
-        case 3:
-            snprintf(outKey, outKeyLen, "DK");
-            const char* dk = (const char*)G_io_apdu_buffer + 4 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, dk, KEY_LENGTH, pageIdx, pageCount);
-            break;
-        case 4: {
+        case 1: {
             snprintf(outKey, outKeyLen, "HD Path");
             char buffer[200] = {0};
             bip32_to_str(buffer, sizeof(buffer), hdPath, hdPathLen);
