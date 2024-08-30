@@ -51,16 +51,14 @@ typedef uint8_t ivk_t[KEY_LENGTH];
 typedef uint8_t ovk_t[KEY_LENGTH];
 typedef uint8_t d_t[DIVERSIFIER_LENGTH];
 typedef uint8_t fvk_tag_t[TAG_LENGTH];
+typedef uint8_t fvk_t[KEY_LENGTH*3];
 
 typedef uint8_t public_address_t[KEY_LENGTH];
 
 typedef struct {
     ask_t ask;
-    ak_t ak;
     nsk_t nsk;
-    nk_t nk;
-    ivk_t ivk;
-    ovk_t ovk;
+    fvk_t fvk;
     d_t diversifier;
     dk_t dk;
     chain_code_t chain_code;

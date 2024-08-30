@@ -508,26 +508,14 @@ static zxerr_t computeKeys(keys_t * saplingKeys) {
         return zxerr_no_data;
     }
 
-    // Compute ask, nsk, ovk
-    zip32_child_ask_nsk(hdPath[2], saplingKeys->ask, saplingKeys->nsk);
-    zip32_ovk(hdPath[2], saplingKeys->ovk);
+    // Compute chain code, fvk, parent fvk tag, dk
+    zip32_xfvk(hdPath[2], saplingKeys->parent_fvk_tag, saplingKeys->chain_code, saplingKeys->fvk, saplingKeys->dk);
 
-    // Compute ak, nk, ivk
-    CHECK_PARSER_OK(generate_key(saplingKeys->ask, SpendingKeyGenerator, saplingKeys->ak));
-    CHECK_PARSER_OK(generate_key(saplingKeys->nsk, ProofGenerationKeyGenerator, saplingKeys->nk));
-    CHECK_PARSER_OK(computeIVK(saplingKeys->ak, saplingKeys->nk, saplingKeys->ivk));
+    // Compute ask, nsk
+    zip32_child_ask_nsk(hdPath[2], saplingKeys->ask, saplingKeys->nsk);
 
     // Compute diversifier
     diversifier_find_valid(hdPath[2], saplingKeys->diversifier);
-
-    // Compute dk
-    zip32_dk(hdPath[2], saplingKeys->dk);
-
-    // Compute chain code
-    zip32_chain_code(hdPath[2], saplingKeys->chain_code);
-
-    // Compute parent full viewing key tag
-    zip32_parent_fvk_tag(hdPath[2], saplingKeys->parent_fvk_tag);
 
     // Compute address
     get_pkd(hdPath[2], saplingKeys->diversifier, saplingKeys->address);
@@ -556,9 +544,7 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             memcpy(output + 1, saplingKeys->parent_fvk_tag, TAG_LENGTH);
             memcpy(output + 5, &hdPath[hdPathLen - 1], TAG_LENGTH);
             memcpy(output + 9, saplingKeys->chain_code, KEY_LENGTH);
-            memcpy(output + 41, saplingKeys->ak, KEY_LENGTH);
-            memcpy(output + 73, saplingKeys->nk, KEY_LENGTH);
-            memcpy(output + 105, saplingKeys->ovk, KEY_LENGTH);
+            memcpy(output + 41, saplingKeys->fvk, KEY_LENGTH*3);
             memcpy(output + 137, saplingKeys->dk, KEY_LENGTH);
             break;
 
@@ -566,7 +552,7 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             if (outputLen < 2 * KEY_LENGTH) {
                 return zxerr_buffer_too_small;
             }
-            memcpy(output, saplingKeys->ak, KEY_LENGTH);
+            memcpy(output, saplingKeys->fvk, KEY_LENGTH);
             memcpy(output + KEY_LENGTH, saplingKeys->nsk, KEY_LENGTH);
             break;
 

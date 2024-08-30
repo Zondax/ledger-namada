@@ -19,3 +19,4 @@ void diversifier_find_valid(uint32_t zip32_account, uint8_t *default_diversifier
 void zip32_dk(uint32_t zip32_account, uint8_t *dk);
 void zip32_chain_code(uint32_t zip32_account, uint8_t *chain_code);
 void zip32_parent_fvk_tag(uint32_t zip32_account, uint8_t *fvk_tag);
+void zip32_xfvk(uint32_t zip32_account, uint8_t *fvk_tag, uint8_t *chain_code, uint8_t *fvk, uint8_t *dk);

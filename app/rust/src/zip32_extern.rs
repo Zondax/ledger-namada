@@ -232,3 +232,26 @@ pub extern "C" fn zip32_parent_fvk_tag(
 
     fvk_tag.copy_from_slice(&tag);
 }
+
+#[no_mangle]
+pub extern "C" fn zip32_xfvk(
+    account: u32,
+    fvk_tag_ptr: *mut FvkTagBytes,
+    cc_ptr: *mut Zip32MasterChainCode,
+    fvk_ptr: *mut FullViewingKey,
+    dk_ptr: *mut DkBytes,
+) {
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
+    let fvk_tag = unsafe { &mut *fvk_tag_ptr };
+    let cc = unsafe { &mut *cc_ptr };
+    let fvk_out = unsafe { &mut *fvk_ptr };
+    let dk = unsafe { &mut *dk_ptr };
+
+    let (key_bundle, chain_code, tag) = zip32_sapling_derive(&path);
+
+    fvk_tag.copy_from_slice(&tag);
+    cc.copy_from_slice(&chain_code);
+    let fvk = zip32_sapling_fvk(&key_bundle);
+    fvk_out.to_bytes_mut().copy_from_slice(fvk.to_bytes());
+    dk.copy_from_slice(&key_bundle.dk());
+}
