@@ -331,6 +331,10 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
         tmp.len = tmp_64 * (ASSET_ID_LEN + INT_128_LEN);
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, tmp.len))
 
+        // Parse generator
+        tmp.len = 32;
+        CHECK_ERROR(readBytes(ctx, &tmp.ptr, tmp.len))
+
         // Parse value
         CHECK_ERROR(readUint64(ctx, &tmp_64))
 
