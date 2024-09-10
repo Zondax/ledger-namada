@@ -28,29 +28,6 @@
     #include "cx_blake2b.h"
 #endif
 
-static parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
-    uint8_t tag = 0;
-    uint16_t tmp16 = 0;
-    uint32_t tmp32 = 0;
-    CHECK_ERROR(readByte(ctx, &tag))
-    switch(tag) {
-    case 253:
-        CHECK_ERROR(readUint16(ctx, &tmp16))
-        *result = (uint64_t)tmp16;
-        break;
-    case 254:
-        CHECK_ERROR(readUint32(ctx, &tmp32))
-        *result = (uint64_t)tmp32;
-        break;
-    case 255:
-        CHECK_ERROR(readUint64(ctx, result))
-        break;
-    default:
-        *result = (uint64_t)tag;
-    }
-    return parser_ok;
-}
-
 static parser_error_t readSaplingBundle(parser_context_t *ctx, masp_sapling_bundle_t *bundle) {
     if (ctx == NULL || bundle == NULL) {
         return parser_unexpected_error;
@@ -312,7 +289,7 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
     CHECK_ERROR(readUint32(ctx, &builder->n_converts))
 #if defined(LEDGER_SPECIFIC)
     uint32_t rnd_converts = (uint32_t)transaction_get_n_converts();
-    if (rnd_converts != builder->n_converts) {
+    if (rnd_converts < builder->n_converts) {
         return parser_invalid_number_of_converts;
     }
 #endif

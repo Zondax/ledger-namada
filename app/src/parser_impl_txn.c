@@ -1422,7 +1422,9 @@ parser_error_t verifyShieldedHash(parser_context_t *ctx) {
 #if defined(LEDGER_SPECIFIC)
     // compute tx_id hash
     uint8_t tx_id_hash[HASH_LEN] = {0};
-    tx_hash_txId(ctx->tx_obj, tx_id_hash);
+    if (tx_hash_txId(ctx->tx_obj, tx_id_hash) != zxerr_ok) {
+        return parser_unexpected_error;
+    }
 
     if (ctx->tx_obj->transaction.sections.maspBuilder.target_hash.len == HASH_LEN) {
         if (memcmp(tx_id_hash, ctx->tx_obj->transaction.sections.maspBuilder.target_hash.ptr, HASH_LEN) != 0) {

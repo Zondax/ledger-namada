@@ -116,6 +116,29 @@ parser_error_t readFieldSizeU16(parser_context_t *ctx, uint16_t *size) {
     return parser_ok;
 }
 
+parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
+    uint8_t tag = 0;
+    uint16_t tmp16 = 0;
+    uint32_t tmp32 = 0;
+    CHECK_ERROR(readByte(ctx, &tag))
+    switch(tag) {
+    case 253:
+        CHECK_ERROR(readUint16(ctx, &tmp16))
+        *result = (uint64_t)tmp16;
+        break;
+    case 254:
+        CHECK_ERROR(readUint32(ctx, &tmp32))
+        *result = (uint64_t)tmp32;
+        break;
+    case 255:
+        CHECK_ERROR(readUint64(ctx, result))
+        break;
+    default:
+        *result = (uint64_t)tag;
+    }
+    return parser_ok;
+}
+
 parser_error_t checkTag(parser_context_t *ctx, uint8_t expectedTag) {
     uint8_t tmpTag = 0;
     CHECK_ERROR(readByte(ctx, &tmpTag))
