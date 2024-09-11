@@ -110,9 +110,9 @@ __Z_INLINE void app_sign() {
     }
 }
 
-__Z_INLINE void app_sign_masp() {
-    const parser_tx_t *txObj = tx_get_txObject();
-    const zxerr_t err = crypto_sign_masp(txObj, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
+__Z_INLINE void app_sign_masp_spends() {
+    parser_tx_t *txObj = tx_get_txObject();
+    const zxerr_t err = crypto_sign_masp_spends(txObj, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3);
 
     if (err != zxerr_ok) {
         transaction_reset();

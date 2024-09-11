@@ -409,6 +409,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     if (ctx == NULL || maspTx == NULL) {
         return parser_unexpected_error;
     }
+    maspTx->masptx_ptr = ctx->buffer;
 
     uint8_t sectionMaspTx = 0;
     CHECK_ERROR(readByte(ctx, &sectionMaspTx))
@@ -444,6 +445,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     // Read sapling bundle
     CHECK_ERROR(readSaplingBundle(ctx, &maspTx->data.sapling_bundle))
 
+    maspTx->masptx_len = ctx->buffer + ctx->offset - maspTx->masptx_ptr;
     return parser_ok;
 }
 

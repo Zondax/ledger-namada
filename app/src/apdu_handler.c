@@ -145,8 +145,8 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     THROW(APDU_CODE_OK);
 }
 #if defined(COMPILE_MASP)
-__Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    ZEMU_LOGF(50, "handleSignMasp\n")
+__Z_INLINE void handleSignMaspSpends(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignMaspSpends\n")
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -163,7 +163,7 @@ __Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, 
     }
 
     CHECK_APP_CANARY()
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp);
+    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp_spends);
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
@@ -315,9 +315,9 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
-                case INS_SIGN_MASP: {
+                case INS_SIGN_MASP_SPENDS: {
                     CHECK_PIN_VALIDATED()
-                    handleSignMasp(flags, tx, rx);
+                    handleSignMaspSpends(flags, tx, rx);
                     break;
                 }
 

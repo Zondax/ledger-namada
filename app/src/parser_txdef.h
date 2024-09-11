@@ -186,6 +186,8 @@ typedef struct {
 typedef struct {
     bytes_t tx_id; // [u8;32]
     masp_tx_data_t data;
+    const uint8_t* masptx_ptr;
+    uint64_t masptx_len;
 } masp_tx_section_t;
 
 typedef struct {

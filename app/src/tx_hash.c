@@ -125,7 +125,6 @@ zxerr_t tx_hash_sapling_spends(const parser_tx_t *txObj, uint8_t *output) {
 
     const uint8_t *spend = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.ptr;
     const uint64_t n_shielded_spends = txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends;
-    const bool has_spend_anchor = txObj->transaction.sections.maspBuilder.builder.sapling_builder.has_spend_anchor;
     const uint8_t *spend_anchor_ptr = txObj->transaction.sections.maspTx.data.sapling_bundle.anchor_shielded_spends.ptr;
 
     for (uint64_t i = 0; i < n_shielded_spends; i++, spend += SHIELDED_SPENDS_LEN) {
@@ -252,7 +251,7 @@ zxerr_t tx_hash_sapling_data(const parser_tx_t *txObj, uint8_t *output) {
 
     if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends != 0 || 
         txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts != 0 || 
-        txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs != 0) {{
+        txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs != 0) {
         CHECK_ZXERR(tx_hash_sapling_spends(txObj, spends_hash));
 
         // TODO: there is not an example to validate converts
