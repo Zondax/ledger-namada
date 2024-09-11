@@ -54,7 +54,7 @@ pub enum InstructionCode {
     /// Instruction to generate spend convert values
     GetConvertRandomness = 6,
     /// Instruction to sign masp
-    SignMasp = 7,
+    SignMaspSpends = 7,
     /// Instruction to retrieve spend signatures
     ExtractSpendSignature = 8,
 
