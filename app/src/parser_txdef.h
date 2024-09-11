@@ -279,6 +279,7 @@ typedef struct {
     bytes_t timestamp;
     header_t header;
     sections_t sections;
+    uint8_t maspTx_idx;
     bool isMasp;
 } transaction_t;
 

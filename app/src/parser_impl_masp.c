@@ -169,7 +169,7 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_spends))
-#if defined(LEDGER_SPECIFIC)
+#if defined(LEDGER_SPECIFIC) && !defined(APP_TESTING)
     uint32_t rnd_spends = (uint32_t)transaction_get_n_spends();
     if (rnd_spends != builder->n_spends) {
         return parser_invalid_number_of_spends;
@@ -287,7 +287,7 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_converts))
-#if defined(LEDGER_SPECIFIC)
+#if defined(LEDGER_SPECIFIC) && !defined(APP_TESTING)
     uint32_t rnd_converts = (uint32_t)transaction_get_n_converts();
     if (rnd_converts < builder->n_converts) {
         return parser_invalid_number_of_converts;
@@ -409,7 +409,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     if (ctx == NULL || maspTx == NULL) {
         return parser_unexpected_error;
     }
-    maspTx->masptx_ptr = ctx->buffer;
+    maspTx->masptx_ptr = ctx->buffer + ctx->offset;
 
     uint8_t sectionMaspTx = 0;
     CHECK_ERROR(readByte(ctx, &sectionMaspTx))

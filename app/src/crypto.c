@@ -416,7 +416,7 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
         uint64_t maspSectionLen = txObj->transaction.sections.maspTx.masptx_len;
         uint8_t *maspHash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
         CHECK_ZXERR(crypto_hashMaspSection(maspSection, maspSectionLen, maspHash))
-        section_hashes.indices.ptr[section_hashes.hashesLen] = txObj->transaction.sections.sectionLen+1;
+        section_hashes.indices.ptr[section_hashes.hashesLen] = txObj->transaction.maspTx_idx;
         section_hashes.hashesLen++;
         signature_section.hashes.hashesLen++;
     } 

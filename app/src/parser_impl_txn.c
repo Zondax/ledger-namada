@@ -1298,6 +1298,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 // Identify tx has masp tx
                 v->transaction.isMasp = true;
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
+                v->transaction.maspTx_idx = i+1;
                 break;
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
