@@ -69,6 +69,10 @@ parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk);
 parser_error_t crypto_encodeLargeBech32( const uint8_t *address, size_t addressLen, uint8_t *output, size_t outputLen, bool paymentAddr);
 parser_error_t crypto_encodeAltAddress(const AddressAlt *addr, char *address, uint16_t addressLen);
 parser_error_t derive_asset_type(const masp_asset_data_t *asset_data, uint8_t *identifier, uint8_t *nonce);
+parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_len, uint8_t *output);
+parser_error_t parser_scalar_multiplication(const uint8_t input[32], constant_key_t key, uint8_t output[32]);
+parser_error_t parser_compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t rsk[32], uint8_t sbar[32]);
+parser_error_t parser_randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]);
 #ifdef __cplusplus
 }
 #endif

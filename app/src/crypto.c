@@ -647,32 +647,8 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
     return zxerr_ok;
 }
 
-static parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_len, uint8_t *output) {
-    if (a == NULL || b == NULL || output == NULL) {
-        return parser_no_data;
-    }
-
-    uint8_t hash[BLAKE2B_OUTPUT_LEN] = {0};
-#if defined(LEDGER_SPECIFIC)
-    cx_blake2b_t ctx = {0};
-    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SIGNING_REDJUBJUB,
-                                           sizeof(SIGNING_REDJUBJUB)));
-    ASSERT_CX_OK(cx_blake2b_update(&ctx, a, a_len));
-    ASSERT_CX_OK(cx_blake2b_update(&ctx, b, b_len));
-    cx_blake2b_final(&ctx, hash);
-#else
-    blake2b_state state = {0};
-    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SIGNING_REDJUBJUB,
-                                      sizeof(SIGNING_REDJUBJUB));
-    blake2b_update(&state, a, a_len);
-    blake2b_update(&state, b, b_len);
-    blake2b_final(&state, hash, BLAKE2B_OUTPUT_LEN);
-#endif
-
-    from_bytes_wide(hash, output);
-
-    return parser_ok;
-}
+// https://github.com/anoma/masp/blob/8d83b172698098fba393006016072bc201ed9ab7/masp_primitives/src/sapling.rs#L170
+// https://github.com/anoma/masp/blob/main/masp_primitives/src/sapling/redjubjub.rs#L136
 static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH], uint8_t sign_hash[static KEY_LENGTH], uint8_t *signature) {
     if (alpha == NULL || sign_hash == NULL || signature == NULL) {
         return zxerr_no_data;
@@ -683,10 +659,10 @@ static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH]
     uint8_t rk[KEY_LENGTH] = {0};
 
     // get randomized secret
-    randomized_secret_from_seed(keys->ask, alpha, rsk);
+    CHECK_PARSER_OK(parser_randomized_secret_from_seed(keys->ask, alpha, rsk));
 
     //rsk to rk
-    scalar_multiplication(rsk, SpendingKeyGenerator, rk);
+    CHECK_PARSER_OK(parser_scalar_multiplication(rsk, SpendingKeyGenerator, rk));
 
     // sign
     MEMCPY(data_to_be_signed, rk, KEY_LENGTH);
@@ -700,13 +676,13 @@ static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH]
     uint8_t r[32] = {0};
     uint8_t rbar[32] = {0};
     CHECK_PARSER_OK(h_star(rng, sizeof(rng), data_to_be_signed, sizeof(data_to_be_signed), r));
-    CHECK_PARSER_OK(scalar_multiplication(r, SpendingKeyGenerator, rbar));
+    CHECK_PARSER_OK(parser_scalar_multiplication(r, SpendingKeyGenerator, rbar));
 
     //compute s and sbar
     uint8_t s[32] = {0};
     uint8_t sbar[32] = {0};
     CHECK_PARSER_OK(h_star(rbar, sizeof(rbar), data_to_be_signed, sizeof(data_to_be_signed), s));
-    CHECK_PARSER_OK(compute_sbar(s, r, rsk, sbar));
+    CHECK_PARSER_OK(parser_compute_sbar(s, r, rsk, sbar));
 
     MEMCPY(signature, rbar, HASH_LEN);
     MEMCPY(signature + HASH_LEN, sbar, HASH_LEN);

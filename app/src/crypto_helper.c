@@ -590,9 +590,7 @@ parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifi
     blake2s_update(&state, diversifier, DIVERSIFIER_LENGTH);
     blake2s_final(&state, hash, KEY_LENGTH);
 
-    zemu_log_stack("computePkd got hash");
     CHECK_ERROR(get_pkd(ivk, hash, pk_d));
-    zemu_log_stack("computePkd after get_pkd");
     return parser_ok;
 }
 
@@ -621,7 +619,7 @@ parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *ide
     blake2s_final(&state, hash, KEY_LENGTH);
 
     uint8_t scalar[32] = {0};
-    CHECK_ERROR(scalar_multiplication(rcv, ValueCommitmentRandomnessGenerator, scalar));
+    CHECK_ERROR(parser_scalar_multiplication(rcv, ValueCommitmentRandomnessGenerator, scalar));
     CHECK_ERROR(add_points(hash, value_bytes, scalar, cv));
 
     return parser_ok;
@@ -634,10 +632,62 @@ parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk) {
     }
     uint8_t rsk[KEY_LENGTH] = {0};
     // get randomized secret
-    CHECK_ERROR(randomized_secret_from_seed(keys->ask, alpha, rsk));
+    CHECK_ERROR(parser_randomized_secret_from_seed(keys->ask, alpha, rsk));
 
     //rsk to rk
-    CHECK_ERROR(scalar_multiplication(rsk, SpendingKeyGenerator, rk));
+    CHECK_ERROR(parser_scalar_multiplication(rsk, SpendingKeyGenerator, rk));
 
     return parser_ok;
+}
+
+parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_len, uint8_t *output) {
+    if (a == NULL || b == NULL || output == NULL) {
+        return parser_no_data;
+    }
+
+    uint8_t hash[BLAKE2B_OUTPUT_LEN] = {0};
+#if defined(LEDGER_SPECIFIC)
+    cx_blake2b_t ctx = {0};
+    ASSERT_CX_OK(cx_blake2b_init2_no_throw(&ctx, BLAKE2B_OUTPUT_LEN, NULL, 0, (uint8_t *)SIGNING_REDJUBJUB,
+                                           sizeof(SIGNING_REDJUBJUB)));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, a, a_len));
+    ASSERT_CX_OK(cx_blake2b_update(&ctx, b, b_len));
+    cx_blake2b_final(&ctx, hash);
+#else
+    blake2b_state state = {0};
+    blake2b_init_with_personalization(&state, BLAKE2B_OUTPUT_LEN, (const uint8_t *)SIGNING_REDJUBJUB,
+                                      sizeof(SIGNING_REDJUBJUB));
+    blake2b_update(&state, a, a_len);
+    blake2b_update(&state, b, b_len);
+    blake2b_final(&state, hash, BLAKE2B_OUTPUT_LEN);
+#endif
+
+    from_bytes_wide(hash, output);
+
+    return parser_ok;
+}
+
+// This fuctnion will allow to test the rust ones in cpp_tests
+parser_error_t parser_scalar_multiplication(const uint8_t input[32], constant_key_t key, uint8_t output[32]) {
+    if (input == NULL || output == NULL) {
+        return parser_no_data;
+    }
+
+    return scalar_multiplication(input, key, output);
+}
+
+parser_error_t parser_compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t rsk[32], uint8_t sbar[32]) {
+    if (s == NULL || r == NULL || rsk == NULL || sbar == NULL) {
+        return parser_no_data;
+    }
+
+    return compute_sbar(s, r, rsk, sbar);
+}
+
+parser_error_t parser_randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]) {
+    if (ask == NULL || alpha == NULL || output == NULL) {
+        return parser_no_data;
+    }
+
+    return randomized_secret_from_seed(ask, alpha, output);
 }
