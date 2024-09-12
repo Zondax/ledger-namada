@@ -111,6 +111,7 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     CHECK_APP_CANARY()
 
     if (error_msg != NULL) {
+        transaction_reset();
         const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
         memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
         *tx += (error_msg_length);
@@ -156,6 +157,7 @@ __Z_INLINE void handleSignMaspSpends(volatile uint32_t *flags, volatile uint32_t
     CHECK_APP_CANARY()
 
     if (error_msg != NULL) {
+        transaction_reset();
         const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
         memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
         *tx += (error_msg_length);
@@ -202,6 +204,7 @@ __Z_INLINE void handleComputeMaspRand(__Z_UNUSED volatile uint32_t *flags, volat
     *tx = 0;
     zxerr_t zxerr = app_fill_randomness(type);
     if (zxerr != zxerr_ok) {
+        transaction_reset();
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }

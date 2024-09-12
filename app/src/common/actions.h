@@ -100,10 +100,12 @@ __Z_INLINE void app_sign() {
     const zxerr_t err = crypto_sign(txObj, G_io_apdu_buffer, sizeof(G_io_apdu_buffer) - 2);
 
     if (err != zxerr_ok) {
+        transaction_reset();
         MEMZERO(G_io_apdu_buffer, sizeof(G_io_apdu_buffer));
         set_code(G_io_apdu_buffer, 0, APDU_CODE_SIGN_VERIFY_ERROR);
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
     } else {
+        transaction_reset();
         const uint16_t responseLen = PK_LEN_25519_PLUS_TAG + 2 * SALT_LEN + 2 * SIG_LEN_25519_PLUS_TAG + 2 + 10;
         set_code(G_io_apdu_buffer, responseLen, APDU_CODE_OK);
         io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, responseLen + 2);
