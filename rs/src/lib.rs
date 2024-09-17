@@ -620,4 +620,26 @@ where
             hash: hash.try_into().unwrap(),
         })
     }
+
+    /// Clean buffers
+    pub async fn clean_randomness_buffers(
+        &self,
+        path: &BIP44Path,
+        blob: &[u8],
+    ) -> Result<(), NamError<E::Error>> {
+        let first_chunk = path.serialize_path().unwrap();
+
+        let start_command = APDUCommand {
+            cla: CLA,
+            ins: InstructionCode::CleanBuffers as _,
+            p1: ChunkPayloadType::Init as u8,
+            p2: 0x00,
+            data: first_chunk,
+        };
+
+        let response =
+            <Self as AppExt<E>>::send_chunks(&self.apdu_transport, start_command, blob).await?;
+
+        Ok(())
+    }
 }

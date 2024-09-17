@@ -107,6 +107,7 @@ typedef enum {
 #define INS_GET_CONVERT_RAND            0x06
 #define INS_SIGN_MASP_SPENDS            0x07
 #define INS_EXTRACT_SPEND_SIGN          0x08
+#define INS_CLEAN_BUFFERS               0x09
 
 #define APDU_CODE_CHECK_SIGN_TR_FAIL 0x6999
 #ifdef __cplusplus
