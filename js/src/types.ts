@@ -48,6 +48,7 @@ export interface ResponseViewKey extends ResponseBase {
   viewKey?: Buffer;
   ivk?: Buffer;
   ovk?: Buffer;
+  dk?: Buffer;
 }
 
  export interface ResponseProofGenKey extends ResponseBase {
