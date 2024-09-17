@@ -25,6 +25,7 @@ export const INS = {
   GET_CONVERT_RAND: 0x06,
   SIGN_MASP_SPENDS: 0x07,
   EXTRACT_SPEND_SIGN: 0x08,
+  CLEAN_RANDOMNESS_BUFFERS: 0x09,
 }
 export const SALT_LEN = 8
 export const HASH_LEN = 32

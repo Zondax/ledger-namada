@@ -112,11 +112,15 @@ export function processGetKeysResponse(response: Buffer, keyType: NamadaKeys): K
       const ivk = Buffer.from(response.subarray(0, KEY_LENGTH))
       response = response.subarray(KEY_LENGTH)
 
+      const dk = Buffer.from(response.subarray(0, KEY_LENGTH))
+      response = response.subarray(KEY_LENGTH)
+
       requestedKey = {
         ...requestedKey,
         viewKey,
         ovk,
         ivk,
+        dk,
       }
       break
     }

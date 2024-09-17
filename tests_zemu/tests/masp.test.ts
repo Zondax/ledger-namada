@@ -167,4 +167,33 @@ describe('Masp', function () {
       await sim.close()
     }
   })
+
+  test.concurrent.each(MASP_MODELS)('Clean randomness Buffers', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new NamadaApp(sim.getTransport())
+
+      const respSpend = await app.getSpendRandomness()
+      console.log(respSpend)
+      expect(respSpend.returnCode).toEqual(0x9000)
+      expect(respSpend.errorMessage).toEqual('No errors')
+
+      const respOutput = await app.getOutputRandomness()
+      console.log(respOutput)
+      expect(respOutput.returnCode).toEqual(0x9000)
+      expect(respOutput.errorMessage).toEqual('No errors')
+
+      const respRandomness = await app.getConvertRandomness()
+      console.log(respRandomness)
+      expect(respRandomness.returnCode).toEqual(0x9000)
+      expect(respRandomness.errorMessage).toEqual('No errors')
+
+      const respClean = await app.cleanRandomnessBuffers()
+      console.log(respClean)
+      expect(respClean.returnCode).toEqual(0x9000)
+    } finally {
+      await sim.close()
+    }
+  })
 })

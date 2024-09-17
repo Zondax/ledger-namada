@@ -51,6 +51,7 @@ pub struct ResponseViewKey {
     pub view_key: [u8; 2 * KEY_LEN],
     pub ivk: [u8; KEY_LEN],
     pub ovk: [u8; KEY_LEN],
+    pub dk: [u8; KEY_LEN],
 }
 
 pub struct ResponseProofGenKey {

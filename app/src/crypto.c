@@ -541,13 +541,14 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
             break;
 
         case ViewKeys:
-            if (outputLen < 4 * KEY_LENGTH) {
+            if (outputLen < 5 * KEY_LENGTH) {
                 return zxerr_buffer_too_small;
             }
             memcpy(output, saplingKeys->ak, KEY_LENGTH);
             memcpy(output + KEY_LENGTH, saplingKeys->nk, KEY_LENGTH);
             memcpy(output + 2 * KEY_LENGTH, saplingKeys->ovk, KEY_LENGTH);
             memcpy(output + 3 * KEY_LENGTH, saplingKeys->ivk, KEY_LENGTH);
+            memcpy(output + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
             break;
 
         case ProofGenerationKey:
@@ -633,7 +634,7 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
             break;
 
         case ViewKeys:
-            *cmdResponseLen = 4 * KEY_LENGTH;
+            *cmdResponseLen = 5 * KEY_LENGTH;
             break;
 
         case ProofGenerationKey:

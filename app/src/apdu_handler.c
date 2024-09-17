@@ -224,6 +224,12 @@ __Z_INLINE void handleExtractSpendSign(__Z_UNUSED volatile uint32_t *flags, vola
     THROW(APDU_CODE_OK);
 }
 
+__Z_INLINE void handleCleanRandomnessBuffers(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx, __Z_UNUSED uint32_t rx) {
+    *tx = 0;
+    transaction_reset();
+    THROW(APDU_CODE_OK);
+}
+
 #endif
 
 __Z_INLINE void handle_getversion(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx)
@@ -327,6 +333,11 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 case INS_EXTRACT_SPEND_SIGN: {
                     CHECK_PIN_VALIDATED()
                     handleExtractSpendSign(flags, tx, rx);
+                    break;
+                }
+                case INS_CLEAN_BUFFERS: {
+                    CHECK_PIN_VALIDATED()
+                    handleCleanRandomnessBuffers(flags, tx, rx);
                     break;
                 }
 #endif

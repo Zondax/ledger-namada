@@ -318,4 +318,15 @@ export class NamadaApp {
       .send(CLA, INS.EXTRACT_SPEND_SIGN, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
       .then(processSpendSignResponse, processErrorResponse);
   }
+
+  async cleanRandomnessBuffers() {
+    return this.transport
+      .send(CLA, INS.CLEAN_RANDOMNESS_BUFFERS, 0, 0, Buffer.from([]), [0x9000])
+      .then(() => {
+        return {
+          returnCode: LedgerError.NoErrors,
+          errorMessage: errorCodeToString(LedgerError.NoErrors),
+        }
+      }, processErrorResponse);
+  }
 }

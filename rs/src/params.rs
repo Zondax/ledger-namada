@@ -57,6 +57,8 @@ pub enum InstructionCode {
     SignMaspSpends = 7,
     /// Instruction to retrieve spend signatures
     ExtractSpendSignature = 8,
+    /// Instruction to clean Buffers
+    CleanBuffers = 0x09,
 
     /// Instruction to retrieve a signed section
     GetSignature = 0x0a,
