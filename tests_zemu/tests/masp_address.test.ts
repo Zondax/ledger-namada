@@ -118,6 +118,7 @@ describe('Address', function () {
       expect(resp.viewKey?.toString('hex')).toEqual(expectedKeys.viewKey)
       expect(resp.ivk?.toString('hex')).toEqual(expectedKeys.ivk)
       expect(resp.ovk?.toString('hex')).toEqual(expectedKeys.ovk)
+      expect(resp.dk?.toString('hex')).toEqual(expectedKeys.dk)
 
     } finally {
       await sim.close()
