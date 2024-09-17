@@ -372,10 +372,12 @@ where
                 let (view_key, rest) = response_data.split_at(2 * KEY_LEN);
                 let (ovk, rest) = rest.split_at(KEY_LEN);
                 let (ivk, _) = rest.split_at(KEY_LEN);
+                let (dk, _) = rest.split_at(KEY_LEN);
                 Ok(KeyResponse::ViewKey(ResponseViewKey {
                     view_key: view_key.try_into().unwrap(),
                     ovk: ovk.try_into().unwrap(),
                     ivk: ivk.try_into().unwrap(),
+                    dk: dk.try_into().unwrap(),
                 }))
             }
             NamadaKeys::ProofGenerationKey => {
@@ -578,7 +580,7 @@ where
     }
 
     /// Sign Masp signing
-    pub async fn sign_masp(
+    pub async fn sign_masp_spends(
         &self,
         path: &BIP44Path,
         blob: &[u8],
@@ -587,7 +589,7 @@ where
 
         let start_command = APDUCommand {
             cla: CLA,
-            ins: InstructionCode::SignMasp as _,
+            ins: InstructionCode::SignMaspSpends as _,
             p1: ChunkPayloadType::Init as u8,
             p2: 0x00,
             data: first_chunk,
@@ -619,5 +621,27 @@ where
         Ok(ResponseMaspSign {
             hash: hash.try_into().unwrap(),
         })
+    }
+
+    /// Clean buffers
+    pub async fn clean_randomness_buffers(
+        &self,
+        path: &BIP44Path,
+        blob: &[u8],
+    ) -> Result<(), NamError<E::Error>> {
+        let first_chunk = path.serialize_path().unwrap();
+
+        let start_command = APDUCommand {
+            cla: CLA,
+            ins: InstructionCode::CleanBuffers as _,
+            p1: ChunkPayloadType::Init as u8,
+            p2: 0x00,
+            data: first_chunk,
+        };
+
+        let response =
+            <Self as AppExt<E>>::send_chunks(&self.apdu_transport, start_command, blob).await?;
+
+        Ok(())
     }
 }

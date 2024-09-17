@@ -106,8 +106,8 @@ zxerr_t getNumItemsViewKey(uint8_t *num_items) {
     if (num_items == NULL) {
         return zxerr_no_data;
     }
-    // Display [viewKey | ivk | ovk | HD path]
-    *num_items = 4;
+    // Display [viewKey | ivk | ovk | dk | HD path]
+    *num_items = 5;
     return zxerr_ok;
 }
 
@@ -123,16 +123,20 @@ zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char
             break;
         case 1:
             snprintf(outKey, outKeyLen, "IVK");
-            const char* ivk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
+            const char* ivk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
             pageStringHex(outVal, outValLen, ivk, KEY_LENGTH, pageIdx, pageCount);
             break;
         case 2:
             snprintf(outKey, outKeyLen, "OVK");
-            const char* ovk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
+            const char* ovk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
             pageStringHex(outVal, outValLen, ovk, KEY_LENGTH, pageIdx, pageCount);
             break;
-
-        case 3: {
+        case 3:
+            snprintf(outKey, outKeyLen, "DK");
+            const char* dk = (const char*)G_io_apdu_buffer + 4 * KEY_LENGTH;
+            pageStringHex(outVal, outValLen, dk, KEY_LENGTH, pageIdx, pageCount);
+            break;
+        case 4: {
             snprintf(outKey, outKeyLen, "HD Path");
             char buffer[200] = {0};
             bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);

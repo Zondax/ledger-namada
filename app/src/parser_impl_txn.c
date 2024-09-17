@@ -24,6 +24,7 @@
 #include "txn_delegation.h"
 #include "stdbool.h"
 #include "parser_address.h"
+#include "tx_hash.h"
 
 #include <zxformat.h>
 
@@ -559,8 +560,7 @@ static parser_error_t readTransferTxn(const bytes_t *data, parser_tx_t *v) {
     CHECK_ERROR(readByte(&ctx, &v->transfer.has_shielded_hash))
     if (v->transfer.has_shielded_hash){
         v->transfer.shielded_hash.len = HASH_LEN;
-        // we are not displaying these bytes
-        ctx.offset += v->transfer.shielded_hash.len;
+        CHECK_ERROR(readBytes(&ctx,  &v->transfer.shielded_hash.ptr, v->transfer.shielded_hash.len))
     }
 
     if (ctx.offset != ctx.bufferLen) {
@@ -935,8 +935,7 @@ static parser_error_t readIBCTxn(const bytes_t *data, parser_tx_t *v) {
         CHECK_ERROR(readByte(&ctx, &v->ibc.transfer.has_shielded_hash))
         if (v->ibc.transfer.has_shielded_hash){
             v->ibc.transfer.shielded_hash.len = HASH_LEN;
-            // we are not displaying these bytes
-            ctx.offset += v->ibc.transfer.shielded_hash.len;
+            CHECK_ERROR(readBytes(&ctx,  &v->ibc.transfer.shielded_hash.ptr, v->ibc.transfer.shielded_hash.len))
         }
     }
 
@@ -1299,6 +1298,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 // Identify tx has masp tx
                 v->transaction.isMasp = true;
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
+                v->transaction.maspTx_idx = i+1;
                 break;
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
@@ -1413,4 +1413,26 @@ parser_error_t validateTransactionParams(parser_tx_t *txObj) {
     }
 
     return  parser_ok;
+}
+
+parser_error_t verifyShieldedHash(parser_context_t *ctx) {
+    if (ctx == NULL) {
+        return parser_unexpected_error;
+    }
+
+#if defined(LEDGER_SPECIFIC)
+    // compute tx_id hash
+    uint8_t tx_id_hash[HASH_LEN] = {0};
+    if (tx_hash_txId(ctx->tx_obj, tx_id_hash) != zxerr_ok) {
+        return parser_unexpected_error;
+    }
+
+    if (ctx->tx_obj->transaction.sections.maspBuilder.target_hash.len == HASH_LEN) {
+        if (memcmp(tx_id_hash, ctx->tx_obj->transaction.sections.maspBuilder.target_hash.ptr, HASH_LEN) != 0) {
+            return parser_invalid_target_hash;
+        }
+    }
+#endif
+
+    return parser_ok;
 }

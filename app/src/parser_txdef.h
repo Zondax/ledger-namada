@@ -59,8 +59,8 @@ extern "C" {
 #define EPK_LEN 32
 #define ENC_CIPHER_LEN 612
 #define OUT_CIPHER_LEN 80
-#define COMPACT_NOTE_SIZE 52
-#define NOTE_PLAINTEXT_SIZE 564
+#define COMPACT_NOTE_SIZE 84
+#define NOTE_PLAINTEXT_SIZE 512
 #define POSITION_LEN 8
 #define RANDOM_LEN 32
 #define IDENTIFIER_LEN 32
@@ -149,6 +149,20 @@ typedef struct {
 } masp_sapling_bundle_t;
 
 typedef struct {
+    uint8_t cv[CV_LEN];
+    uint8_t nullifier[NULLIFIER_LEN];
+    uint8_t rk[RK_LEN];
+} shielded_spends_t;
+
+typedef struct {
+    uint8_t cv[CV_LEN];
+    uint8_t cmu[CMU_LEN];
+    uint8_t ephemeral_key[EPK_LEN];
+    uint8_t enc_ciphertext[ENC_CIPHER_LEN];
+    uint8_t out_ciphertext[OUT_CIPHER_LEN];
+} shielded_outputs_t;
+
+typedef struct {
     uint64_t n_vin;
     bytes_t vin; // [u8;60]
     uint64_t n_vout;
@@ -172,6 +186,8 @@ typedef struct {
 typedef struct {
     bytes_t tx_id; // [u8;32]
     masp_tx_data_t data;
+    const uint8_t* masptx_ptr;
+    uint64_t masptx_len;
 } masp_tx_section_t;
 
 typedef struct {
@@ -263,6 +279,7 @@ typedef struct {
     bytes_t timestamp;
     header_t header;
     sections_t sections;
+    uint8_t maspTx_idx;
     bool isMasp;
 } transaction_t;
 

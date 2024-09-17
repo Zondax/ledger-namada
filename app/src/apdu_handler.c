@@ -111,6 +111,7 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     CHECK_APP_CANARY()
 
     if (error_msg != NULL) {
+        transaction_reset();
         const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
         memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
         *tx += (error_msg_length);
@@ -145,8 +146,8 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     THROW(APDU_CODE_OK);
 }
 #if defined(COMPILE_MASP)
-__Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    ZEMU_LOGF(50, "handleSignMasp\n")
+__Z_INLINE void handleSignMaspSpends(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    ZEMU_LOGF(50, "handleSignMaspSpends\n")
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -156,6 +157,7 @@ __Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, 
     CHECK_APP_CANARY()
 
     if (error_msg != NULL) {
+        transaction_reset();
         const int error_msg_length = strnlen(error_msg, sizeof(G_io_apdu_buffer));
         memcpy(G_io_apdu_buffer, error_msg, error_msg_length);
         *tx += (error_msg_length);
@@ -163,7 +165,7 @@ __Z_INLINE void handleSignMasp(volatile uint32_t *flags, volatile uint32_t *tx, 
     }
 
     CHECK_APP_CANARY()
-    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp);
+    view_review_init(tx_getItem, tx_getNumItems, app_sign_masp_spends);
     view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
@@ -202,6 +204,7 @@ __Z_INLINE void handleComputeMaspRand(__Z_UNUSED volatile uint32_t *flags, volat
     *tx = 0;
     zxerr_t zxerr = app_fill_randomness(type);
     if (zxerr != zxerr_ok) {
+        transaction_reset();
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -218,6 +221,12 @@ __Z_INLINE void handleExtractSpendSign(__Z_UNUSED volatile uint32_t *flags, vola
         THROW(APDU_CODE_DATA_INVALID);
     }
     *tx = cmdResponseLen;
+    THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void handleCleanRandomnessBuffers(__Z_UNUSED volatile uint32_t *flags, volatile uint32_t *tx, __Z_UNUSED uint32_t rx) {
+    *tx = 0;
+    transaction_reset();
     THROW(APDU_CODE_OK);
 }
 
@@ -315,15 +324,20 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
-                case INS_SIGN_MASP: {
+                case INS_SIGN_MASP_SPENDS: {
                     CHECK_PIN_VALIDATED()
-                    handleSignMasp(flags, tx, rx);
+                    handleSignMaspSpends(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPEND_SIGN: {
                     CHECK_PIN_VALIDATED()
                     handleExtractSpendSign(flags, tx, rx);
+                    break;
+                }
+                case INS_CLEAN_BUFFERS: {
+                    CHECK_PIN_VALIDATED()
+                    handleCleanRandomnessBuffers(flags, tx, rx);
                     break;
                 }
 #endif

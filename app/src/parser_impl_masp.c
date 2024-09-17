@@ -20,29 +20,13 @@
 #include "nvdata.h"
 #include "crypto_helper.h"
 #include "parser_address.h"
+#include "tx_hash.h"
 
-static parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result) {
-    uint8_t tag = 0;
-    uint16_t tmp16 = 0;
-    uint32_t tmp32 = 0;
-    CHECK_ERROR(readByte(ctx, &tag))
-    switch(tag) {
-    case 253:
-        CHECK_ERROR(readUint16(ctx, &tmp16))
-        *result = (uint64_t)tmp16;
-        break;
-    case 254:
-        CHECK_ERROR(readUint32(ctx, &tmp32))
-        *result = (uint64_t)tmp32;
-        break;
-    case 255:
-        CHECK_ERROR(readUint64(ctx, result))
-        break;
-    default:
-        *result = (uint64_t)tag;
-    }
-    return parser_ok;
-}
+#if defined(TARGET_NANOS) || defined(TARGET_NANOS2) || defined(TARGET_NANOX) || defined(TARGET_STAX)
+    #include "cx.h"
+    #include "cx_sha256.h"
+    #include "cx_blake2b.h"
+#endif
 
 static parser_error_t readSaplingBundle(parser_context_t *ctx, masp_sapling_bundle_t *bundle) {
     if (ctx == NULL || bundle == NULL) {
@@ -105,8 +89,8 @@ static parser_error_t readSaplingBundle(parser_context_t *ctx, masp_sapling_bund
 
     // Read outputs proofs
     if (bundle->n_shielded_outputs != 0) {
-        bundle->zkproof_shielded_spends.len = ZKPROFF_LEN * bundle->n_shielded_outputs;
-        CHECK_ERROR(readBytes(ctx, &bundle->zkproof_shielded_spends.ptr, bundle->zkproof_shielded_spends.len))
+        bundle->zkproof_shielded_outputs.len = ZKPROFF_LEN * bundle->n_shielded_outputs;
+        CHECK_ERROR(readBytes(ctx, &bundle->zkproof_shielded_outputs.ptr, bundle->zkproof_shielded_outputs.len))
     }
 
     // Read authorization signature
@@ -185,7 +169,7 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_spends))
-#if defined(LEDGER_SPECIFIC)
+#if defined(LEDGER_SPECIFIC) && !defined(APP_TESTING)
     uint32_t rnd_spends = (uint32_t)transaction_get_n_spends();
     if (rnd_spends != builder->n_spends) {
         return parser_invalid_number_of_spends;
@@ -303,9 +287,9 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
     }
 
     CHECK_ERROR(readUint32(ctx, &builder->n_converts))
-#if defined(LEDGER_SPECIFIC)
+#if defined(LEDGER_SPECIFIC) && !defined(APP_TESTING)
     uint32_t rnd_converts = (uint32_t)transaction_get_n_converts();
-    if (rnd_converts != builder->n_converts) {
+    if (rnd_converts < builder->n_converts) {
         return parser_invalid_number_of_converts;
     }
 #endif
@@ -326,6 +310,10 @@ static parser_error_t readConvertDescriptionInfo(parser_context_t *ctx, masp_sap
 
         // Parse value
         CHECK_ERROR(readUint64(ctx, &tmp_64))
+
+        // Parse generator
+        tmp.len = 32;
+        CHECK_ERROR(readBytes(ctx, &tmp.ptr, tmp.len))
 
         // Parse Merkle path
         CHECK_ERROR(readByte(ctx, &tmp_8))
@@ -421,6 +409,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     if (ctx == NULL || maspTx == NULL) {
         return parser_unexpected_error;
     }
+    maspTx->masptx_ptr = ctx->buffer + ctx->offset;
 
     uint8_t sectionMaspTx = 0;
     CHECK_ERROR(readByte(ctx, &sectionMaspTx))
@@ -456,6 +445,7 @@ parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx) {
     // Read sapling bundle
     CHECK_ERROR(readSaplingBundle(ctx, &maspTx->data.sapling_bundle))
 
+    maspTx->masptx_len = ctx->buffer + ctx->offset - maspTx->masptx_ptr;
     return parser_ok;
 }
 

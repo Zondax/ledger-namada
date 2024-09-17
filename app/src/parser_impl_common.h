@@ -60,8 +60,8 @@ extern "C" {
 #define UNJAIL_VALIDATOR_NORMAL_PARAMS  2
 #define UNJAIL_VALIDATOR_EXPERT_PARAMS  6
 
-#define IBC_NORMAL_PARAMS  9
-#define IBC_EXPERT_PARAMS  14
+#define IBC_NORMAL_PARAMS  8
+#define IBC_EXPERT_PARAMS  12
 
 #define REDELEGATE_NORMAL_PARAMS  5
 #define REDELEGATE_EXPERT_PARAMS  9
@@ -106,6 +106,7 @@ parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t ou
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
+parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result);
 
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
 parser_error_t readFieldSizeU16(parser_context_t *ctx, uint16_t *size);
@@ -118,6 +119,7 @@ parser_error_t readVote(bytes_t *vote, yay_vote_type_e type, char *strVote, uint
 parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v);
 parser_error_t validateTransactionParams(parser_tx_t *txObj);
+parser_error_t verifyShieldedHash(parser_context_t *ctx);
 
 parser_error_t readPGFPaymentAction(parser_context_t *ctx, pgf_payment_action_t *paymentAction);
 parser_error_t readTransferSourceTarget(parser_context_t *ctx, AddressAlt *owner, AddressAlt *token, bytes_t *amount, uint8_t *amount_denom, const char** symbol);

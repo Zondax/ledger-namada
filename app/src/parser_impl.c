@@ -27,6 +27,8 @@ parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
 
     CHECK_ERROR(validateTransactionParams(v))
 
+    CHECK_ERROR(verifyShieldedHash(ctx))
+
     if (ctx->offset != ctx->bufferLen) {
         return parser_unexpected_unparsed_bytes;
     }
@@ -52,7 +54,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
                 items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
                 items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
 
-                *numItems = (app_mode_expert() ? items + 5 : items);
+                *numItems = (app_mode_expert() ? items + 4 : items);
             } else {
                 *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
@@ -93,6 +95,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case BecomeValidator: {
             *numItems = (app_mode_expert() ? BECOME_VALIDATOR_EXPERT_PARAMS : BECOME_VALIDATOR_NORMAL_PARAMS);
+            if(ctx->tx_obj->becomeValidator.name.ptr) {
+                (*numItems)++;
+            }
             if(ctx->tx_obj->becomeValidator.description.ptr) {
                 (*numItems)++;
             }
@@ -100,6 +105,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
                 (*numItems)++;
             }
             if(ctx->tx_obj->becomeValidator.website.ptr) {
+                (*numItems)++;
+            }
+            if(ctx->tx_obj->becomeValidator.avatar.ptr) {
                 (*numItems)++;
             }
             break;
@@ -125,8 +133,9 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
                 *numItems += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
             }
             *numItems += ctx->tx_obj->ibc.transfer.non_masp_sources_len*2 + ctx->tx_obj->ibc.transfer.non_masp_targets_len*2 + ctx->tx_obj->ibc.transfer.no_symbol_sources + ctx->tx_obj->ibc.transfer.no_symbol_targets;
+            *numItems += ctx->tx_obj->ibc.memo.len > 0 && app_mode_expert();
             if(ctx->tx_obj->ibc.is_nft) {
-                *numItems += (ctx->tx_obj->ibc.n_token_id - (ctx->tx_obj->ibc.memo.len == 0 ? 1 : 0));
+                *numItems += ctx->tx_obj->ibc.n_token_id;
             }
             break;
 
@@ -190,7 +199,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
       (*numItems)++;
     }
 
-    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL && !ctx->tx_obj->transaction.isMasp && !ctx->tx_obj->ibc.is_ibc) {
+    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
         (*numItems)++;
     }
 

@@ -275,17 +275,17 @@ export class NamadaApp {
       .then(result => processGetKeysResponse(result, keyType) as KeyResponse, processErrorResponse)
   }
 
-  async signMasp(path: string, masp: Buffer): Promise<ResponseSignMasp> {
+  async signMaspSpends(path: string, masp: Buffer): Promise<ResponseSignMasp> {
     const serializedPath = serializePath(path)
     return this.prepareChunks(serializedPath, masp).then(chunks => {
-      return this.signSendMaspChunk(1, chunks.length, chunks[0], INS.SIGN_MASP).then(async response => {
+      return this.signSendMaspChunk(1, chunks.length, chunks[0], INS.SIGN_MASP_SPENDS).then(async response => {
         let result: ResponseSign = {
           returnCode: response.returnCode,
           errorMessage: response.errorMessage,
         }
 
         for (let i = 1; i < chunks.length; i++) {
-          result = await this.signSendMaspChunk(1 + i, chunks.length, chunks[i], INS.SIGN_MASP)
+          result = await this.signSendMaspChunk(1 + i, chunks.length, chunks[i], INS.SIGN_MASP_SPENDS)
           if (result.returnCode !== LedgerError.NoErrors) {
             break
           }
@@ -317,5 +317,16 @@ export class NamadaApp {
     return this.transport
       .send(CLA, INS.EXTRACT_SPEND_SIGN, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
       .then(processSpendSignResponse, processErrorResponse);
+  }
+
+  async cleanRandomnessBuffers() {
+    return this.transport
+      .send(CLA, INS.CLEAN_RANDOMNESS_BUFFERS, 0, 0, Buffer.from([]), [0x9000])
+      .then(() => {
+        return {
+          returnCode: LedgerError.NoErrors,
+          errorMessage: errorCodeToString(LedgerError.NoErrors),
+        }
+      }, processErrorResponse);
   }
 }
