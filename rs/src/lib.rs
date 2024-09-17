@@ -578,7 +578,7 @@ where
     }
 
     /// Sign Masp signing
-    pub async fn sign_masp(
+    pub async fn sign_masp_spends(
         &self,
         path: &BIP44Path,
         blob: &[u8],
@@ -587,7 +587,7 @@ where
 
         let start_command = APDUCommand {
             cla: CLA,
-            ins: InstructionCode::SignMasp as _,
+            ins: InstructionCode::SignMaspSpends as _,
             p1: ChunkPayloadType::Init as u8,
             p2: 0x00,
             data: first_chunk,

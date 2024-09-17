@@ -20,7 +20,7 @@
 #include <zxmacros.h>
 #include "tx_hash.h"
 
-const uint8_t CONSENSUS_BRANCH_ID[4] = {0xe9, 0xff, 0x75, 0xa6}; // value from masp
+const uint8_t CONSENSUS_BRANCH_ID[4] = {0xa6, 0x75, 0xff, 0xe9}; // value from masp
 
 // From https://github.com/anoma/masp/blob/main/masp_primitives/src/transaction/txid.rs#L297
 zxerr_t signature_hash(const parser_tx_t *txObj, uint8_t *output) {

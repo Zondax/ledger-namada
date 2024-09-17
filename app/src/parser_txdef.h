@@ -186,6 +186,8 @@ typedef struct {
 typedef struct {
     bytes_t tx_id; // [u8;32]
     masp_tx_data_t data;
+    const uint8_t* masptx_ptr;
+    uint64_t masptx_len;
 } masp_tx_section_t;
 
 typedef struct {
@@ -277,6 +279,7 @@ typedef struct {
     bytes_t timestamp;
     header_t header;
     sections_t sections;
+    uint8_t maspTx_idx;
     bool isMasp;
 } transaction_t;
 

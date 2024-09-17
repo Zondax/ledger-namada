@@ -125,8 +125,7 @@ zxerr_t tx_hash_sapling_spends(const parser_tx_t *txObj, uint8_t *output) {
 
     const uint8_t *spend = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.ptr;
     const uint64_t n_shielded_spends = txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends;
-    const bool has_spend_anchor = txObj->transaction.sections.maspBuilder.builder.sapling_builder.has_spend_anchor;
-    const uint8_t *spend_anchor_ptr = txObj->transaction.sections.maspBuilder.builder.sapling_builder.spend_anchor.ptr;
+    const uint8_t *spend_anchor_ptr = txObj->transaction.sections.maspTx.data.sapling_bundle.anchor_shielded_spends.ptr;
 
     for (uint64_t i = 0; i < n_shielded_spends; i++, spend += SHIELDED_SPENDS_LEN) {
         shielded_spends_t *shielded_spends = (shielded_spends_t *)spend;
@@ -134,9 +133,7 @@ zxerr_t tx_hash_sapling_spends(const parser_tx_t *txObj, uint8_t *output) {
         CHECK_CX_OK(cx_hash_no_throw(&nullifier_ctx.header, 0, shielded_spends->nullifier, NULLIFIER_LEN, NULL, 0));
 
         CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, shielded_spends->cv, CV_LEN, NULL, 0));
-        if (has_spend_anchor) {
-            CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, spend_anchor_ptr, ANCHOR_LEN, NULL, 0));
-        }
+        CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, spend_anchor_ptr, ANCHOR_LEN, NULL, 0));
         CHECK_CX_OK(cx_hash_no_throw(&nc_ctx.header, 0, shielded_spends->rk, RK_LEN, NULL, 0));
     }
 
@@ -252,7 +249,9 @@ zxerr_t tx_hash_sapling_data(const parser_tx_t *txObj, uint8_t *output) {
     uint8_t converts_hash[32] = {0};
     uint8_t outputs_hash[32] = {0};
 
-    if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs != 0) {
+    if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends != 0 || 
+        txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts != 0 || 
+        txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs != 0) {
         CHECK_ZXERR(tx_hash_sapling_spends(txObj, spends_hash));
 
         // TODO: there is not an example to validate converts

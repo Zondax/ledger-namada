@@ -31,7 +31,7 @@ extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
 zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen);
 zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen);
 zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen, key_kind_e requestedKey);
-zxerr_t crypto_sign_masp(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLen);
+zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t outputLen);
 zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen);
 zxerr_t crypto_computeRandomness(masp_type_e type, uint8_t *out, uint16_t outLen, uint16_t *replyLen);
 #ifdef __cplusplus

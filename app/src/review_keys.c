@@ -123,12 +123,12 @@ zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char
             break;
         case 1:
             snprintf(outKey, outKeyLen, "IVK");
-            const char* ivk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
+            const char* ivk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
             pageStringHex(outVal, outValLen, ivk, KEY_LENGTH, pageIdx, pageCount);
             break;
         case 2:
             snprintf(outKey, outKeyLen, "OVK");
-            const char* ovk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
+            const char* ovk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
             pageStringHex(outVal, outValLen, ovk, KEY_LENGTH, pageIdx, pageCount);
             break;
 

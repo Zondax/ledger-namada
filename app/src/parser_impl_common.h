@@ -106,6 +106,7 @@ parser_error_t readBytesSize(parser_context_t *ctx, uint8_t *output, uint16_t ou
 parser_error_t readUint16(parser_context_t *ctx, uint16_t *value);
 parser_error_t readUint32(parser_context_t *ctx, uint32_t *value);
 parser_error_t readUint64(parser_context_t *ctx, uint64_t *value);
+parser_error_t readCompactSize(parser_context_t *ctx, uint64_t *result);
 
 parser_error_t readFieldSize(parser_context_t *ctx, uint32_t *size);
 parser_error_t readFieldSizeU16(parser_context_t *ctx, uint16_t *size);

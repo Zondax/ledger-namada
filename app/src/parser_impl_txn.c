@@ -1298,6 +1298,7 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 // Identify tx has masp tx
                 v->transaction.isMasp = true;
                 CHECK_ERROR(readMaspTx(ctx, &v->transaction.sections.maspTx))
+                v->transaction.maspTx_idx = i+1;
                 break;
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
@@ -1422,7 +1423,9 @@ parser_error_t verifyShieldedHash(parser_context_t *ctx) {
 #if defined(LEDGER_SPECIFIC)
     // compute tx_id hash
     uint8_t tx_id_hash[HASH_LEN] = {0};
-    tx_hash_txId(ctx->tx_obj, tx_id_hash);
+    if (tx_hash_txId(ctx->tx_obj, tx_id_hash) != zxerr_ok) {
+        return parser_unexpected_error;
+    }
 
     if (ctx->tx_obj->transaction.sections.maspBuilder.target_hash.len == HASH_LEN) {
         if (memcmp(tx_id_hash, ctx->tx_obj->transaction.sections.maspBuilder.target_hash.ptr, HASH_LEN) != 0) {
