@@ -73,6 +73,7 @@ parser_error_t h_star(uint8_t *a, uint16_t a_len, uint8_t *b, uint16_t b_len, ui
 parser_error_t parser_scalar_multiplication(const uint8_t input[32], constant_key_t key, uint8_t output[32]);
 parser_error_t parser_compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t rsk[32], uint8_t sbar[32]);
 parser_error_t parser_randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]);
+parser_error_t computeConvertValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *generator, uint8_t *cv);
 #ifdef __cplusplus
 }
 #endif

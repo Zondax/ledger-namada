@@ -171,7 +171,7 @@ static parser_error_t readSpendDescriptionInfo(parser_context_t *ctx, masp_sapli
     CHECK_ERROR(readUint32(ctx, &builder->n_spends))
 #if defined(LEDGER_SPECIFIC) && !defined(APP_TESTING)
     uint32_t rnd_spends = (uint32_t)transaction_get_n_spends();
-    if (rnd_spends != builder->n_spends) {
+    if (rnd_spends < builder->n_spends) {
         return parser_invalid_number_of_spends;
     }
 #endif
@@ -240,7 +240,7 @@ parser_error_t getNextOutputDescription(parser_context_t *output, uint8_t index)
     for (int i = 0; i < index; i++) {
         uint8_t has_ovk = 0;
         CHECK_ERROR(readByte(output, &has_ovk));
-        CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + NOTE_LEN + MEMO_LEN);
+        CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN);
     }
     return parser_ok;
 }
@@ -273,7 +273,7 @@ parser_error_t getNextConvertDescription(parser_context_t *convert, uint8_t inde
             allowed_size = (uint64_t)tag;
         }
         CTX_CHECK_AND_ADVANCE(convert, allowed_size * (ASSET_ID_LEN + INT_128_LEN) + sizeof(uint64_t));
-
+        CTX_CHECK_AND_ADVANCE(convert, 32);
         CHECK_ERROR(readByte(convert, &merkel_size));
         CTX_CHECK_AND_ADVANCE(convert, merkel_size * (32 + 1) + sizeof(uint64_t));
     }
