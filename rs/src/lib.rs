@@ -624,10 +624,7 @@ where
     }
 
     /// Clean buffers
-    pub async fn clean_randomness_buffers(
-        &self,
-    ) -> Result<(), NamError<E::Error>> {
-
+    pub async fn clean_randomness_buffers(&self) -> Result<(), NamError<E::Error>> {
         let start_command = APDUCommand {
             cla: CLA,
             ins: InstructionCode::CleanBuffers as _,
