@@ -733,19 +733,23 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint
     return get_next_spend_signature(buffer);
 }
 
-parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx) {
+parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx, parser_context_t *indices_ctx) {
     if (txObj == NULL || keys == NULL) {
         return parser_unexpected_error;
     }
 
-    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends) {
+    if (txObj->transaction.sections.maspBuilder.metadata.n_spends_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends) {
         return parser_invalid_number_of_spends;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_spends_indices; i++) {
         CHECK_ERROR(getNextSpendDescription(builder_spends_ctx, i));
-        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * i);
-        spend_item_t *item = spendlist_retrieve_rand_item(i);
+
+        uint64_t indice = 0;
+        CHECK_ERROR(readUint64(indices_ctx, &indice));
+
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * indice);
+        spend_item_t *item = spendlist_retrieve_rand_item(indice);
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
@@ -782,7 +786,7 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         return parser_unexpected_error;
     }
 
-    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs != txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+    if (txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
         return parser_invalid_number_of_outputs;
     }
 
@@ -816,19 +820,23 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
     return parser_ok;
 }
 
-parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder_converts_ctx, parser_context_t *tx_converts_ctx) {
+parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder_converts_ctx, parser_context_t *tx_converts_ctx, parser_context_t *indices_ctx) {
     if (txObj == NULL) {
         return parser_unexpected_error;
     }
-    if(txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
+
+    if (txObj->transaction.sections.maspBuilder.metadata.n_converts_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
         return parser_invalid_number_of_outputs;
     }
 
     for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
         CHECK_ERROR(getNextConvertDescription(builder_converts_ctx, i));
-        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN * i);
 
-        convert_item_t *item = convertlist_retrieve_rand_item(i);
+        uint64_t indice = 0;
+        CHECK_ERROR(readUint64(indices_ctx, &indice));
+        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN * indice);
+        convert_item_t *item = convertlist_retrieve_rand_item(indice);
+
         //check cv (computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
         uint8_t generator[IDENTIFIER_LEN] = {0};
@@ -866,7 +874,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                       .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.len,
                                       .offset = 0, 
                                       .tx_obj = NULL};
-    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx));
+    parser_context_t spends_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.spends_indices.ptr,
+                                        .bufferLen = txObj->transaction.sections.maspBuilder.metadata.spends_indices.len,
+                                        .offset = 0, 
+                                        .tx_obj = NULL};
+    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx, &spends_indices_ctx));
 
     // Check outputs
     parser_context_t builder_outputs_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.ptr,
@@ -877,11 +889,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                      .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.len,
                                      .offset = 0, 
                                      .tx_obj = NULL};
-    parser_context_t indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.ptr,
+    parser_context_t output_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.ptr,
                                 .bufferLen = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.len,
                                 .offset = 0, 
                                 .tx_obj = NULL};
-    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx, &indices_ctx));
+    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx, &output_indices_ctx));
 
     // Check converts
     parser_context_t builder_converts_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.ptr,
@@ -892,7 +904,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                         .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_converts.len,
                                         .offset = 0, 
                                         .tx_obj = NULL};
-    CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx));
+    parser_context_t converts_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.converts_indices.ptr,
+                                           .bufferLen = txObj->transaction.sections.maspBuilder.metadata.converts_indices.len,
+                                           .offset = 0, 
+                                           .tx_obj = NULL};
+    CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx, &converts_indices_ctx));
     return zxerr_ok;
 }
 
