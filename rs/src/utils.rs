@@ -22,7 +22,7 @@ use std::error::Error;
 const HARDENED: u32 = 0x80000000;
 
 use crate::params::{
-    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG,
+    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG, XFVK_LEN,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -48,10 +48,7 @@ pub struct ResponsePubAddress {
 }
 
 pub struct ResponseViewKey {
-    pub view_key: [u8; 2 * KEY_LEN],
-    pub ivk: [u8; KEY_LEN],
-    pub ovk: [u8; KEY_LEN],
-    pub dk: [u8; KEY_LEN],
+    pub xfvk: [u8; XFVK_LEN],
 }
 
 pub struct ResponseProofGenKey {
@@ -100,9 +97,6 @@ impl BIP44Path {
         }
 
         let path_array: Vec<&str> = self.path.split('/').collect();
-        if path_array.len() != 6 {
-            return Err("Invalid path. (e.g \"m/44'/134'/0/0/0\"".into());
-        }
 
         let mut serialized_path = Vec::new();
         // First byte is path size

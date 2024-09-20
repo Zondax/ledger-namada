@@ -70,3 +70,39 @@ pub const DIV_DEFAULT_LIST_LEN: usize = 4;
 pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"MASP__gd";
 pub const GH_FIRST_BLOCK: &[u8; 64] =
     b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
+
+pub const FIRSTVALUE:   u32 = 32 ^ 0x8000_0000;
+pub const COIN_TYPE:    u32 = 877 ^ 0x8000_0000;
+
+// ZIP32 Child components
+pub const AK_NK: u8 = 0;
+pub const DK: u8 = 2;
+pub const AK_NSK: u8 = 3;
+pub const ASK_NSK: u8 = 4;
+pub const DK_AK_NK: u8 = 5;
+
+/*******************************************************************************
+*   (c) 2018 - 2024 Zondax AG
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
+
+pub const SPENDING_KEY_BASE: AffineNielsPoint = SPENDING_KEY_GENERATOR;
+
+pub const PROVING_KEY_BASE: AffineNielsPoint = PROOF_GENERATION_KEY_GENERATOR;
+
+/// https://zips.z.cash/zip-0032#key-path-levels
+/// m/PURPOSE/COIN/account
+pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
+pub const ZIP32_COIN_TYPE: u32 = 0x8000_036d;
+pub const ZIP32_HARDENED: u32 = 0x8000_0000;

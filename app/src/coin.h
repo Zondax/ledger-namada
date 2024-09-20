@@ -22,7 +22,9 @@ extern "C" {
 #define CLA                             0x57
 
 #define HDPATH_LEN_DEFAULT   5
+#define IDENTITY_DER_PATH_LEN 3
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
+#define HDPATH_0_IDENTITY    (0x80000000u | 0x20u)   //32
 
 #define HDPATH_1_DEFAULT     (0x80000000u | 0x36d)  //877
 #define HDPATH_1_TESTNET     (0x80000000u | 0x01)  //1
@@ -30,6 +32,8 @@ extern "C" {
 #define HDPATH_2_DEFAULT     (0x80000000u | 0u)
 #define HDPATH_3_DEFAULT     (0u)
 #define HDPATH_4_DEFAULT     (0u)
+
+#define MASK_HARDENED 0x80000000
 
 #define SECP256K1_PK_LEN            65u
 #define COMPRESSED_SECP256K1_PK_LEN 33u
@@ -72,6 +76,7 @@ extern "C" {
 /// For payment addresses on the Testnet, the Human-Readable Part is "patest"
 #define SAPLING_PAYMENT_ADDR_HRP "patest"
 
+#define HDPATH_LEN_BIP44              5
 #define COIN_AMOUNT_DECIMAL_PLACES 6
 #define COIN_TICKER "NAM "
 

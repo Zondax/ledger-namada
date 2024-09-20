@@ -20,8 +20,15 @@
 
 use core::panic::PanicInfo;
 
-use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR, KEY_DIVERSIFICATION_PERSONALIZATION, GH_FIRST_BLOCK};
+use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, SPENDING_KEY_GENERATOR, KEY_DIVERSIFICATION_PERSONALIZATION, GH_FIRST_BLOCK, DK};
 mod constants;
+mod bolos;
+mod zip32;
+mod zip32_extern;
+mod personalization;
+mod sapling;
+mod types;
+mod cryptoops;
 use aes::Aes256;
 use aes::cipher::{
     BlockCipher, BlockEncrypt, BlockDecrypt, NewBlockCipher,
@@ -29,6 +36,7 @@ use aes::cipher::{
 };
 use binary_ff1::BinaryFF1;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
+use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
 
 fn debug(_msg: &str) {}
 
@@ -130,37 +138,6 @@ pub extern "C" fn is_valid_diversifier(
     }
 
     false
-}
-
-#[no_mangle]
-pub extern "C" fn get_pkd(
-    ivk_ptr: &[u8; 32],
-    h: &[u8; 32],
-    pk_d: &mut [u8; 32],
-) -> ParserError {
-
-    let affine = AffinePoint::from_bytes(*h).unwrap();
-    let extended = ExtendedPoint::from(affine);
-    let cofactor = extended.mul_by_cofactor();
-    let p = cofactor.to_niels().multiply_bits(ivk_ptr);
-    *pk_d = AffinePoint::from(p).to_bytes();
-
-    ParserError::ParserOk
-}
-
-#[no_mangle]
-pub extern "C" fn randomized_secret_from_seed(
-    ask:  &[u8; 32],
-    alpha:  &[u8; 32],
-    output:  &mut [u8; 32],
-) -> ParserError{
-
-    let mut skfr = Fr::from_bytes(ask).unwrap();
-    let alphafr = Fr::from_bytes(alpha).unwrap();
-    skfr += alphafr;
-    output.copy_from_slice(&skfr.to_bytes());
-
-    ParserError::ParserOk
 }
 
 #[no_mangle]

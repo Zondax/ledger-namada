@@ -32,10 +32,12 @@ typedef enum {
 
 #define RNG_LEN 80
 #define KEY_LENGTH 32
+#define TAG_LENGTH 4
 #define ASSET_IDENTIFIER_LENGTH 32
 #define EXTENDED_KEY_LENGTH 64
 #define DIVERSIFIER_LENGTH 11
 #define DIVERSIFIER_LIST_LENGTH 44
+#define ZIP32_SEED_SIZE 64
 typedef uint8_t spending_key_t[KEY_LENGTH];
 typedef uint8_t ask_t[KEY_LENGTH];
 typedef uint8_t nsk_t[KEY_LENGTH];
@@ -44,23 +46,23 @@ typedef uint8_t ak_t[KEY_LENGTH];
 typedef uint8_t nk_t[KEY_LENGTH];
 
 typedef uint8_t dk_t[KEY_LENGTH];
+typedef uint8_t chain_code_t[KEY_LENGTH];
 typedef uint8_t ivk_t[KEY_LENGTH];
 typedef uint8_t ovk_t[KEY_LENGTH];
 typedef uint8_t d_t[DIVERSIFIER_LENGTH];
+typedef uint8_t fvk_tag_t[TAG_LENGTH];
+typedef uint8_t fvk_t[KEY_LENGTH*3];
 
 typedef uint8_t public_address_t[KEY_LENGTH];
 
 typedef struct {
-    spending_key_t spendingKey;
     ask_t ask;
-    ak_t ak;
     nsk_t nsk;
-    nk_t nk;
-    dk_t dk;
-    ivk_t ivk;
-    ovk_t ovk;
+    fvk_t fvk;
     d_t diversifier;
-    d_t diversifier_start_index;
+    dk_t dk;
+    chain_code_t chain_code;
+    fvk_tag_t parent_fvk_tag;
     public_address_t address;
 } keys_t;
 
