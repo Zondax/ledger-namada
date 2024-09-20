@@ -640,7 +640,7 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
 
 // https://github.com/anoma/masp/blob/8d83b172698098fba393006016072bc201ed9ab7/masp_primitives/src/sapling.rs#L170
 // https://github.com/anoma/masp/blob/main/masp_primitives/src/sapling/redjubjub.rs#L136
-static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH], uint8_t sign_hash[static KEY_LENGTH], uint8_t *signature) {
+static zxerr_t sign_sapling_spend(uint32_t zip32_account, uint8_t alpha[static KEY_LENGTH], uint8_t sign_hash[static KEY_LENGTH], uint8_t *signature) {
     if (alpha == NULL || sign_hash == NULL || signature == NULL) {
         return zxerr_no_data;
     }
@@ -650,7 +650,7 @@ static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH]
     uint8_t rk[KEY_LENGTH] = {0};
 
     // get randomized secret
-    CHECK_PARSER_OK(parser_randomized_secret_from_seed(keys->ask, alpha, rsk));
+    CHECK_PARSER_OK(parser_randomized_secret_from_seed(zip32_account, alpha, rsk));
 
     //rsk to rk
     CHECK_PARSER_OK(parser_scalar_multiplication(rsk, SpendingKeyGenerator, rk));
@@ -681,7 +681,7 @@ static zxerr_t sign_sapling_spend(keys_t *keys, uint8_t alpha[static KEY_LENGTH]
     return zxerr_ok;
 }
 
-zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, keys_t *keys) {
+zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, uint32_t zip32_account) {
     zemu_log_stack("crypto_signspends_sapling");
     if (txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends == 0) {
         return zxerr_ok;
@@ -700,7 +700,7 @@ zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, keys_t *keys) {
         spend += spendLen;
         spend_item_t *item = spendlist_retrieve_rand_item(i);
 
-        CHECK_ZXERR(sign_sapling_spend(keys, item->alpha, sign_hash, signature));
+        CHECK_ZXERR(sign_sapling_spend(zip32_account, item->alpha, sign_hash, signature));
 
         // Save signature in flash
         CHECK_ZXERR(spend_signatures_append(signature));
@@ -723,8 +723,8 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint
     return get_next_spend_signature(buffer);
 }
 
-parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx) {
-    if (txObj == NULL || keys == NULL) {
+parser_error_t checkSpends(const parser_tx_t *txObj, uint32_t zip32_account, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx) {
+    if (txObj == NULL) {
         return parser_unexpected_error;
     }
 
@@ -752,7 +752,7 @@ parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_contex
 
         //check rk
         uint8_t rk[KEY_LENGTH] = {0};
-        CHECK_ERROR(computeRk(keys, item->alpha, rk));
+        CHECK_ERROR(computeRk(zip32_account, item->alpha, rk));
 
         CTX_CHECK_AND_ADVANCE(tx_spends_ctx, CV_LEN + NULLIFIER_LEN);
 #ifndef APP_TESTING
@@ -839,8 +839,8 @@ parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder
     return parser_ok;
 }
 
-zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
-    if (txObj == NULL || keys == NULL) {
+zxerr_t crypto_check_masp(const parser_tx_t *txObj, uint32_t zip32_account) {
+    if (txObj == NULL) {
         return zxerr_unknown;
     }
 
@@ -854,7 +854,7 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                       .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.len,
                                       .offset = 0, 
                                       .tx_obj = NULL};
-    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx));
+    CHECK_PARSER_OK(checkSpends(txObj, zip32_account, &builder_spends_ctx, &tx_spends_ctx));
 
     // Check outputs
     parser_context_t builder_outputs_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.ptr,
@@ -898,19 +898,16 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
         return zxerr_unknown;
     }
 
-    // Get keys
-    keys_t keys = {0};
+    const uint32_t zip32_account = hdPath[2];
 
-    if (computeKeys(&keys) != zxerr_ok || crypto_check_masp(txObj, &keys) != zxerr_ok || 
-        crypto_sign_spends_sapling(txObj, &keys) != zxerr_ok) {
-        MEMZERO(&keys, sizeof(keys));
+    if (crypto_check_masp(txObj, zip32_account) != zxerr_ok ||
+        crypto_sign_spends_sapling(txObj, zip32_account) != zxerr_ok) {
         return zxerr_invalid_crypto_settings;
     }
 
     //Hash buffer and retreive for verify purpose
     zxerr_t err = crypto_hash_messagebuffer(output, outputLen, tx_get_buffer(), tx_get_buffer_length());
 
-    MEMZERO(&keys, sizeof(keys));
     return err;
 }
 

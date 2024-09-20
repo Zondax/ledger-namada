@@ -545,13 +545,13 @@ parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *ide
 }
 
 
-parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk) {
-    if(keys == NULL || alpha == NULL || rk == NULL) {
+parser_error_t computeRk(uint32_t zip32_account, uint8_t *alpha, uint8_t *rk) {
+    if(alpha == NULL || rk == NULL) {
         return parser_unexpected_error;
     }
     uint8_t rsk[KEY_LENGTH] = {0};
     // get randomized secret
-    CHECK_ERROR(parser_randomized_secret_from_seed(keys->ask, alpha, rsk));
+    CHECK_ERROR(parser_randomized_secret_from_seed(zip32_account, alpha, rsk));
 
     //rsk to rk
     CHECK_ERROR(parser_scalar_multiplication(rsk, SpendingKeyGenerator, rk));
@@ -603,10 +603,10 @@ parser_error_t parser_compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t r
     return compute_sbar(s, r, rsk, sbar);
 }
 
-parser_error_t parser_randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]) {
-    if (ask == NULL || alpha == NULL || output == NULL) {
+parser_error_t parser_randomized_secret_from_seed(uint32_t zip32_account, const uint8_t alpha[32], uint8_t output[32]) {
+    if (alpha == NULL || output == NULL) {
         return parser_no_data;
     }
-
-    return randomized_secret_from_seed(ask, alpha, output);
+    randomized_secret_from_seed(zip32_account, alpha, output);
+    return parser_ok;
 }
