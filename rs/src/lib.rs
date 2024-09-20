@@ -625,17 +625,19 @@ where
 
     /// Clean buffers
     pub async fn clean_randomness_buffers(&self) -> Result<(), NamError<E::Error>> {
-        let start_command = APDUCommand {
+        let arr: &[u8] = &[];
+        let command = APDUCommand {
             cla: CLA,
             ins: InstructionCode::CleanBuffers as _,
             p1: ChunkPayloadType::Init as u8,
             p2: 0x00,
-            data: &[], // Send empty data
+            data: arr, // Send empty data
         };
 
-        let response =
-            <Self as AppExt<E>>::send_chunks(&self.apdu_transport, start_command, blob).await?;
-
+        self.apdu_transport
+            .exchange(&command)
+            .await
+            .map_err(LedgerAppError::TransportError)?;
         Ok(())
     }
 }
