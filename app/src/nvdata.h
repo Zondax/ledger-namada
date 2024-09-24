@@ -53,6 +53,7 @@ typedef struct {
   uint8_t spendlist_len;
   uint8_t outputlist_len;
   uint8_t convertlist_len;
+  uint8_t spends_sign_len;
   uint8_t spends_sign_index;
 } transaction_header_t;
 
