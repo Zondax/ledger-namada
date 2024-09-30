@@ -863,6 +863,7 @@ parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder
         }
 
         builder_converts_ctx->offset = 0;
+        tx_converts_ctx->offset = 0;
     }
     return parser_ok;
 }
