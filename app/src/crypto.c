@@ -790,25 +790,32 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         return parser_invalid_number_of_outputs;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
-        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
-
-        uint64_t indice = 0;
-        CHECK_ERROR(readUint64(indices_ctx, &indice));
-
+    for (uint64_t indice = 0; indice < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs; indice++) {
+        // Find the output descriptor information object corresponding to this
+        // output descriptor
+        uint32_t i;
+        for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
+            uint64_t curr_indice;
+            CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
+            if (curr_indice == indice) break;
+        }
         CTX_CHECK_AND_ADVANCE(tx_outputs_ctx, SHIELDED_OUTPUTS_LEN * indice);
         output_item_t *item = outputlist_retrieve_rand_item(indice);
+        uint64_t value = 0;
+        // Use the dummy note identifier as the default
+        uint8_t identifier[IDENTIFIER_LEN] = {156, 229, 191, 54, 209, 138, 169, 235, 234, 174, 120, 186, 142, 34, 183, 118, 64, 243, 100, 134, 234, 27, 248, 27, 36, 245, 9, 146, 30, 110, 203, 169};
+
+        if (i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+            CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
+            uint8_t has_ovk = 0;
+            CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
+            CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
+            CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
+            CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
+        }
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
-        uint8_t identifier[IDENTIFIER_LEN] = {0};
-        uint64_t value = 0;
-        uint8_t has_ovk = 0;
-        CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
-        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
-        CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
-        CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
-
         CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
         if(MEMCMP(cv, tx_outputs_ctx->buffer + tx_outputs_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
@@ -816,6 +823,7 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
 
         builder_outputs_ctx->offset = 0;
         tx_outputs_ctx->offset = 0;
+        indices_ctx->offset = 0;
     }
     return parser_ok;
 }
