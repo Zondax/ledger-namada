@@ -143,9 +143,6 @@ zxerr_t get_next_spend_signature(uint8_t *result) {
   }
   MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
   transaction_header.spends_sign_index++;
-  if (!spend_signatures_more_extract()) {
-    transaction_reset();
-  }
   return zxerr_ok;
 }
 
