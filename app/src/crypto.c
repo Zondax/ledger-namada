@@ -826,7 +826,7 @@ parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder
     }
 
     if (txObj->transaction.sections.maspBuilder.metadata.n_converts_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
-        return parser_invalid_number_of_outputs;
+        return parser_invalid_number_of_converts;
     }
 
     for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
