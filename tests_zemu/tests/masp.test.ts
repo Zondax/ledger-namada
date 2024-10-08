@@ -195,4 +195,59 @@ describe('Masp', function () {
       await sim.close()
     }
   })
+
+  test.concurrent.each(MASP_MODELS)('Wrong MASP starting instruction', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new NamadaApp(sim.getTransport())
+
+      const respClean = await app.cleanRandomnessBuffers()
+      console.log(respClean)
+      expect(respClean.returnCode).toEqual(0x9000)
+
+      // Wrong MASP starting INS no randomness was computed or spends signed
+      const resp = await app.getSpendSignature()
+
+      // Expect the specific return code and error message
+      expect(resp.returnCode).toEqual(27012)
+      expect(resp.errorMessage).toEqual('Data is invalid')
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.concurrent.each(MASP_MODELS)('Wrong MASP sequence', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new NamadaApp(sim.getTransport())
+
+      // First step: compute randomness
+      const respSpend = await app.getSpendRandomness()
+      console.log(respSpend)
+      expect(respSpend.returnCode).toEqual(0x9000)
+      expect(respSpend.errorMessage).toEqual('No errors')
+
+      const respOutput = await app.getOutputRandomness()
+      console.log(respOutput)
+      expect(respOutput.returnCode).toEqual(0x9000)
+      expect(respOutput.errorMessage).toEqual('No errors')
+
+      const respRandomness = await app.getConvertRandomness()
+      console.log(respRandomness)
+      expect(respRandomness.returnCode).toEqual(0x9000)
+      expect(respRandomness.errorMessage).toEqual('No errors')
+
+      // Missing spend signature and trying to extract the signatures
+      const resp = await app.getSpendSignature()
+      console.log(resp)
+
+      // Expect the specific return code and error message
+      expect(resp.returnCode).toEqual(27012)
+      expect(resp.errorMessage).toEqual('Data is invalid')
+    } finally {
+      await sim.close()
+    }
+  })
 })
