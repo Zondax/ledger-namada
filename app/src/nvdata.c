@@ -143,7 +143,20 @@ zxerr_t get_next_spend_signature(uint8_t *result) {
   const uint8_t index = transaction_header.spends_sign_index;
   MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
   transaction_header.spends_sign_index++;
+  set_state(STATE_EXTRACT_SPENDS);
   return zxerr_ok;
+}
+
+uint8_t get_state() {
+    return transaction_header.state;
+}
+
+void set_state(uint8_t state) {
+    transaction_header.state = state;
+}
+
+void state_reset() {
+    transaction_header.state = STATE_INITIAL;
 }
 
 void zeroize_signatures() {
@@ -195,5 +208,6 @@ void transaction_reset() {
     zeroize_outputs();
     zeroize_converts();
     zeroize_signatures();
+    set_state(STATE_INITIAL);
 }
 
