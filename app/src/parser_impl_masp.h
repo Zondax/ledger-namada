@@ -26,6 +26,7 @@ extern "C" {
 #define MASPV5_TX_VERSION 0x02
 #define MASPV5_VERSION_GROUP_ID 0x26A7270A
 #define BRANCH_ID_IDENTIFIER 0xE9FF75A6
+#define DEFAULT_IDENTIFIER {156, 229, 191, 54, 209, 138, 169, 235, 234, 174, 120, 186, 142, 34, 183, 118, 64, 243, 100, 134, 234, 27, 248, 27, 36, 245, 9, 146, 30, 110, 203, 169}
 
 parser_error_t readMaspTx(parser_context_t *ctx, masp_tx_section_t *maspTx);
 parser_error_t readMaspBuilder(parser_context_t *ctx, masp_builder_section_t *maspBuilder);

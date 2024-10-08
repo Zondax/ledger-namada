@@ -51,6 +51,13 @@ typedef uint8_t d_t[DIVERSIFIER_LENGTH];
 typedef uint8_t public_address_t[KEY_LENGTH];
 
 typedef struct {
+    char viewKey[2*KEY_LENGTH];
+    char ovk[KEY_LENGTH];
+    char ivk[KEY_LENGTH];
+    char dk[KEY_LENGTH];
+} KeyData;
+
+typedef struct {
     spending_key_t spendingKey;
     ask_t ask;
     ak_t ak;
