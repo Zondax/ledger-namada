@@ -742,14 +742,24 @@ parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_contex
         return parser_invalid_number_of_spends;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_spends_indices; i++) {
-        CHECK_ERROR(getNextSpendDescription(builder_spends_ctx, i));
-
-        uint64_t indice = 0;
-        CHECK_ERROR(readUint64(indices_ctx, &indice));
+    for (uint64_t indice = 0; indice < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends; indice++) {
+        // Find the spend descriptor information object corresponding to this
+        // spend descriptor
+        uint32_t i;
+        for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_spends_indices; i++) {
+            uint64_t curr_indice;
+            CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
+            if (curr_indice == indice) break;
+        }
 
         CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * indice);
         spend_item_t *item = spendlist_retrieve_rand_item(indice);
+
+        if(i > txObj->transaction.sections.maspBuilder.metadata.n_spends_indices) {
+            return parser_invalid_number_of_spends;
+        } 
+        
+        CHECK_ERROR(getNextSpendDescription(builder_spends_ctx, i));
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
@@ -803,16 +813,18 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         output_item_t *item = outputlist_retrieve_rand_item(indice);
         uint64_t value = 0;
         // Use the dummy note identifier as the default
-        uint8_t identifier[IDENTIFIER_LEN] = {156, 229, 191, 54, 209, 138, 169, 235, 234, 174, 120, 186, 142, 34, 183, 118, 64, 243, 100, 134, 234, 27, 248, 27, 36, 245, 9, 146, 30, 110, 203, 169};
+        uint8_t identifier[IDENTIFIER_LEN] = DEFAULT_IDENTIFIER;
 
-        if (i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
-            CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
-            uint8_t has_ovk = 0;
-            CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
-            CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
-            CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
-            CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
+        if (i > txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+            return parser_invalid_number_of_outputs;
         }
+        
+        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
+        uint8_t has_ovk = 0;
+        CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
+        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
+        CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
+        CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};

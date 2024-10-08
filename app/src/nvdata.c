@@ -137,10 +137,10 @@ zxerr_t spend_signatures_append(uint8_t *signature) {
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-  const uint8_t index = transaction_header.spends_sign_index;
-  if (index >= transaction_header.spends_sign_len) {
-    return zxerr_unknown;
+  if (!spend_signatures_more_extract()) {
+      return zxerr_unknown;
   }
+  const uint8_t index = transaction_header.spends_sign_index;
   MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
   transaction_header.spends_sign_index++;
   return zxerr_ok;
