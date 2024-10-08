@@ -81,12 +81,11 @@ describe('Masp', function () {
       const respSpend = await app.getSpendRandomness()
       expect(respSpend.returnCode).toEqual(0x9000)
       expect(respSpend.errorMessage).toEqual('No errors')
+      const respConvert = await app.getConvertRandomness()
+      expect(respConvert.errorMessage).toEqual('No errors')
       const respOutput = await app.getOutputRandomness()
       expect(respOutput.returnCode).toEqual(0x9000)
       expect(respOutput.errorMessage).toEqual('No errors')
-      const respOutput2 = await app.getOutputRandomness()
-      expect(respOutput2.returnCode).toEqual(0x9000)
-      expect(respOutput2.errorMessage).toEqual('No errors')
 
       const msg = Buffer.from(MASP_TRANSFER_TX, 'hex')
 

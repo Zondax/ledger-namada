@@ -27,7 +27,7 @@ extern "C" {
 
 #define MAX_EXTRA_DATA_SECS 4
 #define MAX_SIGNATURE_SECS 3
-
+#define OFFSET_INS 1
 #define ASSET_ID_LEN 32
 #define ANCHOR_LEN 32
 #define SHIELDED_OUTPUTS_LEN 788

@@ -120,42 +120,40 @@ uint8_t transaction_get_n_converts() {
 }
 
 bool spend_signatures_more_extract() {
-  return transaction_header.spends_sign_index > 0;
+  return transaction_header.spends_sign_index < transaction_header.spends_sign_len;
 }
 
 zxerr_t spend_signatures_append(uint8_t *signature) {
-  if (transaction_header.spends_sign_index >=
+  if (transaction_header.spends_sign_len >=
       transaction_header.spendlist_len) {
     return zxerr_unknown;
   }
 
   MEMCPY_NV((void *)&N_transactioninfo
-                .spend_signatures[transaction_header.spends_sign_index],
+                .spend_signatures[transaction_header.spends_sign_len],
             signature, SIGNATURE_SIZE);
-  transaction_header.spends_sign_index++;
+  transaction_header.spends_sign_len++;
   return zxerr_ok;
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-  const uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
-  if (index >= transaction_header.spendlist_len) {
-    return zxerr_unknown;
-  }
-  MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
-  transaction_header.spends_sign_index--;
   if (!spend_signatures_more_extract()) {
-    transaction_reset();
+      return zxerr_unknown;
   }
+  const uint8_t index = transaction_header.spends_sign_index;
+  MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
+  transaction_header.spends_sign_index++;
   return zxerr_ok;
 }
 
 void zeroize_signatures() {
   uint8_t sig[SIGNATURE_SIZE] = {0};
 
-  transaction_header.spends_sign_index = 0;
+  transaction_header.spends_sign_len = 0;
   for (int i = 0; i < SPEND_LIST_SIZE; i++) {
     spend_signatures_append(sig);
   }
+  transaction_header.spends_sign_len = 0;
   transaction_header.spends_sign_index = 0;
 }
 

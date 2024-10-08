@@ -733,19 +733,33 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint
     return get_next_spend_signature(buffer);
 }
 
-parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx) {
+parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_context_t *builder_spends_ctx, parser_context_t *tx_spends_ctx, parser_context_t *indices_ctx) {
     if (txObj == NULL || keys == NULL) {
         return parser_unexpected_error;
     }
 
-    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends) {
+    if (txObj->transaction.sections.maspBuilder.metadata.n_spends_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends) {
         return parser_invalid_number_of_spends;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+    for (uint64_t indice = 0; indice < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_spends; indice++) {
+        // Find the spend descriptor information object corresponding to this
+        // spend descriptor
+        uint32_t i;
+        for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_spends_indices; i++) {
+            uint64_t curr_indice;
+            CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
+            if (curr_indice == indice) break;
+        }
+
+        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * indice);
+        spend_item_t *item = spendlist_retrieve_rand_item(indice);
+
+        if(i > txObj->transaction.sections.maspBuilder.metadata.n_spends_indices) {
+            return parser_invalid_number_of_spends;
+        } 
+        
         CHECK_ERROR(getNextSpendDescription(builder_spends_ctx, i));
-        CTX_CHECK_AND_ADVANCE(tx_spends_ctx, SHIELDED_SPENDS_LEN * i);
-        spend_item_t *item = spendlist_retrieve_rand_item(i);
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
@@ -782,29 +796,38 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         return parser_unexpected_error;
     }
 
-    if (txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs != txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+    if (txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
         return parser_invalid_number_of_outputs;
     }
 
-    for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
-        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
-
-        uint64_t indice = 0;
-        CHECK_ERROR(readUint64(indices_ctx, &indice));
-
+    for (uint64_t indice = 0; indice < txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs; indice++) {
+        // Find the output descriptor information object corresponding to this
+        // output descriptor
+        uint32_t i;
+        for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
+            uint64_t curr_indice;
+            CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
+            if (curr_indice == indice) break;
+        }
         CTX_CHECK_AND_ADVANCE(tx_outputs_ctx, SHIELDED_OUTPUTS_LEN * indice);
         output_item_t *item = outputlist_retrieve_rand_item(indice);
-
-        //check cv computation validaded in cpp_tests
-        uint8_t cv[KEY_LENGTH] = {0};
-        uint8_t identifier[IDENTIFIER_LEN] = {0};
         uint64_t value = 0;
+        // Use the dummy note identifier as the default
+        uint8_t identifier[IDENTIFIER_LEN] = DEFAULT_IDENTIFIER;
+
+        if (i > txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+            return parser_invalid_number_of_outputs;
+        }
+        
+        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
         uint8_t has_ovk = 0;
         CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
         CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
         CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
         CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
 
+        //check cv computation validaded in cpp_tests
+        uint8_t cv[KEY_LENGTH] = {0};
         CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
         if(MEMCMP(cv, tx_outputs_ctx->buffer + tx_outputs_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
@@ -812,39 +835,47 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
 
         builder_outputs_ctx->offset = 0;
         tx_outputs_ctx->offset = 0;
+        indices_ctx->offset = 0;
     }
     return parser_ok;
 }
 
-parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder_converts_ctx, parser_context_t *tx_converts_ctx) {
+parser_error_t checkConverts(const parser_tx_t *txObj, parser_context_t *builder_converts_ctx, parser_context_t *tx_converts_ctx, parser_context_t *indices_ctx) {
     if (txObj == NULL) {
         return parser_unexpected_error;
     }
-    if(txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
-        return parser_invalid_number_of_outputs;
+
+    if (txObj->transaction.sections.maspBuilder.metadata.n_converts_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_converts) {
+        return parser_invalid_number_of_converts;
     }
 
     for (uint32_t i = 0; i < txObj->transaction.sections.maspBuilder.builder.sapling_builder.n_converts; i++) {
         CHECK_ERROR(getNextConvertDescription(builder_converts_ctx, i));
-        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN * i);
 
-        convert_item_t *item = convertlist_retrieve_rand_item(i);
+        uint64_t indice = 0;
+        CHECK_ERROR(readUint64(indices_ctx, &indice));
+        CTX_CHECK_AND_ADVANCE(tx_converts_ctx, SHIELDED_CONVERTS_LEN * indice);
+        convert_item_t *item = convertlist_retrieve_rand_item(indice);
+
         //check cv (computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
-        uint8_t identifier[IDENTIFIER_LEN] = {0};
+        uint8_t generator[IDENTIFIER_LEN] = {0};
         uint64_t value = 0;
 
-        CTX_CHECK_AND_ADVANCE(builder_converts_ctx, TAG_LEN);
-        CHECK_ERROR(readBytesSize(builder_converts_ctx, identifier, IDENTIFIER_LEN));
-        CTX_CHECK_AND_ADVANCE(builder_converts_ctx, ASSET_ID_LEN + INT_128_LEN + sizeof(uint64_t));
+        uint64_t tmp_64 = 0;
+        CHECK_ERROR(readCompactSize(builder_converts_ctx, &tmp_64));
+        uint16_t len = tmp_64 * (ASSET_ID_LEN + INT_128_LEN);
+        CTX_CHECK_AND_ADVANCE(builder_converts_ctx, len);
+        CHECK_ERROR(readBytesSize(builder_converts_ctx, generator, IDENTIFIER_LEN));
         CHECK_ERROR(readUint64(builder_converts_ctx, &value));
 
-        CHECK_ERROR(computeValueCommitment(value, item->rcv, identifier, cv));
+        CHECK_ERROR(computeConvertValueCommitment(value, item->rcv, generator, cv));
         if(MEMCMP(cv, tx_converts_ctx->buffer + tx_converts_ctx->offset, CV_LEN) != 0) {
             return parser_invalid_cv;
         }
 
         builder_converts_ctx->offset = 0;
+        tx_converts_ctx->offset = 0;
     }
     return parser_ok;
 }
@@ -864,7 +895,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                       .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_spends.len,
                                       .offset = 0, 
                                       .tx_obj = NULL};
-    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx));
+    parser_context_t spends_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.spends_indices.ptr,
+                                        .bufferLen = txObj->transaction.sections.maspBuilder.metadata.spends_indices.len,
+                                        .offset = 0, 
+                                        .tx_obj = NULL};
+    CHECK_PARSER_OK(checkSpends(txObj, keys, &builder_spends_ctx, &tx_spends_ctx, &spends_indices_ctx));
 
     // Check outputs
     parser_context_t builder_outputs_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.outputs.ptr,
@@ -875,11 +910,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                      .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_outputs.len,
                                      .offset = 0, 
                                      .tx_obj = NULL};
-    parser_context_t indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.ptr,
+    parser_context_t output_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.ptr,
                                 .bufferLen = txObj->transaction.sections.maspBuilder.metadata.outputs_indices.len,
                                 .offset = 0, 
                                 .tx_obj = NULL};
-    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx, &indices_ctx));
+    CHECK_PARSER_OK(checkOutputs(txObj, &builder_outputs_ctx, &tx_outputs_ctx, &output_indices_ctx));
 
     // Check converts
     parser_context_t builder_converts_ctx = {.buffer = txObj->transaction.sections.maspBuilder.builder.sapling_builder.converts.ptr,
@@ -890,7 +925,11 @@ zxerr_t crypto_check_masp(const parser_tx_t *txObj, keys_t *keys) {
                                         .bufferLen = txObj->transaction.sections.maspTx.data.sapling_bundle.shielded_converts.len,
                                         .offset = 0, 
                                         .tx_obj = NULL};
-    CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx));
+    parser_context_t converts_indices_ctx = {.buffer = txObj->transaction.sections.maspBuilder.metadata.converts_indices.ptr,
+                                           .bufferLen = txObj->transaction.sections.maspBuilder.metadata.converts_indices.len,
+                                           .offset = 0, 
+                                           .tx_obj = NULL};
+    CHECK_PARSER_OK(checkConverts(txObj, &builder_converts_ctx, &tx_converts_ctx, &converts_indices_ctx));
     return zxerr_ok;
 }
 
@@ -949,29 +988,49 @@ zxerr_t crypto_computeRandomness(masp_type_e type, uint8_t *out, uint16_t outLen
         return zxerr_unknown;
     }
     MEMZERO(out, outLen);
-    uint8_t tmp_rnd[RANDOM_LEN] = {0};
 
 #ifdef APP_TESTING
-    uint8_t out_tmp_rnd2[RANDOM_LEN] = {0x71, 0x11, 0x60, 0x47, 0xe5, 0xe8, 0xb5, 0x0a, 0x5c,
-                                        0x74, 0x69, 0x8a, 0xc2, 0x9b, 0x73, 0x5c, 0xc9, 0xe2,
-                                        0xfa, 0xf7, 0x94, 0x37, 0xb8, 0x15, 0xa2, 0xb7, 0x0b,
-                                        0x07, 0xec, 0x24, 0xf9, 0x08};
+    uint8_t out_tmp_rnd[RANDOM_LEN] = {0xb1, 0x85, 0x95, 0x9d, 0xdb, 0x84, 0x1a, 0x7f, 0x97, 0x40,
+                                       0x9b, 0x22, 0xec, 0x0e, 0xf8, 0x52, 0xce, 0x98, 0xc9, 0x6a,
+                                       0xf0, 0xa0, 0x62, 0xa4, 0xdc, 0xff, 0x0a, 0xe7, 0x77, 0x10,
+                                       0xf0, 0x0c};
 
-uint8_t out_tmp_rnd[RANDOM_LEN] = {0x4b, 0xd4, 0xe9, 0x74, 0xdd, 0x7b, 0xa7, 0x59, 0x25, 0x25,
-                                   0xdc, 0x92, 0xfe, 0xe9, 0xa4, 0x3b, 0x6d, 0xb1, 0xde, 0x93,
-                                   0x12, 0x5b, 0x76, 0xfa, 0x22, 0x4e, 0xb2, 0xf0, 0x41, 0x04,
-                                   0xe1, 0x02};
+    uint8_t out_tmp_rnd2[RANDOM_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00};
 
-    uint8_t spend_tmp_rnd[RANDOM_LEN] = {0x78,0xbf, 0x5c, 0xd8, 0x3b, 0x81, 0xaf,0x94, 0xc7, 
-                                         0xa5, 0xeb, 0x68,0x9e,0xc5,0x24,0xd2,0xda, 0x98,
-                                         0x0c,0x84,0x73,0x55,0x49, 0x2f,0xd0,0x8e,0x1d,0x79,
-                                         0x41,0x3e,0x6b,0x08};
+    uint8_t out1_tmp_rnd[RANDOM_LEN] = {0x9c, 0xf4, 0x3f, 0x46, 0xb1, 0xa6, 0x1d, 0xae, 0xf8, 0x41,
+                                        0x32, 0xdb, 0xca, 0xe7, 0xea, 0x88, 0xa3, 0xe1, 0x2c, 0x66,
+                                        0xe0, 0x71, 0x05, 0x47, 0xc9, 0x6d, 0x84, 0xf3, 0xc4, 0x24,
+                                        0xa0, 0x0d};
+
+    uint8_t out1_tmp_rnd2[RANDOM_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00};
+
+    uint8_t spend_tmp_rnd[RANDOM_LEN] = {0x22, 0xc9, 0x0b, 0xa7, 0x43, 0x91, 0x6e, 0x04, 0xd2, 0xfe,
+                                         0xea, 0x70, 0x7a, 0xbb, 0xac, 0x40, 0xdb, 0x36, 0x05, 0xa8,
+                                         0x7c, 0xa6, 0x71, 0xab, 0x23, 0xda, 0xc3, 0x01, 0x72, 0xbb,
+                                         0x03, 0x0d};
     
-    uint8_t spend_tmp_rnd2[RANDOM_LEN] = {0x5e, 0x0e, 0xdd, 0x60, 0x7d, 0x43, 0x4e, 0x34, 0x76,
-                                          0x6b, 0xdb, 0x07, 0x13, 0xe2, 0xef, 0xdd, 0x27, 0x5a,
-                                          0x0d, 0x50, 0x73, 0x47, 0x9f, 0xda, 0x02, 0x0c, 0xfc,
-                                          0x6f, 0x03, 0x97, 0x53, 0x07};
+    uint8_t spend_tmp_rnd2[RANDOM_LEN] = {0xc8, 0x06, 0x96, 0x04, 0x94, 0xf8, 0x5d, 0x02, 0x13, 0x61,
+                                          0xcb, 0x07, 0x97, 0x8d, 0x6e, 0x71, 0xec, 0xa5, 0xc0, 0xbf,
+                                          0xe4, 0xc8, 0xe9, 0x3d, 0x0a, 0x10, 0x85, 0x74, 0xe5, 0x04,
+                                          0x94, 0x06};
+
+    uint8_t convert_tmp_rnd[RANDOM_LEN] = {0x22, 0xf4, 0x88, 0x3d, 0xdc, 0x2d, 0x8e, 0x47, 0xbd, 0xfc,
+                                           0xb3, 0xb5, 0x44, 0x2c, 0x04, 0x1c, 0xa5, 0xeb, 0x1d, 0x97,
+                                           0x76, 0xea, 0x1c, 0xcd, 0xef, 0x05, 0x1b, 0xd0, 0xce, 0x30,
+                                           0xd8, 0x03};
+
+    uint8_t convert_tmp_rnd2[RANDOM_LEN] = {0x03, 0xd8, 0x30, 0xce, 0xd0, 0x1b, 0x05, 0xef, 0xcd, 0x1c,
+                                           0xea, 0x76, 0x97, 0x1d, 0xeb, 0xa5, 0x1c, 0x04, 0x2c, 0x44,
+                                           0xb5, 0xb3, 0xfc, 0xbd, 0x47, 0x8e, 0x2d, 0xdc, 0x3d, 0x88,
+                                           0xf4, 0x22};
 #else 
+    uint8_t tmp_rnd[RANDOM_LEN] = {0};
     uint8_t tmp_rnd2[RANDOM_LEN] = {0};
 #endif
 
@@ -996,6 +1055,7 @@ uint8_t out_tmp_rnd[RANDOM_LEN] = {0x4b, 0xd4, 0xe9, 0x74, 0xdd, 0x7b, 0xa7, 0x5
             MEMCPY(out, out_tmp_rnd, RANDOM_LEN);
             MEMCPY(out + RANDOM_LEN, out_tmp_rnd2, RANDOM_LEN);
             CHECK_ZXERR(output_append_rand_item(out_tmp_rnd, out_tmp_rnd2));
+            CHECK_ZXERR(output_append_rand_item(out1_tmp_rnd, out1_tmp_rnd2));
 #else
             CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
             MEMCPY(out, tmp_rnd, RANDOM_LEN);
@@ -1007,10 +1067,16 @@ uint8_t out_tmp_rnd[RANDOM_LEN] = {0x4b, 0xd4, 0xe9, 0x74, 0xdd, 0x7b, 0xa7, 0x5
             *replyLen = 2 * RANDOM_LEN;
             break;
         case convert:
+#ifdef APP_TESTING
+            MEMCPY(out, convert_tmp_rnd, RANDOM_LEN);
+            CHECK_ZXERR(convert_append_rand_item(convert_tmp_rnd));
+            CHECK_ZXERR(convert_append_rand_item(convert_tmp_rnd2));
+#else
             CHECK_ZXERR(random_fr(tmp_rnd, RANDOM_LEN));
             MEMCPY(out, tmp_rnd, RANDOM_LEN);
 
             CHECK_ZXERR(convert_append_rand_item(tmp_rnd));
+#endif
             *replyLen = RANDOM_LEN;
             break;
         default:

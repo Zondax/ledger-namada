@@ -625,6 +625,21 @@ parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *ide
     return parser_ok;
 }
 
+parser_error_t computeConvertValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *generator, uint8_t *cv) {
+    if(rcv == NULL || generator == NULL || cv == NULL) {
+        return parser_unexpected_error;
+    }
+
+    uint8_t value_bytes[32] = {0};
+    u64_to_bytes(value, value_bytes);
+
+    uint8_t scalar[32] = {0};
+    CHECK_ERROR(parser_scalar_multiplication(rcv, ValueCommitmentRandomnessGenerator, scalar));
+    CHECK_ERROR(add_points(generator, value_bytes, scalar, cv));
+
+    return parser_ok;
+}
+
 
 parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk) {
     if(keys == NULL || alpha == NULL || rk == NULL) {
