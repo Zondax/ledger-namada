@@ -7,3 +7,6 @@
 [submodule "deps/blake2"]
 	path = deps/blake2
 	url = https://github.com/Zondax/BLAKE2.git
+[submodule "js"]
+	path = js
+	url = https://github.com/Zondax/ledger-namada-js

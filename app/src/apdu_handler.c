@@ -121,6 +121,7 @@ __Z_INLINE void handleSignTransaction(volatile uint32_t *flags, volatile uint32_
     CHECK_APP_CANARY()
     view_review_init(tx_getItem, tx_getNumItems, app_sign);
     view_review_show(REVIEW_TXN);
+    transaction_reset();
     *flags |= IO_ASYNCH_REPLY;
 }
 

@@ -115,26 +115,23 @@ zxerr_t getItemViewKey(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char
                      uint8_t *pageCount) {
     ZEMU_LOGF(50, "[addr_getItem] %d/%d\n", displayIdx, pageIdx)
 
+    const KeyData* keyData = (const KeyData*)G_io_apdu_buffer;
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "ViewKey");
-            const char* viewKey = (const char*)G_io_apdu_buffer;
-            pageStringHex(outVal, outValLen, viewKey, 2 * KEY_LENGTH, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, keyData->viewKey, 2 * KEY_LENGTH, pageIdx, pageCount);
             break;
         case 1:
             snprintf(outKey, outKeyLen, "IVK");
-            const char* ivk = (const char*)G_io_apdu_buffer + 3 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, ivk, KEY_LENGTH, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, keyData->ivk, KEY_LENGTH, pageIdx, pageCount);
             break;
         case 2:
             snprintf(outKey, outKeyLen, "OVK");
-            const char* ovk = (const char*)G_io_apdu_buffer + 2 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, ovk, KEY_LENGTH, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, keyData->ovk, KEY_LENGTH, pageIdx, pageCount);
             break;
         case 3:
             snprintf(outKey, outKeyLen, "DK");
-            const char* dk = (const char*)G_io_apdu_buffer + 4 * KEY_LENGTH;
-            pageStringHex(outVal, outValLen, dk, KEY_LENGTH, pageIdx, pageCount);
+            pageStringHex(outVal, outValLen, keyData->dk, KEY_LENGTH, pageIdx, pageCount);
             break;
         case 4: {
             snprintf(outKey, outKeyLen, "HD Path");

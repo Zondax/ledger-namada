@@ -67,6 +67,10 @@ __Z_INLINE zxerr_t app_fill_randomness(masp_type_e type) {
     zemu_log("app_fill_randomness\n");
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
 
+    if (get_state() != STATE_INITIAL && get_state() != STATE_PROCESSED_RANDOMNESS) {
+        return zxerr_unknown;
+    }
+
     cmdResponseLen = 0;
     zxerr_t err = crypto_computeRandomness(type, G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, &cmdResponseLen);
 
@@ -75,6 +79,7 @@ __Z_INLINE zxerr_t app_fill_randomness(masp_type_e type) {
         THROW(APDU_CODE_DATA_INVALID);
     }
 
+    set_state(STATE_PROCESSED_RANDOMNESS);
     return err;
 }
 

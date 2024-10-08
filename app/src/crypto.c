@@ -412,6 +412,11 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
 
     // Include Masp hash in the signature if it's there
     if (txObj->transaction.isMasp) {
+#if !defined(APP_TESTING)
+        if (get_state() != STATE_EXTRACT_SPENDS) {
+            return zxerr_unknown;
+        }
+#endif
         const uint8_t *maspSection = txObj->transaction.sections.maspTx.masptx_ptr;
         uint64_t maspSectionLen = txObj->transaction.sections.maspTx.masptx_len;
         uint8_t *maspHash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
@@ -723,7 +728,7 @@ zxerr_t crypto_sign_spends_sapling(const parser_tx_t *txObj, keys_t *keys) {
 }
 
 zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen) {
-    if (!spend_signatures_more_extract()) {
+    if (!spend_signatures_more_extract() || (get_state() != STATE_SIGNED_SPENDS && get_state() != STATE_EXTRACT_SPENDS)) {
         zemu_log_stack("crypto_extract_spend_signature: no more signatures");
         return zxerr_unknown;
     }
@@ -947,6 +952,10 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
         return zxerr_unknown;
     }
 
+    if (get_state() != STATE_PROCESSED_RANDOMNESS) {
+        return zxerr_unknown;
+    }
+
     // Get keys
     uint8_t sapling_seed[KEY_LENGTH] = {0};
     keys_t keys = {0};
@@ -968,6 +977,11 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
 
     MEMZERO(sapling_seed, sizeof(sapling_seed));
     MEMZERO(&keys, sizeof(keys));
+
+    if (err == zxerr_ok) {
+        set_state(STATE_SIGNED_SPENDS);
+    }
+
     return err;
 }
 
