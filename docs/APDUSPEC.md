@@ -196,7 +196,7 @@ Gets the view key, ivk, ovk, dk for the given address.
 | CLA           | byte (1) | Application Identifier    | 0x57             |
 | INS           | byte (1) | Instruction ID            | 0x03             |
 | P1            | byte (1) | Request User confirmation | No = 0           |
-| P2            | byte (1) | Parameter ignored         |                  |
+| P2            | byte (1) | Keys to retreive          | 0x0 - public address, 0x1 - view key, 0x2 - proof generation key
 | L             | byte (1) | Bytes in payload          | 21 bytes         |
 | PathLength    | byte (1) | Path length               | 5                |
 | Path[0]       | byte (4) | Derivation Path Data      | 0x80000000 \| 44  |
@@ -207,12 +207,29 @@ Gets the view key, ivk, ovk, dk for the given address.
 
 #### Response
 
+##### Public Address (P2=0)
+
+| Field             | Type          | Content       | Note                      |
+| ----------------- | ------------- | ------------- | ------------------------  |
+| Address           | byte (32)     | Address      |                           |
+| SW1-SW2           | byte (2)      | Return code   | see list of return codes  |
+
+##### View Key (P2=1)
+
 | Field             | Type          | Content       | Note                      |
 | ----------------- | ------------- | ------------- | ------------------------  |
 | ViewKey           | byte (64)     | View key      |                           |
 | OVK               | byte (32)     | OVK           |                           |
 | IVK               | byte (32)     | IVK           |                           |
 | DK                | byte (32)     | DK            |                           |
+| SW1-SW2           | byte (2)      | Return code   | see list of return codes  |
+
+##### Proof Generation Key (P2=2)
+
+| Field             | Type          | Content       | Note                      |
+| ----------------- | ------------- | ------------- | ------------------------  |
+| AK                | byte (32)     | AK            |                           |
+| NSK               | byte (32)     | NSK           |                           |
 | SW1-SW2           | byte (2)      | Return code   | see list of return codes  |
 
 *prefix is ED25519: 0 | SECP256K1: 1
@@ -227,8 +244,9 @@ Get spend randomness values to be used in transation creation.
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0x57      |
 | INS   | byte (1) | Instruction ID         | 0x04      |
-| P1    | byte (1) | Request User confirmation | No = 0           |
-| P2    | byte (1) | Parameter ignored         |                  |
+| P1    | byte (1) | Request User confirmation | No = 0 |
+| P2    | byte (1) | Parameter ignored         |        |
+| L     | byte (1) | Bytes in payload          | 0 bytes |
 
 #### Response
 
@@ -248,8 +266,9 @@ Get output randomness values to be used in transation creation.
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0x57      |
 | INS   | byte (1) | Instruction ID         | 0x05      |
-| P1    | byte (1) | Request User confirmation | No = 0           |
-| P2    | byte (1) | Parameter ignored         |                  |
+| P1    | byte (1) | Request User confirmation | No = 0 |
+| P2    | byte (1) | Parameter ignored         |        |
+| L     | byte (1) | Bytes in payload          | 0 bytes |
 
 #### Response
 
@@ -269,8 +288,9 @@ Get convert randomness values to be used in transation creation.
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0x57      |
 | INS   | byte (1) | Instruction ID         | 0x06      |
-| P1    | byte (1) | Request User confirmation | No = 0           |
-| P2    | byte (1) | Parameter ignored         |                  |
+| P1    | byte (1) | Request User confirmation | No = 0 |
+| P2    | byte (1) | Parameter ignored         |        |
+| L     | byte (1) | Bytes in payload          | 0 bytes |
 
 #### Response
 
@@ -332,8 +352,9 @@ Extract the spend signatures computed in INS_SIGN_MASP_SPENDS.
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0x57      |
 | INS   | byte (1) | Instruction ID         | 0x08      |
-| P1    | byte (1) | Request User confirmation | No = 0           |
-| P2    | byte (1) | Parameter ignored         |                  |
+| P1    | byte (1) | Parameter ignored      |           |
+| P2    | byte (1) | Parameter ignored      |           |
+| L     | byte (1) | Bytes in payload          | 0 bytes |
 
 #### Response
 
@@ -353,8 +374,9 @@ Clean the randomness buffers.
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0x57      |
 | INS   | byte (1) | Instruction ID         | 0x09      |
-| P1    | byte (1) | Request User confirmation | No = 0           |
-| P2    | byte (1) | Parameter ignored         |                  |
+| P1    | byte (1) | Parameter ignored      | No = 0    |
+| P2    | byte (1) | Parameter ignored      |           |
+| L     | byte (1) | Bytes in payload          | 0 bytes |
 
 #### Response
 
