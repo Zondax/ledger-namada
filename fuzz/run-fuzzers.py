@@ -20,7 +20,7 @@ for config in CONFIGS:
 
     artifact_dir = os.path.join('fuzz', 'corpora', f'{fuzzer}-artifacts')
     corpus_dir = os.path.join('fuzz', 'corpora', f'{fuzzer}')
-    fuzz_path = os.path.join(f'build/bin/fuzz-{fuzzer}')
+    fuzz_path = os.path.join(f'build/fuzz-{fuzzer}')
 
     os.makedirs(artifact_dir, exist_ok=True)
     os.makedirs(corpus_dir, exist_ok=True)
