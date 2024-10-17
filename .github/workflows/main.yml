@@ -48,6 +48,7 @@ jobs:
       - name: audit
         run: |
           cd ./rs
+          cargo install cargo-audit
           cargo audit
 
   build_ledger:
