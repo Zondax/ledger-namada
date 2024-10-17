@@ -13,7 +13,7 @@
 #*  See the License for the specific language governing permissions and
 #*  limitations under the License.
 #********************************************************************************
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.28)
 include("cmake/HunterGate.cmake")
 HunterGate(
     URL "https://github.com/cpp-pm/hunter/archive/v0.25.5.tar.gz"
@@ -21,14 +21,24 @@ HunterGate(
     LOCAL
 )
 
-project(ledger-namada VERSION 0.0.0)
-enable_testing()
+if(CMAKE_GENERATOR MATCHES "Ninja")
+        message(FATAL_ERROR "This project does not support the Ninja generator. "
+                            "Please use Unix Makefiles or another supported generator. "
+                            "This error is typical in CLion. In this case, switch to generator Unix Makefiles.")
+endif()
 
+########################################################
+
+project(ledger-namada VERSION 0.0.0)
+
+set(CMAKE_CXX_STANDARD 17)
 cmake_policy(SET CMP0025 NEW)
-set(CMAKE_CXX_STANDARD 11)
+cmake_policy(SET CMP0144 NEW)
 
 set(HUNTER_STATUS_DEBUG ON)
 set(HUNTER_TLS_VERIFY OFF)
+
+enable_testing()
 
 option(ENABLE_FUZZING "Build with fuzzing instrumentation and build fuzz targets" OFF)
 option(ENABLE_COVERAGE "Build with source code coverage instrumentation" OFF)
@@ -38,13 +48,12 @@ string(APPEND CMAKE_C_FLAGS " -fno-omit-frame-pointer -g")
 string(APPEND CMAKE_CXX_FLAGS " -fno-omit-frame-pointer -g")
 string(APPEND CMAKE_LINKER_FLAGS " -fno-omit-frame-pointer -g")
 
-add_definitions(-DAPP_STANDARD)
-add_definitions(-DSUBSTRATE_PARSER_FULL)
-
 hunter_add_package(fmt)
 find_package(fmt CONFIG REQUIRED)
+
 hunter_add_package(jsoncpp)
 find_package(jsoncpp CONFIG REQUIRED)
+
 hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
 
@@ -67,9 +76,9 @@ if(ENABLE_FUZZING)
         endif()
     else()
         message(FATAL_ERROR
-                "You are using an unsupported compiler! Fuzzing only works with Clang 10.\n"
+                "Unsupported compiler! Fuzzing requires Clang 10.\n"
                 "1. Install clang-10 \n"
-                "2. Pass -DCMAKE_C_COMPILER=clang-10 -DCMAKE_CXX_COMPILER=clang++-10")
+                "2. Use -DCMAKE_C_COMPILER=clang-10 -DCMAKE_CXX_COMPILER=clang++-10")
     endif()
 
     string(APPEND CMAKE_C_FLAGS " -fsanitize=fuzzer-no-link")
@@ -113,8 +122,6 @@ add_definitions(
     -DLEDGER_MAJOR_VERSION=${MAJOR_VERSION}
     -DLEDGER_MINOR_VERSION=${MINOR_VERSION}
 )
-
-
 ##############################################################
 ##{TODO}
 ##############################################################
@@ -212,6 +219,20 @@ add_dependencies(rslib RustLibBuild)
 # Ensure your C++ targets depend on the Rust library being built first
 # For example, for your app_lib static library:
 add_dependencies(app_lib rslib)
+
+##############################################################
+#  Fuzz Targets
+if(ENABLE_FUZZING)
+    set(FUZZ_TARGETS
+        parser_parse
+        )
+
+    foreach(target ${FUZZ_TARGETS})
+        add_executable(fuzz-${target} ${CMAKE_CURRENT_SOURCE_DIR}/fuzz/${target}.cpp)
+        target_link_libraries(fuzz-${target} PRIVATE app_lib rslib)
+        target_link_options(fuzz-${target} PRIVATE "-fsanitize=fuzzer")
+    endforeach()
+else()
 ##############################################################
 #  Tests
 file(GLOB_RECURSE TESTS_SRC
@@ -238,16 +259,4 @@ add_test(NAME unittests COMMAND unittests)
 set_tests_properties(unittests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 ##############################################################
-##############################################################
-#  Fuzz Targets
-if(ENABLE_FUZZING)
-    set(FUZZ_TARGETS
-        parser_parse
-        )
-
-    foreach(target ${FUZZ_TARGETS})
-        add_executable(fuzz-${target} ${CMAKE_CURRENT_SOURCE_DIR}/fuzz/${target}.cpp)
-        target_link_libraries(fuzz-${target} PRIVATE app_lib)
-        target_link_options(fuzz-${target} PRIVATE "-fsanitize=fuzzer")
-    endforeach()
 endif()
