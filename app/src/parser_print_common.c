@@ -30,7 +30,12 @@
 #define PREFIX "yay with councils:\n"
 #define PREFIX_COUNCIL "Council: "
 #define PREFIX_SPENDING "spending cap: "
-
+#if defined(LEDGER_SPECIFIC)
+#define NAM_MAINNET_ADDRESS "tnam1q9gr66cvu4hrzm0sd5kmlnjje82gs3xlfg3v6nu7"
+#else
+// Test address to verify the address replacement by NAM
+#define NAM_MAINNET_ADDRESS "tnam1qx60d9v036kfqhfnt2lua5uquh3d3hhrzva03gfl"
+#endif
 
 #define CHECK_PTR_BOUNDS(count, dstLen)    \
     if((count + 1) >= dstLen) {             \
@@ -88,7 +93,13 @@ parser_error_t printAddressAlt(const AddressAlt *addr,
 
     char address[110] = {0};
     CHECK_ERROR(crypto_encodeAltAddress(addr, address, sizeof(address)))
-    pageString(outVal, outValLen, (const char*) address, pageIdx, pageCount);
+
+    // Comapare with NAM mainnet address
+    if (memcmp(address, NAM_MAINNET_ADDRESS, strlen(NAM_MAINNET_ADDRESS)) == 0) {
+        pageString(outVal, outValLen, "NAM", pageIdx, pageCount);
+    } else {
+        pageString(outVal, outValLen, (const char*) address, pageIdx, pageCount);
+    }
 
     return parser_ok;
 }
