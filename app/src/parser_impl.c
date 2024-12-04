@@ -38,6 +38,18 @@ parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
     return parser_ok;
 }
 
+bool hasMemoToPrint(const parser_context_t *ctx) {
+    // Check if memoSection exists and has a commitmentDiscriminant
+    if ((ctx->tx_obj->transaction.header.memoSection != NULL && 
+        ctx->tx_obj->transaction.header.memoSection->commitmentDiscriminant && 
+        ctx->tx_obj->transaction.header.memoSection->bytes.len != 0) ||
+        (ctx->tx_obj->transaction.header.memoSection != NULL && ctx->tx_obj->transaction.header.memoSection->commitmentDiscriminant == 0)) {
+        
+        return true; // Memo is available to print
+    }
+    return false; // No memo to print
+}
+
 parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
     *numItems = 0;
     switch (ctx->tx_obj->typeTx) {
@@ -197,8 +209,8 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
             break;
     }
 
-    if (ctx->tx_obj->transaction.header.memoSection != NULL) {
-      (*numItems)++;
+    if (hasMemoToPrint(ctx)) {
+        (*numItems)++;
     }
 
     if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
