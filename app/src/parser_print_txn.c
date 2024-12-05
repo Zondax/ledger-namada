@@ -24,6 +24,7 @@
 #include "parser_address.h"
 #include "bech32_encoding.h"
 #include "crypto_helper.h"
+#include "parser_impl.h"
 
 #include "txn_delegation.h"
 
@@ -37,7 +38,7 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
     if (ctx->tx_obj->bond.has_source == 0 && displayIdx >= 1) {
         displayIdx++;
     }
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 4 && !hasMemo) {
         displayIdx++;
     }
@@ -90,7 +91,7 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                         uint8_t pageIdx, uint8_t *pageCount) {
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 2 && !hasMemo) {
         displayIdx++;
     }
@@ -413,7 +414,7 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
                 ? pubkeys_first_field_idx
                 : displayIdx - pubkeys_num + 1);
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (adjustedDisplayIdx >= 4 && !hasMemo) {
         adjustedDisplayIdx++;
     }
@@ -505,7 +506,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
     if (displayIdx >= 1 + proposalElements) {
         adjustedIdx = displayIdx - proposalElements + 1;
     }
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (adjustedIdx >= 7 && !hasMemo) {
         adjustedIdx++;
     }
@@ -581,7 +582,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                                              uint8_t pageIdx, uint8_t *pageCount) {
     tx_vote_proposal_t *voteProposal = &ctx->tx_obj->voteProposal;
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 4 && !hasMemo) {
         displayIdx++;
     }
@@ -648,7 +649,7 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 2 && !hasMemo) {
         displayIdx++;
     }
@@ -687,7 +688,7 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
                                                   uint8_t pageIdx, uint8_t *pageCount) {
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 3 && !hasMemo) {
         displayIdx++;
     }
@@ -729,7 +730,7 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 2 && !hasMemo) {
         displayIdx++;
     }
@@ -766,7 +767,7 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
                                             uint8_t pageIdx, uint8_t *pageCount) {
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 2 && !hasMemo) {
         displayIdx++;
     }
@@ -916,7 +917,7 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         displayIdx++;
     }
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 14 && !hasMemo) {
         displayIdx++;
     }
@@ -1033,7 +1034,7 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
     if (ctx->tx_obj->withdraw.has_source == 0 && displayIdx >= 1) {
         displayIdx++;
     }
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 3 && !hasMemo) {
         displayIdx++;
     }
@@ -1084,7 +1085,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 3 && !hasMemo) {
         displayIdx++;
     }
@@ -1769,7 +1770,7 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
         return parser_display_idx_out_of_range;
     }
     // displayIdx will be greater than the right part. No underflow
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     const uint8_t adjustedDisplayIdx  = displayIdx - 2 - (2 * updateStewardCommission->commissionLen) - (hasMemo ? 1 : 0);
     return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
@@ -1804,7 +1805,7 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
         displayIdx++;
     }
 
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 9 && !hasMemo) {
         displayIdx++;
     }
@@ -1882,7 +1883,7 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
 
     tx_bridge_pool_transfer_t *bridgePoolTransfer = &ctx->tx_obj->bridgePoolTransfer;
     char tmpBuffer[45] = {0};
-    const bool hasMemo = ctx->tx_obj->transaction.header.memoSection != NULL;
+    const bool hasMemo = hasMemoToPrint(ctx);
     if (displayIdx >= 9 && !hasMemo) {
         displayIdx++;
     }
