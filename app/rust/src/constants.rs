@@ -32,7 +32,7 @@ pub const SPENDING_KEY_GENERATOR: AffineNielsPoint = AffinePoint::from_raw_unche
 )
 .to_niels();
 
-pub const PROOF_GENERATION_KEY_GENERATOR: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
         0x5f3c_723a_a253_1b66,
         0x1e24_f832_67f1_5abd,
@@ -48,25 +48,30 @@ pub const PROOF_GENERATION_KEY_GENERATOR: AffineNielsPoint = AffinePoint::from_r
 )
 .to_niels();
 
+pub const VALUE_COMMITMENT_RANDOMNESS_GENERATOR: AffineNielsPoint =
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0xdd93d364cb8cec7e,
+            0x91cc3e3835675450,
+            0xcfa86026b8d99be9,
+            0x1c6da0ce9a5e5fdb,
+        ]),
+        Fq::from_raw([
+            0x28e5fce99ce692d0,
+            0xf94c2daa360302fe,
+            0xbc900cd4b8ae1150,
+            0x555f11f9b720d50b,
+        ]),
+    )
+    .to_niels();
 
-pub const VALUE_COMMITMENT_RANDOMNESS_GENERATOR: AffineNielsPoint = AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0xdd93d364cb8cec7e,
-        0x91cc3e3835675450,
-        0xcfa86026b8d99be9,
-        0x1c6da0ce9a5e5fdb,
-    ]),
-    Fq::from_raw([
-        0x28e5fce99ce692d0,
-        0xf94c2daa360302fe,
-        0xbc900cd4b8ae1150,
-        0x555f11f9b720d50b,
-    ]),
-)
-.to_niels();
-
-pub const DIV_SIZE:             usize = 11;
+pub const DIV_SIZE: usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
-pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"MASP__gd";
 pub const GH_FIRST_BLOCK: &[u8; 64] =
     b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
+
+/// https://zips.z.cash/zip-0032#key-path-levels
+/// m/PURPOSE/COIN/account
+pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
+pub const ZIP32_COIN_TYPE: u32 = 0x8000_036d;
+pub const ZIP32_HARDENED: u32 = 0x8000_0000;

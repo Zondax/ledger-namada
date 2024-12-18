@@ -29,14 +29,13 @@
 
 extern uint16_t cmdResponseLen;
 
-__Z_INLINE zxerr_t app_fill_address(signing_key_type_e addressKind) {
+__Z_INLINE zxerr_t app_fill_address() {
     // Put data directly in the apdu buffer
     zemu_log("app_fill_address\n");
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
 
     cmdResponseLen = 0;
-    zxerr_t err = crypto_fillAddress(addressKind,
-                                     G_io_apdu_buffer, IO_APDU_BUFFER_SIZE,
+    zxerr_t err = crypto_fillAddress(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE,
                                      &cmdResponseLen);
 
     if (err != zxerr_ok || cmdResponseLen == 0) {

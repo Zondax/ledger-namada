@@ -52,7 +52,7 @@ TEST(AddressMainnet, NamadaEncoding) {
         {"006b1541e97d413c37460467e9f9572bf285ad6a25659297c23def810e94df52d2", "tpknam1qp432s0f04qncd6xq3n7n72h90egttt2y4je997z8hhczr55mafdyqlyjul", "tnam1qq9way96y9te6cjm7gnluz39re8kgw43msx7esrv"},
         {"001372fa6f565c392c874e9455067408ebfabaadabb5d073b50670b7c1d71f1a8b", "tpknam1qqfh97n02ewrjty8f6292pn5pr4l4w4d4w6aqua4qect0swhrudgkeyednn", "tnam1qq4y45pfrp5qpry34vwm9j7yrl227knl2vznvs66"}
     };
-
+    hdPath[0] = HDPATH_0_DEFAULT;
     hdPath[1] = HDPATH_1_DEFAULT;
 
     for (const auto& testcase : addresses) {
@@ -93,7 +93,7 @@ TEST(AddressTestnet, NamadaEncoding) {
         {"003eaf5fe64fe8235a64a1879aaa0ebb2685c1a9220131dd9731e6a9acc650c0e4", "testtpknam1qql27hlxfl5zxkny5xre42swhvngtsdfygqnrhvhx8n2ntxx2rqwgfj964d", "testtnam1qp98248ld824crcv4kadv4gg0flp9zdz6yuhlnl0"},
         {"003a43272baff528f76a07d4cc8aa295939269bda6a95040ac9ddfb674d5d14fdc", "testtpknam1qqayxfet4l6j3am2ql2vez4zjkfey6da5654qs9vnh0mvax4698acnarh59", "testtnam1qrafawzxjaq23u6cwn9tmza7aq2nugpt0qhl4qxj"}
     };
-
+    hdPath[0] = HDPATH_0_DEFAULT;
     hdPath[1] = HDPATH_1_TESTNET;
 
     for (const auto& testcase : addresses) {

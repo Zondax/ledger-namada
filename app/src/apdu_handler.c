@@ -35,27 +35,25 @@
 
 static bool tx_initialized = false;
 
+// Here we extract the HD path and verify that each element is hardened and that the total length of the path is correct.
+// Later, we will check if the path is ZIP32 or BIP32, depending on the path that will be used.
 __Z_INLINE void extractHDPath(uint32_t rx, uint32_t offset) {
     ZEMU_LOGF(50, "Extract HDPath\n")
     tx_initialized = false;
 
-    const uint8_t pathLength = G_io_apdu_buffer[offset];
+    hdPathLen = G_io_apdu_buffer[offset];
     offset++;
 
-    if (pathLength != HDPATH_LEN_DEFAULT || (rx - offset) != sizeof(uint32_t) * pathLength) {
+    if (hdPathLen < HDPATH_LEN_MIN || hdPathLen > HDPATH_LEN_DEFAULT || (rx - offset) != sizeof(uint32_t) * hdPathLen) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    memcpy(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_DEFAULT);
+    memcpy(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * hdPathLen);
 
-    const bool mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
-                         hdPath[1] == HDPATH_1_DEFAULT;
-
-    const bool testnet = hdPath[0] == HDPATH_0_DEFAULT &&
-                         hdPath[1] == HDPATH_1_TESTNET;
-
-    if (!mainnet && !testnet) {
-        THROW(APDU_CODE_DATA_INVALID);
+    for (int i = 0; i < hdPathLen; i++) {
+        if ((hdPath[i] & 0x80000000) != 0x80000000) {
+            THROW(APDU_CODE_DATA_INVALID);
+        }
     }
 }
 
@@ -132,7 +130,7 @@ __Z_INLINE void handleGetAddr(volatile uint32_t *flags, volatile uint32_t *tx, u
     *tx = 0;
     const uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
-    zxerr_t zxerr = app_fill_address(key_ed25519);
+    zxerr_t zxerr = app_fill_address();
     if(zxerr != zxerr_ok){
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);

@@ -15,7 +15,7 @@
  ******************************************************************************* */
 import Zemu from '@zondax/zemu'
 import { NamadaApp, ResponseSignMasp, ResponseSpendSign, Signature } from '@zondax/ledger-namada'
-import { models, hdpath, defaultOptions, MASP_TRANSFER_SIGNING_TX, MASP_TRANSFER_TX } from './common'
+import { models, hdpath, defaultOptions, MASP_TRANSFER_SIGNING_TX, MASP_TRANSFER_TX, zip32_path } from './common'
 import { hashSignatureSec } from './utils'
 
 // @ts-ignore
@@ -90,7 +90,7 @@ describe('Masp', function () {
       const msg = Buffer.from(MASP_TRANSFER_TX, 'hex')
 
       //Sign and verify returned hash
-      const respRequest = app.signMaspSpends(hdpath, msg)
+      const respRequest = app.signMaspSpends(zip32_path, msg)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign_masp_spends`)

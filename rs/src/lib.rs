@@ -34,7 +34,7 @@ pub use params::{
     InstructionCode, KeyResponse, NamadaKeys, ADDRESS_LEN, CLA, ED25519_PUBKEY_LEN,
     PK_LEN_PLUS_TAG, SIG_LEN_PLUS_TAG,
 };
-use params::{KEY_LEN, SALT_LEN};
+use params::{KEY_LEN, SALT_LEN, XFVK_LEN};
 use utils::{
     ResponseAddress, ResponseGetConvertRandomness, ResponseGetOutputRandomness,
     ResponseGetSpendRandomness, ResponseMaspSign, ResponseProofGenKey, ResponsePubAddress,
@@ -368,18 +368,9 @@ where
             NamadaKeys::PublicAddress => Ok(KeyResponse::Address(ResponsePubAddress {
                 public_address: response_data[..KEY_LEN].try_into().unwrap(),
             })),
-            NamadaKeys::ViewKey => {
-                let (view_key, rest) = response_data.split_at(2 * KEY_LEN);
-                let (ovk, rest) = rest.split_at(KEY_LEN);
-                let (ivk, _) = rest.split_at(KEY_LEN);
-                let (dk, _) = rest.split_at(KEY_LEN);
-                Ok(KeyResponse::ViewKey(ResponseViewKey {
-                    view_key: view_key.try_into().unwrap(),
-                    ovk: ovk.try_into().unwrap(),
-                    ivk: ivk.try_into().unwrap(),
-                    dk: dk.try_into().unwrap(),
-                }))
-            }
+            NamadaKeys::ViewKey => Ok(KeyResponse::ViewKey(ResponseViewKey {
+                xfvk: response_data[..XFVK_LEN].try_into().unwrap(),
+            })),
             NamadaKeys::ProofGenerationKey => {
                 let (ak, rest) = response_data.split_at(KEY_LEN);
                 let (nsk, _) = rest.split_at(KEY_LEN);

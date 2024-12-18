@@ -44,6 +44,9 @@ extern "C" {
     }                          \
   } while (0)
 
+zxerr_t verify_bip32_path();
+zxerr_t verify_zip32_path();
+
 zxerr_t crypto_encodeRawPubkey(const uint8_t* rawPubkey, uint16_t rawPubkeyLen, uint8_t *output, uint16_t outputLen);
 zxerr_t crypto_encodeAddress(const uint8_t *pubkey, uint16_t pubkeyLen, uint8_t *output, uint16_t outputLen);
 
@@ -59,11 +62,6 @@ zxerr_t crypto_hashExtraDataSection(const section_t *section, uint8_t *output, u
 // MASP SECTION
 parser_error_t convertKey(const uint8_t spendingKey[KEY_LENGTH], const uint8_t modifier, uint8_t outputKey[KEY_LENGTH], bool reduceWideByte);
 parser_error_t generate_key(const uint8_t expandedKey[KEY_LENGTH], constant_key_t keyType, uint8_t output[KEY_LENGTH]);
-parser_error_t computeIVK(const ak_t ak, const nk_t nk, ivk_t ivk);
-parser_error_t computeMasterFromSeed(const uint8_t seed[KEY_LENGTH],  uint8_t master_sk[EXTENDED_KEY_LENGTH]);
-parser_error_t computeDiversifiersList(const uint8_t dk[KEY_LENGTH], uint8_t div_start_index[DIVERSIFIER_LENGTH], uint8_t diversifier_list[DIVERSIFIER_LIST_LENGTH]);
-parser_error_t computeDiversifier(const uint8_t dk[KEY_LENGTH], uint8_t start_index[DIVERSIFIER_LENGTH], uint8_t diversifier[DIVERSIFIER_LENGTH]);
-parser_error_t computePkd(const uint8_t ivk[KEY_LENGTH], const uint8_t diversifier[DIVERSIFIER_LENGTH], uint8_t pk_d[KEY_LENGTH]);
 parser_error_t computeValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *identifier, uint8_t *cv);
 parser_error_t computeRk(keys_t *keys, uint8_t *alpha, uint8_t *rk);
 parser_error_t crypto_encodeLargeBech32( const uint8_t *address, size_t addressLen, uint8_t *output, size_t outputLen, bool paymentAddr);
@@ -74,6 +72,11 @@ parser_error_t parser_scalar_multiplication(const uint8_t input[32], constant_ke
 parser_error_t parser_compute_sbar(const uint8_t s[32], uint8_t r[32], uint8_t rsk[32], uint8_t sbar[32]);
 parser_error_t parser_randomized_secret_from_seed(const uint8_t ask[32], const uint8_t alpha[32], uint8_t output[32]);
 parser_error_t computeConvertValueCommitment(uint64_t value, uint8_t *rcv, uint8_t *generator, uint8_t *cv);
+
+#if !defined(LEDGER_SPECIFIC)
+zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
