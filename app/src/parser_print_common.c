@@ -42,6 +42,33 @@
         return parser_decimal_too_big;     \
     }
 
+void remove_fraction(char *s) {
+    size_t len = strlen(s);
+
+    // Find the decimal point
+    char *decimal_point = strchr(s, '.');
+    if (decimal_point == NULL) {
+        // No decimal point found, nothing to remove
+        return;
+    }
+
+    // Find the end of the string up to the decimal point
+    size_t end_index = decimal_point - s;
+
+    // Find the first non-zero digit after the decimal point
+    size_t non_zero_index = end_index + 1;
+    while (s[non_zero_index] == '0') {
+        non_zero_index++;
+    }
+
+    // Check if there is a non-zero digit after the decimal point
+    if (non_zero_index >= len) {
+        // There is no non-zero digit after the decimal point
+        // Remove the decimal point and trailing zeros
+        s[end_index] = '\0';
+    }
+}
+
 static parser_error_t bigint_to_str(const bytes_t *value, bool isSigned, char *output, uint16_t outputLen, uint8_t pageIdx, uint8_t *pageCount) {
     if (output == NULL || value == NULL || value->ptr == NULL) {
         return parser_unexpected_error;
@@ -162,6 +189,7 @@ parser_error_t printAmount( const bytes_t *amount, bool isSigned, uint8_t amount
     //const char *suffix = (amountDenom == 0) ? ".0" : "";
     z_str3join(strAmount, sizeof(strAmount), symbol, "");
     number_inplace_trimming(strAmount, 1);
+    remove_fraction(strAmount);
     pageString(outVal, outValLen, strAmount, pageIdx, pageCount);
 
     return parser_ok;
