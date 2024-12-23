@@ -41,18 +41,18 @@ zxerr_t getNumItemsPublicAddress(uint8_t *num_items) {
 zxerr_t getItemPublicAddress(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen, uint8_t pageIdx,
                      uint8_t *pageCount) {
     ZEMU_LOGF(50, "[addr_getItem] %d/%d\n", displayIdx, pageIdx)
-
+    char tmp_buf[280] = {0};
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Address");
             const char* address = (const char*)G_io_apdu_buffer;
-            pageStringHex(outVal, outValLen, address, KEY_LENGTH, pageIdx, pageCount);
+            crypto_encodeLargeBech32((uint8_t*)address, PAYMENT_ADDR_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1);
+            pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             break;
         case 1: {
             snprintf(outKey, outKeyLen, "HD Path");
-            char buffer[200] = {0};
-            bip32_to_str(buffer, sizeof(buffer), hdPath, hdPathLen);
-            pageString(outVal, outValLen, buffer, pageIdx, pageCount);
+            bip32_to_str(tmp_buf, sizeof(tmp_buf), hdPath, hdPathLen);
+            pageString(outVal, outValLen, tmp_buf, pageIdx, pageCount);
             break;
         }
 

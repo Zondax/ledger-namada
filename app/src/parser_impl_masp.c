@@ -242,7 +242,7 @@ parser_error_t getNextOutputDescription(parser_context_t *output, uint8_t index)
     for (int i = 0; i < index; i++) {
         uint8_t has_ovk = 0;
         CHECK_ERROR(readByte(output, &has_ovk));
-        CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN);
+        CTX_CHECK_AND_ADVANCE(output, (has_ovk ? 32 : 0) + PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN);
     }
     return parser_ok;
 }
@@ -359,7 +359,7 @@ static parser_error_t readSaplingOutputDescriptionInfo(parser_context_t *ctx, ma
 
         // Parse payment address
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, DIVERSIFIER_LEN))
-        CHECK_ERROR(readBytes(ctx, &tmp.ptr, PAYMENT_ADDR_LEN))
+        CHECK_ERROR(readBytes(ctx, &tmp.ptr, PKD_LEN))
 
         // read note
         CHECK_ERROR(readBytes(ctx, &tmp.ptr, OUT_NOTE_LEN))

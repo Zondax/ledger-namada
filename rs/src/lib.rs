@@ -34,7 +34,7 @@ pub use params::{
     InstructionCode, KeyResponse, NamadaKeys, ADDRESS_LEN, CLA, ED25519_PUBKEY_LEN,
     PK_LEN_PLUS_TAG, SIG_LEN_PLUS_TAG,
 };
-use params::{KEY_LEN, SALT_LEN, XFVK_LEN};
+use params::{KEY_LEN, PAYMENT_ADDR_LEN, SALT_LEN, XFVK_LEN};
 use utils::{
     ResponseAddress, ResponseGetConvertRandomness, ResponseGetOutputRandomness,
     ResponseGetSpendRandomness, ResponseMaspSign, ResponseProofGenKey, ResponsePubAddress,
@@ -366,7 +366,7 @@ where
         let response_data = response.apdu_data();
         match key_type {
             NamadaKeys::PublicAddress => Ok(KeyResponse::Address(ResponsePubAddress {
-                public_address: response_data[..KEY_LEN].try_into().unwrap(),
+                public_address: response_data[..PAYMENT_ADDR_LEN].try_into().unwrap(),
             })),
             NamadaKeys::ViewKey => Ok(KeyResponse::ViewKey(ResponseViewKey {
                 xfvk: response_data[..XFVK_LEN].try_into().unwrap(),

@@ -47,7 +47,7 @@ typedef uint8_t d_t[DIVERSIFIER_LENGTH];
 typedef uint8_t fvk_tag_t[TAG_LENGTH];
 typedef uint8_t fvk_t[KEY_LENGTH*3];
 
-typedef uint8_t public_address_t[KEY_LENGTH];
+typedef uint8_t pkd_t[KEY_LENGTH];
 
 typedef struct {
     ask_t ask;
@@ -57,7 +57,7 @@ typedef struct {
     dk_t dk;
     chain_code_t chain_code;
     fvk_tag_t parent_fvk_tag;
-    public_address_t address;
+    pkd_t pkd;
 } keys_t;
 
 #ifdef __cplusplus

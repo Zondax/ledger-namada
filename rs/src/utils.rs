@@ -22,7 +22,8 @@ use std::error::Error;
 const HARDENED: u32 = 0x80000000;
 
 use crate::params::{
-    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PK_LEN_PLUS_TAG, SALT_LEN, SIG_LEN_PLUS_TAG, XFVK_LEN,
+    ADDRESS_LEN, ED25519_PUBKEY_LEN, KEY_LEN, PAYMENT_ADDR_LEN, PK_LEN_PLUS_TAG, SALT_LEN,
+    SIG_LEN_PLUS_TAG, XFVK_LEN,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -44,7 +45,7 @@ pub struct ResponseSignature {
 }
 
 pub struct ResponsePubAddress {
-    pub public_address: [u8; ED25519_PUBKEY_LEN],
+    pub public_address: [u8; PAYMENT_ADDR_LEN],
 }
 
 pub struct ResponseViewKey {

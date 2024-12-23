@@ -5,6 +5,12 @@ use crate::personalization::{
 use blake2b_simd::Params as Blake2bParams;
 use blake2s_simd::Params as Blake2sParams;
 
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 extern "C" {
     fn c_zcash_blake2b_expand_seed(
         input_a: *const u8,
@@ -45,7 +51,7 @@ extern "C" {
     fn c_zcash_blake2b_redjubjub(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32] {
     let h = Blake2bParams::new()
         .hash_length(32)
@@ -56,7 +62,12 @@ pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32
     hash
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32] {
     let mut hash = [0; 32];
     unsafe {
@@ -70,7 +81,7 @@ pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32
     hash
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64] {
     let h = Blake2bParams::new()
         .hash_length(64)
@@ -81,7 +92,12 @@ pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64
     hash
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
@@ -95,7 +111,7 @@ pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64
     hash
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
     let h = Blake2bParams::new()
         .hash_length(64)
@@ -109,7 +125,12 @@ pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
     result
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
@@ -124,7 +145,12 @@ pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
     hash
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
@@ -139,7 +165,12 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     hash
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b_expand_vec_two(in_a: &[u8], in_b: &[u8], in_c: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
@@ -156,7 +187,12 @@ pub fn blake2b_expand_vec_two(in_a: &[u8], in_b: &[u8], in_c: &[u8]) -> [u8; 64]
     hash
 }
 
-#[cfg(not(test))]
+#[cfg(all(
+    not(test),
+    not(feature = "clippy"),
+    not(feature = "fuzzing"),
+    not(feature = "cpp_tests")
+))]
 pub fn blake2b_expand_v4(
     in_a: &[u8],
     in_b: &[u8],
@@ -183,7 +219,7 @@ pub fn blake2b_expand_v4(
     hash
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     let h = Blake2bParams::new()
         .hash_length(64)
@@ -214,7 +250,7 @@ pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
     result
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
     let mut h = Blake2bParams::new()
         .hash_length(64)
@@ -228,7 +264,7 @@ pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
     hash
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "clippy", feature = "fuzzing", feature = "cpp_tests"))]
 pub fn blake2b_expand_v4(
     in_a: &[u8],
     in_b: &[u8],

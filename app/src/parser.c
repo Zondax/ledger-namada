@@ -56,6 +56,14 @@ parser_error_t parser_parse(parser_context_t *ctx,
 }
 
 parser_error_t parser_validate(parser_context_t *ctx) {
+#if defined(COMPILE_MASP) && defined(LEDGER_SPECIFIC)
+    // Get change address for masp transactions
+    if(ctx->tx_obj->transaction.isMasp) {
+        crypto_get_change_address();
+
+    }
+#endif
+
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
     CHECK_ERROR(parser_getNumItems(ctx, &numItems))

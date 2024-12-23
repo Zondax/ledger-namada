@@ -18,6 +18,7 @@
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
+#[cfg(all(not(test), not(feature = "clippy"), not(feature = "fuzzing"),))]
 use core::panic::PanicInfo;
 
 use constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, GH_FIRST_BLOCK, SPENDING_KEY_GENERATOR};
@@ -187,7 +188,7 @@ pub extern "C" fn add_points(
     ParserError::ParserOk
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(feature = "clippy"), not(feature = "fuzzing"),))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
