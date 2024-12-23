@@ -150,6 +150,7 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/leb128.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_validator.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txn_delegation.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/c_api/rust.c
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref/blake2b-ref.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/blake2s/blake2s-ref.c
         )
@@ -195,7 +196,7 @@ else()
 endif()
 
 # Use debug mode for debugging tests
-set(RUST_TARGET_DIR "${RUST_LIB_DIR}/target/${RUST_TARGET_TRIPLE}/debug")
+set(RUST_TARGET_DIR "${RUST_LIB_DIR}/target/${RUST_TARGET_TRIPLE}/release")
 
 # Custom target for the Rust library
 add_custom_target(RustLibClean
@@ -203,7 +204,7 @@ add_custom_target(RustLibClean
     WORKING_DIRECTORY ${RUST_LIB_DIR}
 )
 add_custom_target(RustLibBuild
-    COMMAND cargo build --target ${RUST_TARGET_TRIPLE} --features cpp_tests
+    COMMAND cargo build --release --target ${RUST_TARGET_TRIPLE} --features cpp_tests
     WORKING_DIRECTORY ${RUST_LIB_DIR}
     DEPENDS RustLibClean
 )

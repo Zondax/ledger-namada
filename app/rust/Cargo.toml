@@ -11,28 +11,42 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [dependencies]
+ztruct = { path = "../ztruct", version = "*" }
 jubjub = { version = "0.10.0", default-features = false }
 aes = { version = "0.7", default-features = false }
 binary-ff1 = { version = "0.2", default-features = false }
+blake2s_simd = { version = "0.5", default-features = false }
+blake2b_simd = { version = "0.5", default-features = false }
+byteorder = { version = "1.5", default-features = false }
+log = "0.4"
+
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
 
 [profile.release]
-lto = false
 codegen-units = 1
 debug = false
 opt-level = "z"
+panic = "abort"
+# lto = false
+# Settings below aimed to reduce
+# binary size due to code
+lto = "fat"
+overflow-checks = false
+strip = "symbols"
 
 [profile.dev]
-lto = true
+lto = false
 codegen-units = 1
 debug=true
 opt-level = "z"
 panic = "abort"
-strip = true 
+strip = true
 
 [features]
 default = []
+clippy = []
+fuzzing = []
 # use when compiling this crate as a lib for the cpp_tests suite
 cpp_tests = []

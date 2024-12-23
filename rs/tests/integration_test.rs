@@ -141,7 +141,7 @@ async fn get_masp_addr() {
         .unwrap();
 
     if let KeyResponse::Address(ref address_response) = response {
-        assert_eq!(32, address_response.public_address.len());
+        assert_eq!(43, address_response.public_address.len());
     } else {
         panic!("Expected KeyResponse::Address");
     }

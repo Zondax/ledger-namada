@@ -14,9 +14,9 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind, isTouchDevice  } from '@zondax/zemu'
+import Zemu, { ButtonKind, isTouchDevice } from '@zondax/zemu'
 import { NamadaApp, NamadaKeys, ResponseAddress, ResponseProofGenKey, ResponseViewKey } from '@zondax/ledger-namada'
-import { models, hdpath, defaultOptions, expectedKeys } from './common'
+import { models, hdpath, defaultOptions, expectedKeys, zip32_path } from './common'
 
 const sha256 = require('js-sha256')
 
@@ -39,7 +39,7 @@ describe('Address', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
-      const resp: ResponseAddress = await app.retrieveKeys(hdpath, NamadaKeys.PublicAddress, false) as ResponseAddress;
+      const resp: ResponseAddress = (await app.retrieveKeys(zip32_path, NamadaKeys.PublicAddress, false)) as ResponseAddress
       console.log(resp)
 
       expect(resp.returnCode).toEqual(0x9000)
@@ -47,7 +47,6 @@ describe('Address', function () {
       expect(resp).toHaveProperty('publicAddress')
 
       expect(resp.publicAddress?.toString('hex')).toEqual(expectedKeys.publicAddress)
-
     } finally {
       await sim.close()
     }
@@ -56,22 +55,24 @@ describe('Address', function () {
   test.concurrent.each(MASP_MODELS)('show address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({...defaultOptions, model: m.name,
-                       approveKeyword: isTouchDevice(m.name) ? 'Path' : '',
-                       approveAction: ButtonKind.ApproveTapButton,})
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: isTouchDevice(m.name) ? 'Path' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new NamadaApp(sim.getTransport())
 
-      const respRequest = app.retrieveKeys(hdpath, NamadaKeys.PublicAddress, true)
+      const respRequest = app.retrieveKeys(zip32_path, NamadaKeys.PublicAddress, true)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_address_shielded`)
 
-      const resp: ResponseAddress = await respRequest as ResponseAddress;
+      const resp: ResponseAddress = (await respRequest) as ResponseAddress
       console.log(resp)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-
     } finally {
       await sim.close()
     }
@@ -80,16 +81,15 @@ describe('Address', function () {
   test.concurrent.each(MASP_MODELS)('show address - reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({...defaultOptions, model: m.name,
-                       rejectKeyword: isTouchDevice(m.name) ? 'QR' : ''})
+      await sim.start({ ...defaultOptions, model: m.name, rejectKeyword: isTouchDevice(m.name) ? 'QR' : '' })
       const app = new NamadaApp(sim.getTransport())
 
-      const respRequest = app.retrieveKeys(hdpath, NamadaKeys.PublicAddress, true)
+      const respRequest = app.retrieveKeys(zip32_path, NamadaKeys.PublicAddress, true)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-show_address_shielded_reject`)
 
-      const resp: ResponseAddress = await respRequest as ResponseAddress;
+      const resp: ResponseAddress = (await respRequest) as ResponseAddress
       console.log(resp)
 
       expect(resp.returnCode).toEqual(0x6986)
@@ -105,21 +105,17 @@ describe('Address', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
-      const respRequest = app.retrieveKeys(hdpath, NamadaKeys.ViewKey, true)
+      const respRequest = app.retrieveKeys(zip32_path, NamadaKeys.ViewKey, true)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_viewkey`)
 
-      const resp: ResponseViewKey = await respRequest as ResponseViewKey;
+      const resp: ResponseViewKey = (await respRequest) as ResponseViewKey
       console.log(resp)
 
       expect(resp.returnCode).toEqual(0x9000)
       expect(resp.errorMessage).toEqual('No errors')
-      expect(resp.viewKey?.toString('hex')).toEqual(expectedKeys.viewKey)
-      expect(resp.ivk?.toString('hex')).toEqual(expectedKeys.ivk)
-      expect(resp.ovk?.toString('hex')).toEqual(expectedKeys.ovk)
-      expect(resp.dk?.toString('hex')).toEqual(expectedKeys.dk)
-
+      expect(resp.xfvk?.toString('hex')).toEqual(expectedKeys.xfvk)
     } finally {
       await sim.close()
     }
@@ -131,7 +127,7 @@ describe('Address', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new NamadaApp(sim.getTransport())
 
-      const resp: ResponseProofGenKey = await app.retrieveKeys(hdpath, NamadaKeys.ProofGenerationKey, false) as ResponseProofGenKey;
+      const resp: ResponseProofGenKey = (await app.retrieveKeys(zip32_path, NamadaKeys.ProofGenerationKey, false)) as ResponseProofGenKey
       console.log(resp)
 
       expect(resp.returnCode).toEqual(0x9000)

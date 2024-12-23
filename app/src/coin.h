@@ -22,7 +22,9 @@ extern "C" {
 #define CLA                             0x57
 
 #define HDPATH_LEN_DEFAULT   5
+#define HDPATH_LEN_MIN       3
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)   //44
+#define HDPATH_0_ZIP32    (0x80000000u | 0x20u)   //32
 
 #define HDPATH_1_DEFAULT     (0x80000000u | 0x36d)  //877
 #define HDPATH_1_TESTNET     (0x80000000u | 0x01)  //1
@@ -30,6 +32,8 @@ extern "C" {
 #define HDPATH_2_DEFAULT     (0x80000000u | 0u)
 #define HDPATH_3_DEFAULT     (0u)
 #define HDPATH_4_DEFAULT     (0u)
+
+#define MASK_HARDENED 0x80000000
 
 #define SECP256K1_PK_LEN            65u
 #define COMPRESSED_SECP256K1_PK_LEN 33u
@@ -40,7 +44,7 @@ extern "C" {
 #define SK_LEN_25519 32u
 #define SCALAR_LEN_ED25519 32u
 #define SIG_PLUS_TYPE_LEN 65u
-
+#define ED25519_SK_SIZE 64u
 #define ED25519_SIGNATURE_SIZE 64u
 
 #define PK_LEN_25519 32u

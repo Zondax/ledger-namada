@@ -49,6 +49,10 @@
 
 #define MAX_SIGNATURE_HASHES 10
 
+#if defined(COMPILE_MASP) && defined(LEDGER_SPECIFIC)
+uint8_t change_address[PAYMENT_ADDR_LEN];
+#endif
+
 #define CHECK_PARSER_OK(CALL)      \
   do {                         \
     parser_error_t __cx_err = CALL;  \
@@ -61,6 +65,9 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
     if (pubKey == NULL || pubKeyLen < PK_LEN_25519) {
         return zxerr_invalid_crypto_settings;
     }
+
+    CHECK_ZXERR(verify_bip32_path());
+
     zxerr_t error = zxerr_unknown;
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
@@ -70,7 +77,7 @@ static zxerr_t crypto_extractPublicKey_ed25519(uint8_t *pubKey, uint16_t pubKeyL
     CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
-                                                     HDPATH_LEN_DEFAULT,
+                                                     hdPathLen,
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
@@ -103,6 +110,8 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
         return zxerr_unknown;
     }
 
+    CHECK_ZXERR(verify_bip32_path());
+
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[2 * SK_LEN_25519] = {0};
 
@@ -111,7 +120,7 @@ static zxerr_t crypto_sign_ed25519(uint8_t *output, uint16_t outputLen, const ui
     CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
                                                      CX_CURVE_Ed25519,
                                                      hdPath,
-                                                     HDPATH_LEN_DEFAULT,
+                                                     hdPathLen,
                                                      privateKeyData,
                                                      NULL,
                                                      NULL,
@@ -137,7 +146,7 @@ catch_cx_error:
     return error;
 }
 
-zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen) {
+zxerr_t crypto_fillAddress(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen) {
     if (buffer == NULL || cmdResponseLen == NULL) {
         return zxerr_unknown;
     }
@@ -163,20 +172,6 @@ zxerr_t crypto_fillAddress_ed25519(uint8_t *buffer, uint16_t bufferLen, uint16_t
 
     *cmdResponseLen = PK_LEN_25519_PLUS_TAG + *pubkey + *address + 2;
     return zxerr_ok;
-}
-
-zxerr_t crypto_fillAddress(signing_key_type_e addressKind, uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdResponseLen)
-{
-    zxerr_t err = zxerr_unknown;
-    switch (addressKind) {
-        case key_ed25519:
-            err = crypto_fillAddress_ed25519(buffer, bufferLen, cmdResponseLen);
-            break;
-        case key_secp256k1:
-            // TODO
-            break;
-    }
-    return err;
 }
 
 static zxerr_t crypto_hashFeeHeader(const header_t *header, uint8_t *output, uint32_t outputLen) {
@@ -412,11 +407,6 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
 
     // Include Masp hash in the signature if it's there
     if (txObj->transaction.isMasp) {
-#if !defined(APP_TESTING)
-        if (get_state() != STATE_EXTRACT_SPENDS) {
-            return zxerr_unknown;
-        }
-#endif
         const uint8_t *maspSection = txObj->transaction.sections.maspTx.masptx_ptr;
         uint64_t maspSectionLen = txObj->transaction.sections.maspTx.masptx_len;
         uint8_t *maspHash = section_hashes.hashes.ptr + (section_hashes.hashesLen * HASH_LEN);
@@ -510,24 +500,19 @@ static zxerr_t computeKeys(keys_t * saplingKeys) {
         return zxerr_no_data;
     }
 
-    // Compute ask, nsk, ovk
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_ASK, saplingKeys->ask, true));
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_NSK, saplingKeys->nsk, true));
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_OVK, saplingKeys->ovk, true));
+    CHECK_ZXERR(verify_zip32_path());
 
-    // Compute diversifier key - dk
-    CHECK_PARSER_OK(convertKey(saplingKeys->spendingKey, MODIFIER_DK, saplingKeys->dk, true));
+    // Compute ask, nsk
+    zip32_child_ask_nsk(hdPath[2], saplingKeys->ask, saplingKeys->nsk);
 
-    // Compute ak, nk, ivk
-    CHECK_PARSER_OK(generate_key(saplingKeys->ask, SpendingKeyGenerator, saplingKeys->ak));
-    CHECK_PARSER_OK(generate_key(saplingKeys->nsk, ProofGenerationKeyGenerator, saplingKeys->nk));
-    CHECK_PARSER_OK(computeIVK(saplingKeys->ak, saplingKeys->nk, saplingKeys->ivk));
+    // Compute chain code fvk, parent fvk, tag and dk
+    zip32_xfvk(hdPath[2], saplingKeys->parent_fvk_tag, saplingKeys->chain_code, saplingKeys->fvk, saplingKeys->dk);
 
     // Compute diversifier
-    CHECK_PARSER_OK(computeDiversifier(saplingKeys->dk, saplingKeys->diversifier_start_index, saplingKeys->diversifier));
+    diversifier_find_valid(hdPath[2], saplingKeys->diversifier);
 
     // Compute address
-    CHECK_PARSER_OK(computePkd(saplingKeys->ivk, saplingKeys->diversifier, saplingKeys->address));
+    get_pkd(hdPath[2], saplingKeys->diversifier, saplingKeys->pkd);
 
     return zxerr_ok;
 }
@@ -539,29 +524,31 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
 
     switch (requestedKeys) {
         case PublicAddress:
-            if (outputLen < KEY_LENGTH) {
+            if (outputLen < PAYMENT_ADDR_LEN) {
                 return zxerr_buffer_too_small;
             }
-            memcpy(output, saplingKeys->address, KEY_LENGTH);
+            memcpy(output, saplingKeys->diversifier, DIVERSIFIER_LENGTH);
+            memcpy(output + DIVERSIFIER_LENGTH, saplingKeys->pkd, KEY_LENGTH);
             break;
 
         case ViewKeys:
-            if (outputLen < 5 * KEY_LENGTH) {
+            if (outputLen < (5 * KEY_LENGTH) + (2 * TAG_LENGTH) + 1) {
                 return zxerr_buffer_too_small;
             }
-            memcpy(output, saplingKeys->ak, KEY_LENGTH);
-            memcpy(output + KEY_LENGTH, saplingKeys->nk, KEY_LENGTH);
-            memcpy(output + 2 * KEY_LENGTH, saplingKeys->ovk, KEY_LENGTH);
-            memcpy(output + 3 * KEY_LENGTH, saplingKeys->ivk, KEY_LENGTH);
-            memcpy(output + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
+            memcpy(output, &hdPathLen, HDPATH_LENGTH);
+            memcpy(output + HDPATH_LENGTH, saplingKeys->parent_fvk_tag, TAG_LENGTH);
+            memcpy(output + HDPATH_LENGTH + TAG_LENGTH, &hdPath[hdPathLen - 1], TAG_LENGTH);
+            memcpy(output + HDPATH_LENGTH + 2 * TAG_LENGTH, saplingKeys->chain_code, KEY_LENGTH);
+            memcpy(output + HDPATH_LENGTH + 2 * TAG_LENGTH + KEY_LENGTH, saplingKeys->fvk, KEY_LENGTH*3);
+            memcpy(output + HDPATH_LENGTH + 2 * TAG_LENGTH + 4 * KEY_LENGTH, saplingKeys->dk, KEY_LENGTH);
             break;
 
         case ProofGenerationKey:
             if (outputLen < 2 * KEY_LENGTH) {
                 return zxerr_buffer_too_small;
             }
-            memcpy(output, saplingKeys->ak, KEY_LENGTH);
-            memcpy(output + KEY_LENGTH, saplingKeys->nsk, KEY_LENGTH);
+            memcpy(output, saplingKeys->fvk, KEY_LENGTH); // ak
+            memcpy(output + KEY_LENGTH, saplingKeys->nsk, KEY_LENGTH); // nsk
             break;
 
         default:
@@ -570,50 +557,46 @@ __Z_INLINE zxerr_t copyKeys(keys_t *saplingKeys, key_kind_e requestedKeys, uint8
     return zxerr_ok;
 }
 
-zxerr_t crypto_computeSaplingSeed(uint8_t spendingKey[static KEY_LENGTH]) {
-    if (spendingKey == NULL ) {
+zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
+    zemu_log_stack("crypto_fillDeviceSeed");
+    if (device_seed == NULL ) {
         return zxerr_no_data;
     }
+
+    // Generate randomness using a fixed path related to the device mnemonic
+    const uint32_t path[HDPATH_LEN_DEFAULT] = {
+        HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
+    };
+
+    MEMZERO(device_seed, KEY_LENGTH);
+    uint8_t raw_privkey[64];  // Allocate 64 bytes to respect Syscall API but only 32 will be used
     zxerr_t error = zxerr_unknown;
-    uint8_t privateKeyData[2*KEY_LENGTH] = {0};
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL,
-                                                     CX_CURVE_Ed25519,
-                                                     hdPath,
-                                                     HDPATH_LEN_DEFAULT,
-                                                     privateKeyData,
-                                                     NULL, NULL, 0));
-    memcpy(spendingKey, privateKeyData, KEY_LENGTH);
+
+    io_seproxyhal_io_heartbeat();
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, path, HDPATH_LEN_DEFAULT, raw_privkey, NULL,
+                                                     NULL, 0));
     error = zxerr_ok;
+    MEMCPY(device_seed, raw_privkey, KEY_LENGTH);
 
-catch_cx_error: 
-    MEMZERO(privateKeyData, sizeof(privateKeyData));
-
-    if(error != zxerr_ok) {
-        MEMZERO(spendingKey, KEY_LENGTH);
+catch_cx_error:
+    if (error != zxerr_ok) {
+        MEMZERO(raw_privkey, 64);
     }
 
     return error;
 }
 
 zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind_e requestedKey) {
-    if (output == NULL || outputLen < 3 * KEY_LENGTH) {
+    if (output == NULL) {
         return zxerr_buffer_too_small;
     }
+
+    CHECK_ZXERR(verify_zip32_path());
 
     zxerr_t error = zxerr_unknown;
     MEMZERO(output, outputLen);
 
     keys_t saplingKeys = {0};
-    uint8_t sk[KEY_LENGTH] = {0};
-
-    // sk erased inside in case of error
-    CHECK_ZXERR(crypto_computeSaplingSeed(sk))
-
-    if (computeMasterFromSeed((const uint8_t*) sk, saplingKeys.spendingKey) != parser_ok) {
-        MEMZERO(sk, sizeof(sk));
-        return zxerr_unknown;
-    }
-
     error = computeKeys(&saplingKeys);
 
     // Copy keys
@@ -621,7 +604,6 @@ zxerr_t crypto_generateSaplingKeys(uint8_t *output, uint16_t outputLen, key_kind
         error = copyKeys(&saplingKeys, requestedKey, output, outputLen);
     }
 
-    MEMZERO(sk, sizeof(sk));
     MEMZERO(&saplingKeys, sizeof(saplingKeys));
     return error;
 }
@@ -635,11 +617,11 @@ zxerr_t crypto_fillMASP(uint8_t *buffer, uint16_t bufferLen, uint16_t *cmdRespon
     CHECK_ZXERR(crypto_generateSaplingKeys(buffer, bufferLen, requestedKey));
     switch (requestedKey) {
         case PublicAddress:
-            *cmdResponseLen = KEY_LENGTH;
+            *cmdResponseLen = PAYMENT_ADDR_LEN;
             break;
 
         case ViewKeys:
-            *cmdResponseLen = 5 * KEY_LENGTH;
+            *cmdResponseLen = (6 * KEY_LENGTH) + TAG_LENGTH;
             break;
 
         case ProofGenerationKey:
@@ -751,6 +733,7 @@ parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_contex
         // Find the spend descriptor information object corresponding to this
         // spend descriptor
         uint32_t i;
+        indices_ctx->offset = 0;
         for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_spends_indices; i++) {
             uint64_t curr_indice;
             CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
@@ -801,7 +784,7 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         return parser_unexpected_error;
     }
 
-    if (txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices != txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
+    if (txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices > txObj->transaction.sections.maspTx.data.sapling_bundle.n_shielded_outputs) {
         return parser_invalid_number_of_outputs;
     }
 
@@ -809,6 +792,7 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         // Find the output descriptor information object corresponding to this
         // output descriptor
         uint32_t i;
+        indices_ctx->offset = 0;
         for (i = 0; i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices; i++) {
             uint64_t curr_indice;
             CHECK_ERROR(readUint64(indices_ctx, &curr_indice));
@@ -820,16 +804,14 @@ parser_error_t checkOutputs(const parser_tx_t *txObj, parser_context_t *builder_
         // Use the dummy note identifier as the default
         uint8_t identifier[IDENTIFIER_LEN] = DEFAULT_IDENTIFIER;
 
-        if (i > txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
-            return parser_invalid_number_of_outputs;
+        if (i < txObj->transaction.sections.maspBuilder.metadata.n_outputs_indices) {
+            CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
+            uint8_t has_ovk = 0;
+            CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
+            CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? KEY_LENGTH : 0) + PAYMENT_ADDR_LEN);
+            CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
+            CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
         }
-        
-        CHECK_ERROR(getNextOutputDescription(builder_outputs_ctx, i));
-        uint8_t has_ovk = 0;
-        CHECK_ERROR(readByte(builder_outputs_ctx, &has_ovk));
-        CTX_CHECK_AND_ADVANCE(builder_outputs_ctx, (has_ovk ? 32 : 0) + DIVERSIFIER_LEN + PAYMENT_ADDR_LEN);
-        CHECK_ERROR(readBytesSize(builder_outputs_ctx, identifier, IDENTIFIER_LEN));
-        CHECK_ERROR(readUint64(builder_outputs_ctx, &value));
 
         //check cv computation validaded in cpp_tests
         uint8_t cv[KEY_LENGTH] = {0};
@@ -957,17 +939,9 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
     }
 
     // Get keys
-    uint8_t sapling_seed[KEY_LENGTH] = {0};
     keys_t keys = {0};
-    CHECK_ZXERR(crypto_computeSaplingSeed(sapling_seed));
-    if (computeMasterFromSeed(sapling_seed, keys.spendingKey)) {
-        MEMZERO(sapling_seed, sizeof(sapling_seed));
-        return zxerr_unknown;
-    }
-
     if (computeKeys(&keys) != zxerr_ok || crypto_check_masp(txObj, &keys) != zxerr_ok || 
         crypto_sign_spends_sapling(txObj, &keys) != zxerr_ok) {
-        MEMZERO(sapling_seed, sizeof(sapling_seed));
         MEMZERO(&keys, sizeof(keys));
         return zxerr_invalid_crypto_settings;
     }
@@ -975,7 +949,6 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
     //Hash buffer and retreive for verify purpose
     zxerr_t err = crypto_hash_messagebuffer(output, outputLen, tx_get_buffer(), tx_get_buffer_length());
 
-    MEMZERO(sapling_seed, sizeof(sapling_seed));
     MEMZERO(&keys, sizeof(keys));
 
     if (err == zxerr_ok) {
@@ -1098,3 +1071,11 @@ zxerr_t crypto_computeRandomness(masp_type_e type, uint8_t *out, uint16_t outLen
     }
     return zxerr_ok;
 }
+
+#if defined(COMPILE_MASP) && defined(LEDGER_SPECIFIC)
+zxerr_t crypto_get_change_address(void) {
+    MEMZERO(change_address, sizeof(change_address));
+    CHECK_ZXERR(crypto_generateSaplingKeys(change_address, sizeof(change_address), PublicAddress));
+    return zxerr_ok;
+}
+#endif

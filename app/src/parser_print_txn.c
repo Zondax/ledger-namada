@@ -28,6 +28,10 @@
 
 #include "txn_delegation.h"
 
+#ifdef LEDGER_SPECIFIC
+#include "crypto.h"
+#endif
+
 static parser_error_t printBondTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
@@ -145,7 +149,7 @@ static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
         } else {
             out->ptr++;
         }
-        out->ptr += DIVERSIFIER_LEN + PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN;
+        out->ptr += PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN;
     }
 
     return parser_ok;
@@ -329,12 +333,23 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         } case 10:
             snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? 33 : 1), PAYMENT_ADDR_LEN + DIVERSIFIER_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
+#if defined(COMPILE_MASP)
+#ifndef LEDGER_SPECIFIC
+            uint8_t change_address[PAYMENT_ADDR_LEN] = {0x4e, 0x71, 0x48, 0xcb, 0xd2, 0xfe, 0xce, 0x3a, 0xd9, 0x30, 0x1e, 0xba, 0xe4, 0x08, 0x51, 0xd1, 0x72, 0x39, 0x5d, 0x12, 0xf0, 0xd9, 0x0c, 0x2c, 0x1e, 0x01, 0xcd, 0x3c, 0x47, 0x5d, 0x59, 0xff, 0xf5, 0xe2, 0x6d, 0x21, 0x12, 0x50, 0xd8, 0xe9, 0xb6, 0x12, 0x3a};
+#endif
+            if(!app_mode_expert()) {
+                if(MEMCMP(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), change_address, PAYMENT_ADDR_LEN) == 0) {
+                    snprintf(outVal, outValLen, "Self");
+                    break;
+                }
+            }
+#endif
+            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), PAYMENT_ADDR_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
             pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             break;
         case 11:
             snprintf(outKey, outKeyLen, "Receiving Token");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 CHECK_ERROR(printAddressAlt(&asset_data.token, outVal, outValLen, pageIdx, pageCount))
@@ -345,8 +360,8 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
             break;
         case 12: {
             snprintf(outKey, outKeyLen, "Receiving Amount");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
-            amount = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
+            amount = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN + ASSET_ID_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
@@ -1348,12 +1363,23 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
             break;
         } case 18:
             snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? 33 : 1), PAYMENT_ADDR_LEN + DIVERSIFIER_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
+#if defined(COMPILE_MASP)
+#ifndef LEDGER_SPECIFIC
+            uint8_t change_address[PAYMENT_ADDR_LEN] = {0x4e, 0x71, 0x48, 0xcb, 0xd2, 0xfe, 0xce, 0x3a, 0xd9, 0x30, 0x1e, 0xba, 0xe4, 0x08, 0x51, 0xd1, 0x72, 0x39, 0x5d, 0x12, 0xf0, 0xd9, 0x0c, 0x2c, 0x1e, 0x01, 0xcd, 0x3c, 0x47, 0x5d, 0x59, 0xff, 0xf5, 0xe2, 0x6d, 0x21, 0x12, 0x50, 0xd8, 0xe9, 0xb6, 0x12, 0x3a};
+#endif
+            if(!app_mode_expert()) {
+                if(MEMCMP(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), change_address, PAYMENT_ADDR_LEN) == 0) {
+                    snprintf(outVal, outValLen, "Self");
+                    break;
+                }
+            }
+#endif
+            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), PAYMENT_ADDR_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
             pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             break;
         case 19:
             snprintf(outKey, outKeyLen, "Receiving Token");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 CHECK_ERROR(printAddressAlt(&asset_data.token, outVal, outValLen, pageIdx, pageCount))
@@ -1364,8 +1390,8 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
             break;
         case 20: {
             snprintf(outKey, outKeyLen, "Receiving Amount");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
-            amount = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
+            amount = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN + ASSET_ID_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
@@ -1671,12 +1697,23 @@ static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
             break;
         } case 19:
             snprintf(outKey, outKeyLen, "Destination");
-            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? 33 : 1), PAYMENT_ADDR_LEN + DIVERSIFIER_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
+#if defined(COMPILE_MASP)
+#ifndef LEDGER_SPECIFIC
+            uint8_t change_address[PAYMENT_ADDR_LEN] = {0x4e, 0x71, 0x48, 0xcb, 0xd2, 0xfe, 0xce, 0x3a, 0xd9, 0x30, 0x1e, 0xba, 0xe4, 0x08, 0x51, 0xd1, 0x72, 0x39, 0x5d, 0x12, 0xf0, 0xd9, 0x0c, 0x2c, 0x1e, 0x01, 0xcd, 0x3c, 0x47, 0x5d, 0x59, 0xff, 0xf5, 0xe2, 0x6d, 0x21, 0x12, 0x50, 0xd8, 0xe9, 0xb6, 0x12, 0x3a};
+#endif
+            if(!app_mode_expert()) {
+                if(MEMCMP(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), change_address, PAYMENT_ADDR_LEN) == 0) {
+                    snprintf(outVal, outValLen, "Self");
+                    break;
+                }
+            }
+#endif
+            CHECK_ERROR(crypto_encodeLargeBech32(out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1), PAYMENT_ADDR_LEN, (uint8_t*) tmp_buf, sizeof(tmp_buf), 1));
             pageString(outVal, outValLen, (const char*) tmp_buf, pageIdx, pageCount);
             break;
         case 20:
             snprintf(outKey, outKeyLen, "Receiving Token");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 CHECK_ERROR(printAddressAlt(&asset_data.token, outVal, outValLen, pageIdx, pageCount))
@@ -1687,8 +1724,8 @@ static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
             break;
         case 21: {
             snprintf(outKey, outKeyLen, "Receiving Amount");
-            rtoken = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN;
-            amount = out.ptr + (out.ptr[0] ? 33 : 1) + PAYMENT_ADDR_LEN + DIVERSIFIER_LEN + ASSET_ID_LEN;
+            rtoken = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
+            amount = out.ptr + (out.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN + ASSET_ID_LEN;
             CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, rtoken, &asset_data, &asset_idx))
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
