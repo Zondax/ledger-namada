@@ -40,6 +40,7 @@ extern "C" {
 #define PREFIX_IBC_TOKEN 13
 #define PREFIX_MASP 14
 #define PREFIX_TMP_STORAGE 15
+#define PREFIX_REPLAY_PROTECTION 16
 #define PREFIX_INTERNAL 2
 
 parser_error_t readAddressAlt(parser_context_t *ctx, AddressAlt *obj);

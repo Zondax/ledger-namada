@@ -59,7 +59,8 @@ parser_error_t readAddressInternal(parser_context_t *ctx, InternalAddress *obj) 
         case 10: //Multitoken
         case 11: //Pgf
         case 12: //Masp
-        case 13: //TempStorage
+        case 13: //ReplayProtection
+        case 14: //TempStorage
             break;
         case 4:
             CHECK_ERROR(readInternalAddressIbcToken(ctx, &obj->IbcToken))
