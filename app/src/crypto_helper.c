@@ -266,6 +266,9 @@ parser_error_t crypto_encodeAltAddress(const AddressAlt *addr, char *address, ui
               tmpBuffer[0] = PREFIX_MASP;
               break;
             case 13:
+              tmpBuffer[0] = PREFIX_REPLAY_PROTECTION;
+             break;
+            case 14:
               tmpBuffer[0] = PREFIX_TMP_STORAGE;
               break;
             }
