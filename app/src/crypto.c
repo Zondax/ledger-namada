@@ -579,10 +579,7 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
     MEMCPY(device_seed, raw_privkey, KEY_LENGTH);
 
 catch_cx_error:
-    if (error != zxerr_ok) {
-        MEMZERO(raw_privkey, 64);
-    }
-
+    MEMZERO(raw_privkey, 64);
     return error;
 }
 
