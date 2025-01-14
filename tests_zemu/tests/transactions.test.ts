@@ -16,7 +16,7 @@
 
 import Zemu from '@zondax/zemu'
 import { NamadaApp, Signature } from '@zondax/ledger-namada'
-import { models, hdpath, defaultOptions, tx_empty_memo } from './common'
+import { models, hdpath, defaultOptions, tx_empty_memo, tx_empty_field } from './common'
 import { hashSignatureSec } from './utils'
 
 // @ts-ignore
@@ -177,6 +177,28 @@ describe.each(models)('Transactions', function (m) {
       const respRequest = app.sign(hdpath, Buffer.from(tx_empty_memo, 'hex'))
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign-empty-memo`)
+
+      const resp = await respRequest
+
+      expect(resp.returnCode).toEqual(0x9000)
+      expect(resp.errorMessage).toEqual('No errors')
+      expect(resp).toHaveProperty('signature')
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.only('Sign transaction with empty field Issue 106', async function () {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new NamadaApp(sim.getTransport())
+
+      const resp_addr = await app.getAddressAndPubKey(hdpath)
+
+      const respRequest = app.sign(hdpath, Buffer.from(tx_empty_field, 'hex'))
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 20000)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign-empty-field`)
 
       const resp = await respRequest
 
