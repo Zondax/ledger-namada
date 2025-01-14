@@ -176,22 +176,22 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case ChangeValidatorMetadata: {
             *numItems = app_mode_expert() ? CHANGE_VALIDATOR_METADATA_EXPERT_PARAMS : CHANGE_VALIDATOR_METADATA_NORMAL_PARAMS;
 
-            if (ctx->tx_obj->metadataChange.name.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_name) {
                 (*numItems)++;
             }
-            if (ctx->tx_obj->metadataChange.email.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_email) {
                 (*numItems)++;
             }
-            if (ctx->tx_obj->metadataChange.description.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_description) {
                 (*numItems)++;
             }
-            if (ctx->tx_obj->metadataChange.website.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_website) {
                 (*numItems)++;
             }
-            if (ctx->tx_obj->metadataChange.discord_handle.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_discord_handle) {
                 (*numItems)++;
             }
-            if (ctx->tx_obj->metadataChange.avatar.ptr != NULL) {
+            if (ctx->tx_obj->metadataChange.has_avatar) {
                 (*numItems)++;
             }
             if (ctx->tx_obj->metadataChange.has_commission_rate) {
