@@ -916,19 +916,19 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
-    if(displayIdx >= 9 && ctx->tx_obj->becomeValidator.name.ptr == NULL) {
+    if(displayIdx >= 9 && !ctx->tx_obj->becomeValidator.has_name) {
         displayIdx++;
     }
-    if(displayIdx >= 10 && ctx->tx_obj->becomeValidator.description.ptr == NULL) {
+    if(displayIdx >= 10 && !ctx->tx_obj->becomeValidator.has_description) {
         displayIdx++;
     }
-    if(displayIdx >= 11 && ctx->tx_obj->becomeValidator.website.ptr == NULL) {
+    if(displayIdx >= 11 && !ctx->tx_obj->becomeValidator.has_website) {
         displayIdx++;
     }
-    if(displayIdx >= 12 && ctx->tx_obj->becomeValidator.discord_handle.ptr == NULL) {
+    if(displayIdx >= 12 && !ctx->tx_obj->becomeValidator.has_discord_handle) {
         displayIdx++;
     }
-    if(displayIdx >= 13 && ctx->tx_obj->becomeValidator.avatar.ptr == NULL) {
+    if(displayIdx >= 13 && !ctx->tx_obj->becomeValidator.has_avatar) {
         displayIdx++;
     }
 
@@ -995,12 +995,14 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 9: {
             snprintf(outKey, outKeyLen, "Name");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.name.ptr, ctx->tx_obj->becomeValidator.name.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.name.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.name.ptr, ctx->tx_obj->becomeValidator.name.len, pageIdx, pageCount);
+            }
             break;
         }
         case 10: {
             snprintf(outKey, outKeyLen, "Description");
-            // snprintf(outVal, outValLen, "(none)");
             snprintf(outVal, outValLen, "");
             if (ctx->tx_obj->becomeValidator.description.len > 0) {
                 pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.description.ptr, ctx->tx_obj->becomeValidator.description.len, pageIdx, pageCount);
@@ -1009,17 +1011,26 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 11: {
             snprintf(outKey, outKeyLen, "Website");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.website.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
+            }
             break;
         }
         case 12: {
             snprintf(outKey, outKeyLen, "Discord handle");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.discord_handle.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
+            }
             break;
         }
         case 13: {
             snprintf(outKey, outKeyLen, "Avatar");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.avatar.ptr, ctx->tx_obj->becomeValidator.avatar.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.avatar.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.avatar.ptr, ctx->tx_obj->becomeValidator.avatar.len, pageIdx, pageCount);
+            }
             break;
         }
         case 14:
@@ -1820,22 +1831,22 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
 
     const tx_metadata_change_t *metadataChange = &ctx->tx_obj->metadataChange;
 
-    if(displayIdx >= 2 && metadataChange->name.ptr == NULL) {
+    if(displayIdx >= 2 && !metadataChange->has_name) {
         displayIdx++;
     }
-    if(displayIdx >= 3 && metadataChange->email.ptr == NULL) {
+    if(displayIdx >= 3 && !metadataChange->has_email) {
         displayIdx++;
     }
-    if(displayIdx >= 4 && metadataChange->description.ptr == NULL) {
+    if(displayIdx >= 4 && !metadataChange->has_description) {
         displayIdx++;
     }
-    if(displayIdx >= 5 && metadataChange->website.ptr == NULL) {
+    if(displayIdx >= 5 && !metadataChange->has_website) {
         displayIdx++;
     }
-    if(displayIdx >= 6 && metadataChange->discord_handle.ptr == NULL) {
+    if(displayIdx >= 6 && !metadataChange->has_discord_handle) {
         displayIdx++;
     }
-    if(displayIdx >= 7 && metadataChange->avatar.ptr == NULL) {
+    if(displayIdx >= 7 && !metadataChange->has_avatar) {
         displayIdx++;
     }
     if(displayIdx >= 8 && !metadataChange->has_commission_rate) {
@@ -1863,32 +1874,51 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
         }
         case 2: {
             snprintf(outKey, outKeyLen, "Name");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->name.ptr, metadataChange->name.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->name.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->name.ptr, metadataChange->name.len, pageIdx, pageCount);
+            }
+
             break;
         }
         case 3: {
             snprintf(outKey, outKeyLen, "Email");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->email.ptr, metadataChange->email.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->email.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->email.ptr, metadataChange->email.len, pageIdx, pageCount);
+            }
             break;
         }
         case 4: {
             snprintf(outKey, outKeyLen, "Description");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->description.ptr, metadataChange->description.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->description.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->description.ptr, metadataChange->description.len, pageIdx, pageCount);
+            }
             break;
         }
         case 5: {
             snprintf(outKey, outKeyLen, "Website");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->website.ptr, metadataChange->website.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->website.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->website.ptr, metadataChange->website.len, pageIdx, pageCount);
+            }
             break;
         }
         case 6: {
             snprintf(outKey, outKeyLen, "Discord handle");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->discord_handle.ptr, metadataChange->discord_handle.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->discord_handle.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->discord_handle.ptr, metadataChange->discord_handle.len, pageIdx, pageCount);
+            }
             break;
         }
         case 7: {
             snprintf(outKey, outKeyLen, "Avatar");
-            pageStringExt(outVal, outValLen, (const char*)metadataChange->avatar.ptr, metadataChange->avatar.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (metadataChange->avatar.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)metadataChange->avatar.ptr, metadataChange->avatar.len, pageIdx, pageCount);
+            }
             break;
         }
         case 8: {

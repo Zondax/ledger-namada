@@ -630,12 +630,11 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     // The validator email
     metadataChange->email.ptr = NULL;
     metadataChange->email.len = 0;
-    uint8_t has_email = 0;
-    CHECK_ERROR(readByte(&ctx, &has_email))
-    if (has_email != 0 && has_email != 1) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_email))
+    if (metadataChange->has_email != 0 && metadataChange->has_email != 1) {
         return parser_value_out_of_range;
     }
-    if (has_email) {
+    if (metadataChange->has_email) {
       CHECK_ERROR(readUint32(&ctx, &tmpValue));
       if (tmpValue > UINT16_MAX) {
         return parser_value_out_of_range;
@@ -647,12 +646,11 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     /// The validator description
     metadataChange->description.ptr = NULL;
     metadataChange->description.len = 0;
-    uint8_t has_description = 0;
-    CHECK_ERROR(readByte(&ctx, &has_description))
-    if (has_description != 0 && has_description != 1) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_description))
+    if (metadataChange->has_description != 0 && metadataChange->has_description != 1) {
         return parser_value_out_of_range;
     }
-    if (has_description) {
+    if (metadataChange->has_description) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -664,9 +662,8 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     /// The validator website
     metadataChange->website.ptr = NULL;
     metadataChange->website.len = 0;
-    uint8_t has_website;
-    CHECK_ERROR(readByte(&ctx, &has_website))
-    if (has_website) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_website))
+    if (metadataChange->has_website) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -678,9 +675,8 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     /// The validator's discord handle
     metadataChange->discord_handle.ptr = NULL;
     metadataChange->discord_handle.len = 0;
-    uint8_t has_discord_handle;
-    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
-    if (has_discord_handle) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_discord_handle))
+    if (metadataChange->has_discord_handle) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -692,9 +688,8 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
     /// The validator's avatar
     metadataChange->avatar.ptr = NULL;
     metadataChange->avatar.len = 0;
-    uint8_t has_avatar;
-    CHECK_ERROR(readByte(&ctx, &has_avatar))
-    if (has_avatar) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_avatar))
+    if (metadataChange->has_avatar) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -706,9 +701,8 @@ static parser_error_t readChangeValidatorMetadata(const bytes_t *data, tx_metada
         /// The validator's name
     metadataChange->name.ptr = NULL;
     metadataChange->name.len = 0;
-    uint8_t has_name;
-    CHECK_ERROR(readByte(&ctx, &has_name))
-    if (has_name) {
+    CHECK_ERROR(readByte(&ctx, &metadataChange->has_name))
+    if (metadataChange->has_name) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -1433,11 +1427,11 @@ parser_error_t verifyShieldedHash(parser_context_t *ctx) {
         }
     }
 
-    if (ctx->tx_obj->transfer.has_shielded_hash && memcmp(ctx->tx_obj->transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
+    if (ctx->tx_obj->typeTx == Transfer && ctx->tx_obj->transfer.has_shielded_hash && memcmp(ctx->tx_obj->transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
         return parser_invalid_target_hash;
     }
 
-    if(ctx->tx_obj->ibc.transfer.has_shielded_hash && memcmp(ctx->tx_obj->ibc.transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
+    if(ctx->tx_obj->typeTx == IBC && ctx->tx_obj->ibc.transfer.has_shielded_hash && memcmp(ctx->tx_obj->ibc.transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
         return parser_invalid_target_hash;
     }
 #endif
