@@ -1433,11 +1433,11 @@ parser_error_t verifyShieldedHash(parser_context_t *ctx) {
         }
     }
 
-    if (ctx->tx_obj->transfer.has_shielded_hash && memcmp(ctx->tx_obj->transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
+    if (ctx->tx_obj->typeTx == Transfer && ctx->tx_obj->transfer.has_shielded_hash && memcmp(ctx->tx_obj->transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
         return parser_invalid_target_hash;
     }
 
-    if(ctx->tx_obj->ibc.transfer.has_shielded_hash && memcmp(ctx->tx_obj->ibc.transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
+    if(ctx->tx_obj->typeTx == IBC && ctx->tx_obj->ibc.transfer.has_shielded_hash && memcmp(ctx->tx_obj->ibc.transfer.shielded_hash.ptr, tx_id_hash, HASH_LEN) != 0) {
         return parser_invalid_target_hash;
     }
 #endif
