@@ -300,10 +300,15 @@ typedef struct {
     bytes_t max_commission_rate_change;
     bytes_t email;
     bytes_t description;
+    uint8_t has_description;
     bytes_t website;
+    uint8_t has_website;
     bytes_t discord_handle;
+    uint8_t has_discord_handle;
     bytes_t avatar;
+    uint8_t has_avatar;
     bytes_t name;
+    uint8_t has_name;
 } tx_become_validator_t;
 
 typedef struct {

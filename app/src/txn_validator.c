@@ -56,13 +56,12 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     /// The validator description
     v->becomeValidator.description.ptr = NULL;
     v->becomeValidator.description.len = 0;
-    uint8_t has_description = 0;
-    CHECK_ERROR(readByte(&ctx, &has_description))
-    if (has_description != 0 && has_description != 1) {
+    CHECK_ERROR(readByte(&ctx, &v->becomeValidator.has_description))
+    if (v->becomeValidator.has_description != 0 && v->becomeValidator.has_description != 1) {
         return parser_value_out_of_range;
     }
 
-    if (has_description) {
+    if (v->becomeValidator.has_description) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -74,9 +73,8 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     /// The validator website
     v->becomeValidator.website.ptr = NULL;
     v->becomeValidator.website.len = 0;
-    uint8_t has_website;
-    CHECK_ERROR(readByte(&ctx, &has_website))
-    if (has_website) {
+    CHECK_ERROR(readByte(&ctx, &v->becomeValidator.has_website))
+    if (v->becomeValidator.has_website) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -88,9 +86,8 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     /// The validator's discord handle
     v->becomeValidator.discord_handle.ptr = NULL;
     v->becomeValidator.discord_handle.len = 0;
-    uint8_t has_discord_handle;
-    CHECK_ERROR(readByte(&ctx, &has_discord_handle))
-    if (has_discord_handle) {
+    CHECK_ERROR(readByte(&ctx, &v->becomeValidator.has_discord_handle))
+    if (v->becomeValidator.has_discord_handle) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -102,9 +99,8 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     /// The validator's avatar
     v->becomeValidator.avatar.ptr = NULL;
     v->becomeValidator.avatar.len = 0;
-    uint8_t has_avatar;
-    CHECK_ERROR(readByte(&ctx, &has_avatar))
-    if (has_avatar) {
+    CHECK_ERROR(readByte(&ctx, &v->becomeValidator.has_avatar))
+    if (v->becomeValidator.has_avatar) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;
@@ -116,9 +112,8 @@ parser_error_t readBecomeValidator(const bytes_t *data, const section_t *extra_d
     /// The validator's name
     v->becomeValidator.name.ptr = NULL;
     v->becomeValidator.name.len = 0;
-    uint8_t has_name;
-    CHECK_ERROR(readByte(&ctx, &has_name))
-    if (has_name) {
+    CHECK_ERROR(readByte(&ctx, &v->becomeValidator.has_name))
+    if (v->becomeValidator.has_name) {
         CHECK_ERROR(readUint32(&ctx, &tmpValue));
         if (tmpValue > UINT16_MAX) {
             return parser_value_out_of_range;

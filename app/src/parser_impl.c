@@ -109,19 +109,19 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
 
         case BecomeValidator: {
             *numItems = (app_mode_expert() ? BECOME_VALIDATOR_EXPERT_PARAMS : BECOME_VALIDATOR_NORMAL_PARAMS);
-            if(ctx->tx_obj->becomeValidator.name.ptr) {
+            if(ctx->tx_obj->becomeValidator.has_name) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->becomeValidator.description.ptr) {
+            if(ctx->tx_obj->becomeValidator.has_description) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->becomeValidator.discord_handle.ptr) {
+            if(ctx->tx_obj->becomeValidator.has_discord_handle) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->becomeValidator.website.ptr) {
+            if(ctx->tx_obj->becomeValidator.has_website) {
                 (*numItems)++;
             }
-            if(ctx->tx_obj->becomeValidator.avatar.ptr) {
+            if(ctx->tx_obj->becomeValidator.has_avatar) {
                 (*numItems)++;
             }
             break;

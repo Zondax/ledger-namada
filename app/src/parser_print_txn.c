@@ -916,19 +916,19 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
                                               char *outVal, uint16_t outValLen,
                                               uint8_t pageIdx, uint8_t *pageCount) {
 
-    if(displayIdx >= 9 && ctx->tx_obj->becomeValidator.name.ptr == NULL) {
+    if(displayIdx >= 9 && !ctx->tx_obj->becomeValidator.has_name) {
         displayIdx++;
     }
-    if(displayIdx >= 10 && ctx->tx_obj->becomeValidator.description.ptr == NULL) {
+    if(displayIdx >= 10 && !ctx->tx_obj->becomeValidator.has_description) {
         displayIdx++;
     }
-    if(displayIdx >= 11 && ctx->tx_obj->becomeValidator.website.ptr == NULL) {
+    if(displayIdx >= 11 && !ctx->tx_obj->becomeValidator.has_website) {
         displayIdx++;
     }
-    if(displayIdx >= 12 && ctx->tx_obj->becomeValidator.discord_handle.ptr == NULL) {
+    if(displayIdx >= 12 && !ctx->tx_obj->becomeValidator.has_discord_handle) {
         displayIdx++;
     }
-    if(displayIdx >= 13 && ctx->tx_obj->becomeValidator.avatar.ptr == NULL) {
+    if(displayIdx >= 13 && !ctx->tx_obj->becomeValidator.has_avatar) {
         displayIdx++;
     }
 
@@ -995,12 +995,14 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 9: {
             snprintf(outKey, outKeyLen, "Name");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.name.ptr, ctx->tx_obj->becomeValidator.name.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.name.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.name.ptr, ctx->tx_obj->becomeValidator.name.len, pageIdx, pageCount);
+            }
             break;
         }
         case 10: {
             snprintf(outKey, outKeyLen, "Description");
-            // snprintf(outVal, outValLen, "(none)");
             snprintf(outVal, outValLen, "");
             if (ctx->tx_obj->becomeValidator.description.len > 0) {
                 pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.description.ptr, ctx->tx_obj->becomeValidator.description.len, pageIdx, pageCount);
@@ -1009,17 +1011,26 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
         }
         case 11: {
             snprintf(outKey, outKeyLen, "Website");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.website.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.website.ptr, ctx->tx_obj->becomeValidator.website.len, pageIdx, pageCount);
+            }
             break;
         }
         case 12: {
             snprintf(outKey, outKeyLen, "Discord handle");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.discord_handle.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.discord_handle.ptr, ctx->tx_obj->becomeValidator.discord_handle.len, pageIdx, pageCount);
+            }
             break;
         }
         case 13: {
             snprintf(outKey, outKeyLen, "Avatar");
-            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.avatar.ptr, ctx->tx_obj->becomeValidator.avatar.len, pageIdx, pageCount);
+            snprintf(outVal, outValLen, "");
+            if (ctx->tx_obj->becomeValidator.avatar.len > 0) {
+                pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->becomeValidator.avatar.ptr, ctx->tx_obj->becomeValidator.avatar.len, pageIdx, pageCount);
+            }
             break;
         }
         case 14:
