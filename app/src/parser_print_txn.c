@@ -44,11 +44,12 @@ __Z_INLINE parser_error_t printFee(const parser_context_t *ctx, char *outKey, ui
     
     // Perform multiplication maintaining little endian format
     uint32_t carry = 0;
+    uint64_t sum = 0;
     
     // For each byte position in the result
     for (uint8_t i = 0; i < sizeof(resultBytes); i++) {
-        uint64_t sum = carry;
-        carry = 0;
+        sum = carry; // Use carry from the previous iteration
+        carry = 0;   // Reset carry for the current iteration
         
         // Multiply each byte of fee amount by each byte of gas limit that could affect this position
         for (uint8_t j = 0; j <= i && j < 8; j++) {  // 8 bytes for uint64
@@ -59,9 +60,9 @@ __Z_INLINE parser_error_t printFee(const parser_context_t *ctx, char *outKey, ui
         
         // Store the current byte and keep the carry
         resultBytes[i] = sum & 0xFF;
-        carry = sum >> 8;
+        carry += (sum >> 8); // Update carry for the next iteration
     }
-    
+
     // Create bytes_t for result
     bytes_t result = {resultBytes, sizeof(resultBytes)};
     
