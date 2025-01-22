@@ -68,7 +68,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
                 items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
                 items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
 
-                *numItems = (app_mode_expert() ? items + 4 : items);
+                *numItems = (app_mode_expert() ? items + 4 : items + 2);
             } else {
                 *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }

@@ -188,7 +188,7 @@ describe.each(models)('Transactions', function (m) {
     }
   })
 
-  test.only('Sign transaction with empty field Issue 106', async function () {
+  test.concurrent('Sign transaction with empty field Issue 106', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
