@@ -27,12 +27,6 @@ extern "C" {
 parser_error_t readBondUnbond(const bytes_t *data, parser_tx_t *v);
 parser_error_t readRedelegate(const bytes_t *data, tx_redelegation_t *redelegation);
 
-parser_error_t printRedelegate(const parser_context_t *ctx,
-                                  uint8_t displayIdx,
-                                  char *outKey, uint16_t outKeyLen,
-                                  char *outVal, uint16_t outValLen,
-                                  uint8_t pageIdx, uint8_t *pageCount);
-
 #ifdef __cplusplus
 }
 #endif
