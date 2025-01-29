@@ -27,9 +27,11 @@ parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
 
     CHECK_ERROR(validateTransactionParams(v))
 
+#if defined(COMPILE_MASP)
     if(ctx->tx_obj->transaction.isMasp) {
         CHECK_ERROR(verifyShieldedHash(ctx))
     }
+#endif
 
     if (ctx->offset != ctx->bufferLen) {
         return parser_unexpected_unparsed_bytes;

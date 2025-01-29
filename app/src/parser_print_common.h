@@ -24,12 +24,6 @@
 extern "C" {
 #endif
 
-parser_error_t printTxnFields(const parser_context_t *ctx,
-                              uint8_t displayIdx,
-                              char *outKey, uint16_t outKeyLen,
-                              char *outVal, uint16_t outValLen,
-                              uint8_t pageIdx, uint8_t *pageCount);
-
 parser_error_t printMemo( const parser_context_t *ctx,
                         char *outKey, uint16_t outKeyLen,
                         char *outVal, uint16_t outValLen,

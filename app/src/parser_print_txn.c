@@ -2360,12 +2360,40 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
     return parser_ok;
 }
 
+parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
+    return getNumItems(ctx, num_items);
+}
 
-parser_error_t printTxnFields(const parser_context_t *ctx,
+static void cleanOutput(char *outKey, uint16_t outKeyLen,
+                        char *outVal, uint16_t outValLen)
+{
+    MEMZERO(outKey, outKeyLen);
+    MEMZERO(outVal, outValLen);
+    snprintf(outKey, outKeyLen, "?");
+    snprintf(outVal, outValLen, " ");
+}
+
+static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx)
+{
+    if ( displayIdx >= numItems) {
+        return parser_display_idx_out_of_range;
+    }
+    return parser_ok;
+}
+
+parser_error_t parser_getItem(const parser_context_t *ctx,
                               uint8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount) {
+
+    *pageCount = 1;
+    uint8_t numItems = 0;
+    CHECK_ERROR(parser_getNumItems(ctx, &numItems))
+    CHECK_APP_CANARY()
+
+    CHECK_ERROR(checkSanity(numItems, displayIdx))
+    cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
     switch (ctx->tx_obj->typeTx) {
         case Bond:
