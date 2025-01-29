@@ -210,7 +210,7 @@ describe.each(models)('Transactions', function (m) {
     }
   })
 
-  test.concurrent('Verify nanoS crash Issue110', async function () {
+  test.concurrent('Verify nanoS crash Issue 110', async function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
