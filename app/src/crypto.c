@@ -406,6 +406,7 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
     signature_section.hashes.hashesLen += 2;
 
     // Include Masp hash in the signature if it's there
+#if defined(COMPILE_MASP)
     if (txObj->transaction.isMasp) {
         const uint8_t *maspSection = txObj->transaction.sections.maspTx.masptx_ptr;
         uint64_t maspSectionLen = txObj->transaction.sections.maspTx.masptx_len;
@@ -415,7 +416,7 @@ zxerr_t crypto_sign(const parser_tx_t *txObj, uint8_t *output, uint16_t outputLe
         section_hashes.hashesLen++;
         signature_section.hashes.hashesLen++;
     } 
-
+#endif
     // Include the memo section hash in the signature if it's there
     if (txObj->transaction.header.memoSection != NULL) {
         const section_t *memo = txObj->transaction.header.memoSection;

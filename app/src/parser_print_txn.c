@@ -79,7 +79,7 @@ __Z_INLINE parser_error_t printFee(const parser_context_t *ctx, char *outKey, ui
     return parser_ok;
 }
 
-static parser_error_t printBondTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printBondTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
                                     char *outVal, uint16_t outValLen,
@@ -147,7 +147,7 @@ static parser_error_t printBondTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printResignSteward( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printResignSteward( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -195,7 +195,7 @@ static parser_error_t printResignSteward( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
+static __attribute__((noinline)) parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
 
     for (uint32_t i = 0; i < index; i++) {
         spend->ptr += EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN;
@@ -207,7 +207,7 @@ static parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
     return parser_ok;
 }
 
-static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
+static __attribute__((noinline)) parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
 
     for (uint32_t i = 0; i < index; i++) {
         uint8_t has_ovk = out->ptr[0];
@@ -222,7 +222,7 @@ static parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
     return parser_ok;
 }
 
-static parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, const uint8_t *stoken, masp_asset_data_t *asset_data, uint32_t *index) {
+static __attribute__((noinline)) parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, const uint8_t *stoken, masp_asset_data_t *asset_data, uint32_t *index) {
     parser_context_t asset_data_ctx = {.buffer = maspBuilder->asset_data.ptr, .bufferLen = maspBuilder->asset_data.len, .offset = 0, .tx_obj = NULL};
     for (*index = 0; *index < maspBuilder->n_asset_type; (*index)++) {
         CHECK_ERROR(readAssetData(&asset_data_ctx, asset_data))
@@ -236,7 +236,7 @@ static parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, c
     return parser_ok;
 }
 
-static parser_error_t printTransferTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printTransferTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -460,7 +460,7 @@ static parser_error_t printTransferTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printCustomTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printCustomTxn( const parser_context_t *ctx,
                                            uint8_t displayIdx,
                                            char *outKey, uint16_t outKeyLen,
                                            char *outVal, uint16_t outValLen,
@@ -497,7 +497,7 @@ static parser_error_t printCustomTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
                                             uint8_t displayIdx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
@@ -586,7 +586,7 @@ static parser_error_t printInitAccountTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
@@ -696,7 +696,7 @@ static parser_error_t printInitProposalTxn(  const parser_context_t *ctx,
 }
 
 
-static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
                                              uint8_t displayIdx,
                                              char *outKey, uint16_t outKeyLen,
                                              char *outVal, uint16_t outValLen,
@@ -775,7 +775,7 @@ static parser_error_t printVoteProposalTxn(  const parser_context_t *ctx,
 }
 
 
-static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
                                             uint8_t displayIdx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
@@ -826,7 +826,7 @@ static parser_error_t printRevealPubkeyTxn(  const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -879,7 +879,7 @@ static parser_error_t printChangeConsensusKeyTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
                                             uint8_t displayIdx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
@@ -927,7 +927,7 @@ static parser_error_t printUnjailValidatorTxn(const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printActivateValidator(const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printActivateValidator(const parser_context_t *ctx,
                                             uint8_t displayIdx,
                                             char *outKey, uint16_t outKeyLen,
                                             char *outVal, uint16_t outValLen,
@@ -977,7 +977,7 @@ static parser_error_t printActivateValidator(const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
                                        uint8_t displayIdx,
                                        char *outKey, uint16_t outKeyLen,
                                        char *outVal, uint16_t outValLen,
@@ -1081,7 +1081,7 @@ static parser_error_t printUpdateVPTxn(const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
@@ -1232,7 +1232,7 @@ static parser_error_t printBecomeValidatorTxn(  const parser_context_t *ctx,
 }
 
 
-static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printWithdrawTxn( const parser_context_t *ctx,
                                         uint8_t displayIdx,
                                         char *outKey, uint16_t outKeyLen,
                                         char *outVal, uint16_t outValLen,
@@ -1298,7 +1298,7 @@ static parser_error_t printWithdrawTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
                                                 uint8_t displayIdx,
                                                 char *outKey, uint16_t outKeyLen,
                                                 char *outVal, uint16_t outValLen,
@@ -1351,7 +1351,7 @@ static parser_error_t printCommissionChangeTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printIBCTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
                                     char *outVal, uint16_t outValLen,
@@ -1642,7 +1642,7 @@ static parser_error_t printIBCTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printTokenId( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printTokenId( const parser_context_t *ctx,
                                     uint8_t tokenIdx,
                                     char *outVal, uint16_t outValLen,
                                     uint8_t pageIdx, uint8_t *pageCount) {
@@ -1687,7 +1687,7 @@ static parser_error_t printTokenId( const parser_context_t *ctx,
 
 }
 
-static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
                                     uint8_t displayIdx,
                                     char *outKey, uint16_t outKeyLen,
                                     char *outVal, uint16_t outValLen,
@@ -1987,7 +1987,7 @@ static parser_error_t printNFTIBCTxn( const parser_context_t *ctx,
     return parser_ok;
 }
 
-static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
                                                 uint8_t displayIdx,
                                                 char *outKey, uint16_t outKeyLen,
                                                 char *outVal, uint16_t outValLen,
@@ -2065,7 +2065,7 @@ static parser_error_t printUpdateStewardCommission( const parser_context_t *ctx,
     return printExpert(ctx, adjustedDisplayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
 
-static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
@@ -2194,7 +2194,7 @@ static parser_error_t printChangeValidatorMetadata(  const parser_context_t *ctx
     return parser_ok;
 }
 
-static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
                                               uint8_t displayIdx,
                                               char *outKey, uint16_t outKeyLen,
                                               char *outVal, uint16_t outValLen,
@@ -2292,7 +2292,7 @@ static parser_error_t printBridgePoolTransfer(  const parser_context_t *ctx,
     return parser_ok;
 }
 
-parser_error_t printRedelegate(const parser_context_t *ctx,
+static __attribute__((noinline)) parser_error_t printRedelegate(const parser_context_t *ctx,
                                   uint8_t displayIdx,
                                   char *outKey, uint16_t outKeyLen,
                                   char *outVal, uint16_t outValLen,
