@@ -67,7 +67,7 @@ parser_error_t parser_validate(parser_context_t *ctx) {
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
     CHECK_ERROR(parser_getNumItems(ctx, &numItems))
-
+    zemu_log_stack("parser_validate2");
     char tmpKey[40];
     char tmpVal[40];
 
@@ -75,6 +75,7 @@ parser_error_t parser_validate(parser_context_t *ctx) {
         uint8_t pageCount = 0;
         CHECK_ERROR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
+    zemu_log_stack("parser_validate3");
     return parser_ok;
 }
 

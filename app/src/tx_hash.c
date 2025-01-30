@@ -21,6 +21,7 @@
 #include "parser_txdef.h"
 #include "parser_impl_masp.h"
 
+#if defined(COMPILE_MASP)
 // Hash MaspTx Header information
 zxerr_t tx_hash_header_data(const parser_tx_t *txObj, uint8_t *output) {
     if (txObj == NULL || output == NULL) {
@@ -338,3 +339,4 @@ zxerr_t tx_hash_txId(const parser_tx_t *txObj, uint8_t *output) {
 
     return zxerr_ok;
 }
+#endif

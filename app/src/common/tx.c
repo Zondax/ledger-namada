@@ -82,15 +82,17 @@ const char *tx_parse() {
             tx_get_buffer_length(),
             &tx_obj);
 
+    zemu_log_stack("parser_parse");
     CHECK_APP_CANARY()
 
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
     }
 
+    zemu_log_stack("parser_validate");
     err = parser_validate(&ctx_parsed_tx);
+    zemu_log_stack("parser_validate out");
     CHECK_APP_CANARY()
-
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
     }

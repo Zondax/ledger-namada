@@ -63,6 +63,7 @@ zxerr_t getItemPublicAddress(int8_t displayIdx, char *outKey, uint16_t outKeyLen
     return zxerr_ok;
 }
 
+#if defined(COMPILE_MASP)
 zxerr_t getNumItemsProofGenerationKey(uint8_t *num_items) {
     if (num_items == NULL) {
         return zxerr_no_data;
@@ -165,3 +166,4 @@ void review_keys_menu(key_kind_e keyType) {
     view_review_init(getItemFunction, getNumItemFunction, app_reply_cmd);
     view_review_show(reviewType);
 }
+#endif

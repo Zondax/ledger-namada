@@ -151,10 +151,11 @@ parser_error_t printAmount( const bytes_t *amount, bool isSigned, uint8_t amount
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount) {
 
+    zemu_log_stack("printAmount");
     char strAmount[280] = {0};
     CHECK_ERROR(bigint_to_str(amount, isSigned, strAmount, sizeof(strAmount), 0, pageCount))
     const uint8_t isNegative = strAmount[0] == '-' ? 1 : 0;
-
+    zemu_log_stack("printAmount2");
     if (insertDecimalPoint(strAmount + isNegative, sizeof(strAmount) - isNegative, amountDenom) != zxerr_ok) {
         return parser_unexpected_error;
     }
@@ -417,7 +418,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
     if(displayIdx >= 4 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
         displayIdx++;
     }
-
+    zemu_log_stack("expert");
     switch (displayIdx) {
         case 0:
             snprintf(outKey, outKeyLen, "Timestamp");
@@ -447,8 +448,10 @@ parser_error_t printExpert( const parser_context_t *ctx,
             break;
         }
         case 4: {
+            zemu_log_stack("Fees/gas unit");
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
+            zemu_log_stack("Fees/gas unit out");
             break;
         }
         default:

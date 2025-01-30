@@ -2334,11 +2334,13 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
             CHECK_ERROR(printAddressAlt(&redelegation->owner, outVal, outValLen, pageIdx, pageCount))
             break;
         case 4:
+            zemu_log_stack("Amount");
             snprintf(outKey, outKeyLen, "Amount");
             CHECK_ERROR(printAmount(&redelegation->amount, false, COIN_AMOUNT_DECIMAL_PLACES, "",
                                     outVal, outValLen, pageIdx, pageCount))
             break;
         case 5:
+            zemu_log_stack("Memo");
             CHECK_ERROR(printMemo(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
             break;
         case 6:
@@ -2346,8 +2348,10 @@ parser_error_t printRedelegate(const parser_context_t *ctx,
             CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
             break;
         case 7:
+            zemu_log_stack("Fee");
             snprintf(outKey, outKeyLen, "Fee");
             CHECK_ERROR(printFee(ctx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount))
+            zemu_log_stack("Fee out");
             break;
         default:
             if (!app_mode_expert()) {
