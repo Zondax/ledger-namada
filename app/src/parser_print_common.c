@@ -71,7 +71,7 @@ static parser_error_t bigint_to_str(const bytes_t *value, bool isSigned, char *o
     }
     // it's i128 or i256, up to 79 chars in decimal
     uint8_t bcdOut[40] = {0};
-    char bufUi[100] = {0};
+    char bufUi[81] = {0};
     bignumLittleEndian_to_bcd(bcdOut, sizeof(bcdOut), intAbsVal, ptrLen);
     // we leave the first char for negative sign!
     if (!bignumLittleEndian_bcdprint(bufUi + (isNegative ? 1 : 0), sizeof(bufUi) - (isNegative ? 1 : 0), bcdOut, sizeof(bcdOut))) {
@@ -82,7 +82,7 @@ static parser_error_t bigint_to_str(const bytes_t *value, bool isSigned, char *o
         bufUi[0] = '-';
     }
     // up to 79 chars
-    const uint16_t numLen = strnlen(bufUi, sizeof(bufUi));
+    const uint8_t numLen = strnlen(bufUi, sizeof(bufUi));
     pageStringExt(output, outputLen, bufUi, numLen, pageIdx, pageCount);
     return parser_ok;
 }
@@ -91,7 +91,7 @@ parser_error_t printAddressAlt(const AddressAlt *addr,
                              char *outVal, uint16_t outValLen,
                              uint8_t pageIdx, uint8_t *pageCount) {
 
-    char address[110] = {0};
+    char address[80] = {0};
     CHECK_ERROR(crypto_encodeAltAddress(addr, address, sizeof(address)))
 
     // Comapare with NAM mainnet address
@@ -151,8 +151,7 @@ parser_error_t printAmount( const bytes_t *amount, bool isSigned, uint8_t amount
                             char *outVal, uint16_t outValLen,
                             uint8_t pageIdx, uint8_t *pageCount) {
 
-
-    char strAmount[325] = {0};
+    char strAmount[280] = {0};
     CHECK_ERROR(bigint_to_str(amount, isSigned, strAmount, sizeof(strAmount), 0, pageCount))
     const uint8_t isNegative = strAmount[0] == '-' ? 1 : 0;
 
