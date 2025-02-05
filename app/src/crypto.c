@@ -566,7 +566,7 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
 
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
-        HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
+        HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED_ZIP32,
     };
 
     MEMZERO(device_seed, KEY_LENGTH);
