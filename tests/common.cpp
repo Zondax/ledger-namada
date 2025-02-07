@@ -16,7 +16,7 @@
 #include "gmock/gmock.h"
 #include "parser_impl.h"
 
-#include <parser.h>
+#include <common/parser.h>
 #include <sstream>
 #include <string>
 #include <fmt/core.h>
@@ -26,7 +26,6 @@
 #include <json/json.h>
 #include <app_mode.h>
 #include <hexutils.h>
-#include "parser.h"
 
 std::vector<std::string> dumpUI(parser_context_t *ctx,
                                 uint16_t maxKeyLen,
