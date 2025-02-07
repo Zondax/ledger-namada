@@ -414,29 +414,33 @@ parser_error_t printExpert( const parser_context_t *ctx,
                                    char *outVal, uint16_t outValLen,
                                    uint8_t pageIdx, uint8_t *pageCount) {
 
-    if(displayIdx >= 4 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
+    if(displayIdx >= 5 && ctx->tx_obj->transaction.header.fees.symbol != NULL) {
         displayIdx++;
     }
 
     switch (displayIdx) {
         case 0:
+            snprintf(outKey, outKeyLen, "Chain ID");
+            pageStringExt(outVal, outValLen, (const char*)ctx->tx_obj->transaction.header.chain_id.ptr, ctx->tx_obj->transaction.header.chain_id.len, pageIdx, pageCount);
+            break;
+        case 1:
             snprintf(outKey, outKeyLen, "Timestamp");
             CHECK_ERROR(printTimestamp(ctx->tx_obj->transaction.timestamp,
                                        outVal, outValLen, pageIdx, pageCount))
             break;
-        case 1: {
+        case 2: {
             const bytes_t *pubkey = &ctx->tx_obj->transaction.header.pubkey;
             snprintf(outKey, outKeyLen, "Pubkey");
             CHECK_ERROR(printPublicKey(pubkey, outVal, outValLen, pageIdx, pageCount));
             break;
         }
-        case 2:
+        case 3:
             snprintf(outKey, outKeyLen, "Gas limit");
             if (uint64_to_str(outVal, outValLen, ctx->tx_obj->transaction.header.gasLimit) != NULL) {
                 return parser_unexpected_error;
             }
             break;
-        case 3: {
+        case 4: {
             if(ctx->tx_obj->transaction.header.fees.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Fees/gas unit");
                 CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
@@ -446,7 +450,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
             }
             break;
         }
-        case 4: {
+        case 5: {
             snprintf(outKey, outKeyLen, "Fees/gas unit");
             CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
             break;

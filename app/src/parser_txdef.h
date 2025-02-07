@@ -263,6 +263,7 @@ typedef struct {
     bytes_t memoHash;
     const section_t *memoSection;
     uint8_t atomic;
+    bytes_t chain_id;
 } header_t;
 typedef struct {
     uint32_t sectionLen;
