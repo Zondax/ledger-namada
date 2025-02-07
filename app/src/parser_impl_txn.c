@@ -950,8 +950,9 @@ parser_error_t readHeader(parser_context_t *ctx, parser_tx_t *v) {
     // Read length of chain_id
     uint32_t chain_id_len = 0;
     CHECK_ERROR(readUint32(ctx, &chain_id_len))
+    v->transaction.header.chain_id.len = (uint16_t)chain_id_len;
 
-    ctx->offset += chain_id_len;
+    CHECK_ERROR(readBytes(ctx, &v->transaction.header.chain_id.ptr, v->transaction.header.chain_id.len))
 
     // Check if an expiration is set
     uint8_t has_expiration = 0;
