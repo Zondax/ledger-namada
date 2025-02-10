@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "parser.h"
+#include "common/parser.h"
 #include "zxformat.h"
 
 #ifdef NDEBUG
