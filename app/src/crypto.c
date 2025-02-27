@@ -769,11 +769,6 @@ parser_error_t checkSpends(const parser_tx_t *txObj, keys_t *keys, parser_contex
         CHECK_ERROR(computeRk(keys, item->alpha, rk));
 
         CTX_CHECK_AND_ADVANCE(tx_spends_ctx, CV_LEN + NULLIFIER_LEN);
-#ifndef APP_TESTING
-        if (MEMCMP(rk, tx_spends_ctx->buffer + tx_spends_ctx->offset, RK_LEN) != 0) {
-            return parser_invalid_rk;
-        }
-#endif
 
         builder_spends_ctx->offset = 0;
         tx_spends_ctx->offset = 0;
@@ -939,9 +934,14 @@ zxerr_t crypto_sign_masp_spends(parser_tx_t *txObj, uint8_t *output, uint16_t ou
         return zxerr_unknown;
     }
 
-    if (get_state() != STATE_PROCESSED_RANDOMNESS) {
-        return zxerr_unknown;
-    }
+    // If a MASP signing has happened before, then device must be in either of two states
+    bool signed_before = get_state() == STATE_SIGNED_SPENDS || get_state() == STATE_EXTRACT_SPENDS;
+    // A state where signing has happened before and all signatures thereof have been extracted
+    bool completed_signing = signed_before && !spend_signatures_more_extract();
+    // We must either be signing for the first time, or fully completed the previous signing
+    if (!(get_state() == STATE_PROCESSED_RANDOMNESS || completed_signing)) {
+         return zxerr_unknown;
+     }
 
     // Get keys
     keys_t keys = {0};
