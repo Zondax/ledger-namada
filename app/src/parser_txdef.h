@@ -121,6 +121,7 @@ typedef struct {
     uint8_t has_epoch;
     uint64_t epoch;
     bytes_t bytes;
+    const char* symbol;
 } masp_asset_data_t;
 
 typedef struct {
@@ -224,6 +225,8 @@ typedef struct{
     bytes_t spends;
     bytes_t converts;
     bytes_t outputs;
+    uint32_t no_symbol_spends;
+    uint32_t no_symbol_outputs;
 }masp_sapling_builder_t;
 
 typedef struct {

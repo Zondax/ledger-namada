@@ -27,6 +27,12 @@ extern "C" {
 parser_error_t _read(parser_context_t *c, parser_tx_t *v);
 parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems);
 bool hasMemoToPrint(const parser_context_t *ctx);
+parser_error_t checkMaspSpendsSymbols (const parser_context_t *ctx);
+parser_error_t checkMaspOutputsSymbols (const parser_context_t *ctx);
+parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, const uint8_t *stoken, masp_asset_data_t *asset_data, uint32_t *index);
+parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend);
+parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out);
+
 #ifdef __cplusplus
 }
 #endif
