@@ -69,7 +69,7 @@ __attribute__((noinline)) parser_error_t getOutputfromIndex(uint32_t index, byte
     for (uint32_t i = 0; i < index; i++) {
         uint8_t has_ovk = out->ptr[0];
         if(has_ovk) {
-            out->ptr += 33;
+            out->ptr += OVK_PLUS_CHECK_BYTE;
         } else {
             out->ptr++;
         }
