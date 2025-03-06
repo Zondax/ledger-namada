@@ -443,7 +443,7 @@ parser_error_t printExpert( const parser_context_t *ctx,
         case 4: {
             if(ctx->tx_obj->transaction.header.fees.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Fees/gas unit");
-                CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, "", outVal, outValLen, pageIdx, pageCount))
+                CHECK_ERROR(printAmount(&ctx->tx_obj->transaction.header.fees.amount, true, ctx->tx_obj->transaction.header.fees.denom, ctx->tx_obj->transaction.header.fees.symbol, outVal, outValLen, pageIdx, pageCount))
             } else {
                 snprintf(outKey, outKeyLen, "Fee token");
                 CHECK_ERROR(printAddressAlt(&ctx->tx_obj->transaction.header.fees.address, outVal, outValLen, pageIdx, pageCount))
