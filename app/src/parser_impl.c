@@ -17,7 +17,7 @@
 #include "zxformat.h"
 #include "leb128.h"
 #include "app_mode.h"
-
+#include "crypto_helper.h"
 #include "parser_impl_common.h"
 
 parser_error_t _read(parser_context_t *ctx, parser_tx_t *v) {
@@ -52,6 +52,80 @@ bool hasMemoToPrint(const parser_context_t *ctx) {
     return false; // No memo to print
 }
 
+__attribute__((noinline)) parser_error_t getSpendfromIndex(uint32_t index, bytes_t *spend) {
+
+    for (uint32_t i = 0; i < index; i++) {
+        spend->ptr += EXTENDED_FVK_LEN + DIVERSIFIER_LEN + NOTE_LEN;
+        uint8_t tmp_len = spend->ptr[0];
+        spend->ptr++;
+        spend->ptr += (tmp_len * (32 + 1)) + sizeof(uint64_t);
+    }
+
+    return parser_ok;
+}
+
+__attribute__((noinline)) parser_error_t getOutputfromIndex(uint32_t index, bytes_t *out) {
+
+    for (uint32_t i = 0; i < index; i++) {
+        uint8_t has_ovk = out->ptr[0];
+        if(has_ovk) {
+            out->ptr += OVK_PLUS_CHECK_BYTE;
+        } else {
+            out->ptr++;
+        }
+        out->ptr += PAYMENT_ADDR_LEN + OUT_NOTE_LEN + MEMO_LEN;
+    }
+
+    return parser_ok;
+}
+
+__attribute__((noinline)) parser_error_t findAssetData(const masp_builder_section_t *maspBuilder, const uint8_t *stoken, masp_asset_data_t *asset_data, uint32_t *index) {
+    parser_context_t asset_data_ctx = {.buffer = maspBuilder->asset_data.ptr, .bufferLen = maspBuilder->asset_data.len, .offset = 0, .tx_obj = NULL};
+    for (*index = 0; *index < maspBuilder->n_asset_type; (*index)++) {
+        CHECK_ERROR(readAssetData(&asset_data_ctx, asset_data))
+        uint8_t identifier[32];
+        uint8_t nonce;
+        CHECK_ERROR(readToken(&asset_data->token, &asset_data->symbol));
+        CHECK_ERROR(derive_asset_type(asset_data, identifier, &nonce))
+        if(MEMCMP(identifier, stoken, ASSET_ID_LEN) == 0) {
+            return parser_ok;
+        }
+    }
+    return parser_ok;
+}
+
+parser_error_t checkMaspSpendsSymbols (const parser_context_t *ctx) {
+    bytes_t spend = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.spends;
+    masp_asset_data_t asset_data = {0};
+    uint32_t asset_idx = 0;
+
+    for (uint32_t i = 0; i < ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; i++) {
+        getSpendfromIndex(i, &spend);
+        const uint8_t *spend_token = spend.ptr + EXTENDED_FVK_LEN + DIVERSIFIER_LEN;
+        CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, spend_token, &asset_data, &asset_idx))
+        if(asset_data.symbol == NULL) {
+            ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_spends++;
+        }
+    }
+    return parser_ok;
+}
+
+parser_error_t checkMaspOutputsSymbols (const parser_context_t *ctx) {
+    bytes_t output = ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.outputs;
+    masp_asset_data_t asset_data = {0};
+    uint32_t asset_idx = 0;
+
+    for (uint32_t i = 0; i < ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; i++) {
+        getOutputfromIndex(i, &output);
+        const uint8_t *output_token = output.ptr + (output.ptr[0] ? OVK_PLUS_CHECK_BYTE : 1) + PAYMENT_ADDR_LEN;
+        CHECK_ERROR(findAssetData(&ctx->tx_obj->transaction.sections.maspBuilder, output_token, &asset_data, &asset_idx))
+        if(asset_data.symbol == NULL) {
+            ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_outputs++;
+        }
+    }
+    return parser_ok;
+}
+
 parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
     *numItems = 0;
     switch (ctx->tx_obj->typeTx) {
@@ -67,10 +141,10 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case Transfer:
             if(ctx->tx_obj->transaction.isMasp) {
                 uint8_t items = 1;
-                items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
-                items += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
+                items += 2 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_outputs; // print from outputs
+                items += 2 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_spends; // print from spends
 
-                *numItems = (app_mode_expert() ? items + 5 : items + 2);
+                *numItems = (app_mode_expert() ? items + TRANSFER_EXPERT_MASP_PARAMS : items + TRANSFER_NORMAL_MASP_PARAMS);
             } else {
                 *numItems = (app_mode_expert() ? TRANSFER_EXPERT_PARAMS : TRANSFER_NORMAL_PARAMS);
             }
@@ -215,7 +289,7 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         (*numItems)++;
     }
 
-    if(app_mode_expert() && ctx->tx_obj->transaction.header.fees.symbol == NULL) {
+    if(ctx->tx_obj->transaction.header.fees.symbol == NULL) {
         (*numItems)++;
     }
 

@@ -25,6 +25,7 @@
 #include "stdbool.h"
 #include "parser_address.h"
 #include "tx_hash.h"
+#include "parser_impl.h"
 
 #include <zxformat.h>
 
@@ -46,13 +47,13 @@ static const vp_types_t vp_validator = { "vp_validator.wasm", "Validator"};
     }
 
 static const tokens_t nam_tokens[] = {
-    NAM_TOKEN("tnam1qye0m4890at9r92pfyf3948fpzgryfzweg2v95fs", "NAM "),
-    NAM_TOKEN("tnam1qx3jyxy292rlqu40syq3nfnlgtsusyewkcuyddhp", "BTC "),
-    NAM_TOKEN("tnam1q8dug9yu52tzz3mmn976574fj7yfl4yj0qynxvrk", "ETH "),
-    NAM_TOKEN("tnam1q8d2xskmexg9j9yvfda7cwy48vy8wrmwsuw5lxtv", "DOT "),
-    NAM_TOKEN("tnam1q8qy9puaq5plu2csa4gk3l2fpl5vc4r2ccxqjhqk", "Schnitzel "),
-    NAM_TOKEN("tnam1q9zsxkpuk4sle4lhfcfnu5fdep8fy3n2aqufyc97", "Apfel "),
-    NAM_TOKEN("tnam1qyev25082t47tqxmj4gd4c07d3pm9t6rnc7jgwyq", "Kartoffel "),
+    NAM_TOKEN("tnam1q9gr66cvu4hrzm0sd5kmlnjje82gs3xlfg3v6nu7", "NAM "),
+    NAM_TOKEN("tnam1p5z8ruwyu7ha8urhq2l0dhpk2f5dv3ts7uyf2n75", "uOSMO "),
+    NAM_TOKEN("tnam1pkg30gnt4q0zn7j00r6hms4ajrxn6f5ysyyl7w9m", "uATOM "),
+    NAM_TOKEN("tnam1pklj3kwp0cpsdvv56584rsajty974527qsp8n0nm", "uTIA "),
+    NAM_TOKEN("tnam1p4px8sw3am4qvetj7eu77gftm4fz4hcw2ulpldc7", "ustOSMO "),
+    NAM_TOKEN("tnam1p5z5538v3kdk3wdx7r2hpqm4uq9926dz3ughcp7n", "ustATOM "),
+    NAM_TOKEN("tnam1ph6xhf0defk65hm7l5ursscwqdj8ehrcdv300u4g", "ustTIA "),
 };
 
 #define PREFIX_IMPLICIT 0
@@ -1297,6 +1298,8 @@ parser_error_t readSections(parser_context_t *ctx, parser_tx_t *v) {
                 break;
             case DISCRIMINANT_MASP_BUILDER:
                 CHECK_ERROR(readMaspBuilder(ctx, &v->transaction.sections.maspBuilder))
+                CHECK_ERROR(checkMaspSpendsSymbols(ctx))
+                CHECK_ERROR(checkMaspOutputsSymbols(ctx))
                 break;
 #endif
             default:
