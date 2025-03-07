@@ -219,8 +219,8 @@ parser_error_t getNumItems(const parser_context_t *ctx, uint8_t *numItems) {
         case IBC:
             *numItems = (app_mode_expert() ?  IBC_EXPERT_PARAMS : IBC_NORMAL_PARAMS);
             if(ctx->tx_obj->transaction.isMasp) {
-                *numItems += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs; // print from outputs
-                *numItems += 3 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends; // print from spends
+                *numItems += 2 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_outputs + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_outputs; // print from outputs
+                *numItems += 2 * ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.n_spends + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_spends; // print from spends
             }
             *numItems += ctx->tx_obj->ibc.transfer.non_masp_sources_len*2 + ctx->tx_obj->ibc.transfer.non_masp_targets_len*2 + ctx->tx_obj->ibc.transfer.no_symbol_sources + ctx->tx_obj->ibc.transfer.no_symbol_targets;
             *numItems += ctx->tx_obj->ibc.memo.len > 0 && app_mode_expert();

@@ -1412,9 +1412,9 @@ static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_contex
 
     const uint8_t sourcesStart = 9;
     const uint8_t spendsStart = sourcesStart + 2*ctx->tx_obj->ibc.transfer.non_masp_sources_len + ctx->tx_obj->ibc.transfer.no_symbol_sources;
-    const uint8_t targetsStart = spendsStart + 3*n_spends;
+    const uint8_t targetsStart = spendsStart + 2*n_spends + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_spends;
     const uint8_t outputsStart = targetsStart + 2*ctx->tx_obj->ibc.transfer.non_masp_targets_len + ctx->tx_obj->ibc.transfer.no_symbol_targets;
-    const uint8_t memoStart = outputsStart + 3*n_outs;
+    const uint8_t memoStart = outputsStart + 2*n_outs + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_outputs;
     const uint8_t expertStart = memoStart + (ctx->tx_obj->transaction.header.memoSection != NULL);
     AddressAlt source_address = {0};
     AddressAlt target_address = {0};
@@ -1775,9 +1775,9 @@ static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_con
 
     const uint8_t sourcesStart = 10;
     const uint8_t spendsStart = sourcesStart + 2*ctx->tx_obj->ibc.transfer.non_masp_sources_len + ctx->tx_obj->ibc.transfer.no_symbol_sources;
-    const uint8_t targetsStart = spendsStart + 3*n_spends;
+    const uint8_t targetsStart = spendsStart + 2*n_spends + + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_spends;
     const uint8_t outputsStart = targetsStart + 2*ctx->tx_obj->ibc.transfer.non_masp_targets_len + ctx->tx_obj->ibc.transfer.no_symbol_targets;
-    const uint8_t memoStart = outputsStart + 3*n_outs;
+    const uint8_t memoStart = outputsStart + 2*n_outs + ctx->tx_obj->transaction.sections.maspBuilder.builder.sapling_builder.no_symbol_outputs;
     const uint8_t expertStart = memoStart + (ctx->tx_obj->transaction.header.memoSection != NULL);
     AddressAlt source_address = {0};
     AddressAlt target_address = {0};
