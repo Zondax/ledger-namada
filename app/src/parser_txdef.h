@@ -48,6 +48,7 @@ extern "C" {
 #define DIVERSIFIER_LEN 11
 #define ALPHA_LEN 32
 #define MEMO_LEN 512
+#define GD_LEN 32
 #define PKD_LEN 32
 #define PAYMENT_ADDR_LEN (DIVERSIFIER_LEN + PKD_LEN)
 #define OVK_LEN 32
