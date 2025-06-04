@@ -34,6 +34,11 @@
 
 #define CHECK_NULL(ptr) if ((ptr) == NULL) { return parser_unexpected_error; }
 
+#define CHECK_BUFFER_BOUNDS(buffer_size, position, size) \
+    if ((position) + (size) > (buffer_size)) { \
+        return parser_unexpected_buffer_end; \
+    }
+
 __Z_INLINE parser_error_t printFee(const parser_context_t *ctx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     if(ctx == NULL || outKey == NULL || outVal == NULL || pageCount == NULL) {
         return parser_unexpected_error;
@@ -373,6 +378,7 @@ static __attribute__((noinline)) parser_error_t printTransferTxn( const parser_c
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Sending Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -390,6 +396,7 @@ static __attribute__((noinline)) parser_error_t printTransferTxn( const parser_c
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -417,6 +424,7 @@ static __attribute__((noinline)) parser_error_t printTransferTxn( const parser_c
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Receiving Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -433,6 +441,7 @@ static __attribute__((noinline)) parser_error_t printTransferTxn( const parser_c
             snprintf(outKey, outKeyLen, "Receiving Amount");
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -1639,6 +1648,7 @@ static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_contex
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Sending Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -1656,6 +1666,7 @@ static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_contex
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -1683,6 +1694,7 @@ static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_contex
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Receiving Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -1699,6 +1711,7 @@ static __attribute__((noinline)) parser_error_t printIBCTxn( const parser_contex
             snprintf(outKey, outKeyLen, "Receiving Amount");
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -2021,6 +2034,7 @@ static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_con
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Sending Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -2038,6 +2052,7 @@ static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_con
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
                 // tmp_amount is a 32 bytes array that represents an uint64[4] array, position will determine amount postion inside the array
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -2065,6 +2080,7 @@ static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_con
             if(asset_data.symbol != NULL) {
                 snprintf(outKey, outKeyLen, "Receiving Amount");
                 CHECK_NULL(amount)
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
@@ -2081,6 +2097,7 @@ static __attribute__((noinline)) parser_error_t printNFTIBCTxn( const parser_con
             snprintf(outKey, outKeyLen, "Receiving Amount");
             CHECK_NULL(amount)
             if(asset_idx < ctx->tx_obj->transaction.sections.maspBuilder.n_asset_type) {
+                CHECK_BUFFER_BOUNDS(sizeof(tmp_amount), asset_data.position * sizeof(uint64_t), sizeof(uint64_t))
                 MEMCPY(tmp_amount + (asset_data.position * sizeof(uint64_t)), amount, sizeof(uint64_t));
                 printAmount(&amount_bytes, false, asset_data.denom, asset_data.symbol, outVal, outValLen, pageIdx, pageCount);
             } else {
