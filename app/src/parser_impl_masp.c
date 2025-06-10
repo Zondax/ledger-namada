@@ -498,6 +498,9 @@ parser_error_t readAssetData(parser_context_t *ctx, masp_asset_data_t *asset) {
     CHECK_ERROR(readAddressAlt(ctx, &asset->token))
     CHECK_ERROR(readByte(ctx, &asset->denom))
     CHECK_ERROR(readByte(ctx, &asset->position))
+    if(asset->position >= 4) {
+        return parser_unexpected_value;
+    }
     CHECK_ERROR(readByte(ctx, &asset->has_epoch))
     if (asset->has_epoch) {
         CHECK_ERROR(readUint64(ctx, &asset->epoch))
