@@ -163,7 +163,7 @@ jobs:
         with:
           submodules: true
       - name: Install deps
-        run: pip install ledgerblue
+        run: pip install ledgerblue --break-system-packages
       - name: Setup Rust environment
         uses: actions-rs/toolchain@v1
         with:
@@ -219,7 +219,7 @@ jobs:
         with:
           submodules: true
       - name: Install deps
-        run: pip install ledgerblue
+        run: pip install ledgerblue --break-system-packages
       - name: Setup Rust environment
         uses: actions-rs/toolchain@v1
         with:
@@ -275,7 +275,7 @@ jobs:
         with:
           submodules: true
       - name: Install deps
-        run: pip install ledgerblue
+        run: pip install ledgerblue --break-system-packages
       - name: Setup Rust environment
         uses: actions-rs/toolchain@v1
         with:
@@ -331,7 +331,7 @@ jobs:
         with:
           submodules: true
       - name: Install deps
-        run: pip install ledgerblue
+        run: pip install ledgerblue --break-system-packages
       - name: Setup Rust environment
         uses: actions-rs/toolchain@v1
         with:
